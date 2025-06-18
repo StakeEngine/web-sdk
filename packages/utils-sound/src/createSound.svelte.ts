@@ -27,11 +27,16 @@ function createSound<TSoundName extends string>() {
 		// loadedAudio
 		loadedAudio = loadedAudioValue;
 
+		const howl = new Howl({
+			src: loadedAudio.src,
+			sprite: loadedAudio.sprite,
+			volume: 1,
+		});
 		// players
 		players = {
-			music: createPlayer<TSoundName, PlayMusic>({ loadedAudio, loop: true, createPlay: createPlayMusic<TSoundName> }), // prettier-ignore
-			loop: createPlayer<TSoundName, PlayLoop>({ loadedAudio, loop: true, createPlay: createPlayLoop<TSoundName> }), // prettier-ignore
-			once: createPlayer<TSoundName, PlayOnce>({ loadedAudio, loop: false, createPlay: createPlayOnce<TSoundName> }), //  prettier-ignore
+			music: createPlayer<TSoundName, PlayMusic>({ loadedAudio, loop: true, howl, createPlay: createPlayMusic<TSoundName> }), // prettier-ignore
+			loop: createPlayer<TSoundName, PlayLoop>({ loadedAudio, loop: true, howl, createPlay: createPlayLoop<TSoundName> }), // prettier-ignore
+			once: createPlayer<TSoundName, PlayOnce>({ loadedAudio, loop: false, howl, createPlay: createPlayOnce<TSoundName> }), //  prettier-ignore
 		};
 
 		// audioContextState and visibilityState

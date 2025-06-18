@@ -6,6 +6,7 @@ export function createPlayOnce<TSoundName extends string>(options: {
 	howl: Howl;
 	newSound: (value: TSoundName) => GetSound<TSoundName>;
 	getSoundMap: () => GetSoundMap<TSoundName>;
+	initSoundVolume: (soundName: TSoundName) => void;
 }) {
 	type Sound = GetSound<TSoundName>;
 
@@ -16,6 +17,8 @@ export function createPlayOnce<TSoundName extends string>(options: {
 			soundId,
 			soundState: 'playing',
 		};
+
+		options.initSoundVolume(sound.soundName);
 
 		options.howl.on('end', (soundIdOnEnd) => {
 			if (soundIdOnEnd === soundId) {

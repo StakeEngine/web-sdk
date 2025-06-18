@@ -8,10 +8,12 @@ import type { StopOptions, FadeOptions, GetSound, GetSoundMap, RateOptions } fro
 function createPlayer<TSoundName extends string, TPlay extends Function>(playerOptions: {
 	loadedAudio: LoadedAudio<TSoundName>;
 	loop: boolean;
+	howl: Howl;
 	createPlay: (options: {
 		howl: Howl;
 		newSound: (value: TSoundName) => GetSound<TSoundName>;
 		getSoundMap: () => GetSoundMap<TSoundName>;
+		initSoundVolume: (soundName: TSoundName) => void;
 	}) => { play: TPlay };
 }) {
 	type Sound = GetSound<TSoundName>;
@@ -20,12 +22,6 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 
 	let soundMap = {} as SoundMap;
 	let playerVolume = 1;
-
-	const howl = new Howl({
-		src: playerOptions.loadedAudio.src,
-		sprite: playerOptions.loadedAudio.sprite,
-		loop: playerOptions.loop,
-	});
 
 	const newSound = (soundName: TSoundName) =>
 		({
@@ -36,16 +32,27 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 			soundVolume: 1,
 		}) as Sound;
 
+	const initSoundVolume = (soundName: TSoundName) => {
+		const existingSound = soundMap[soundName];
+		if (existingSound) {
+			playerOptions.howl.volume(
+				playerVolume * existingSound.soundVolume * existingSound.soundConfig.volume,
+				existingSound.soundId,
+			);
+		}
+	};
+
 	const { play } = playerOptions.createPlay({
-		howl,
+		howl: playerOptions.howl,
 		newSound,
 		getSoundMap: () => soundMap,
+		initSoundVolume: (soundName: TSoundName) => initSoundVolume(soundName),
 	});
 
 	const stop = (stopOptions: StopOptions<TSoundName>) => {
 		const existingSound = soundMap[stopOptions.name];
 		if (existingSound) {
-			howl.stop(existingSound.soundId);
+			playerOptions.howl.stop(existingSound.soundId);
 			delete soundMap[existingSound.soundName];
 		}
 	};
@@ -56,7 +63,7 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 			existingSound.soundVolume = fadeOptions.to;
 
 			//Adjust the whole player volume	howl
-			howl.fade(
+			playerOptions.howl.fade(
 				fadeOptions.from * playerVolume * existingSound.soundConfig.volume,
 				fadeOptions.to * playerVolume * existingSound.soundConfig.volume,
 				fadeOptions.duration,
@@ -68,7 +75,7 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 	const rate = (rateOptions: RateOptions<TSoundName>) => {
 		const existingSound = soundMap[rateOptions.name];
 		if (existingSound) {
-			howl.rate(rateOptions.rate, existingSound.soundId);
+			playerOptions.howl.rate(rateOptions.rate, existingSound.soundId);
 		}
 	};
 
@@ -76,11 +83,14 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 		playerVolume = volume;
 
 		//Adjust the whole player volume
-		howl.volume(playerVolume);
+		// howl.volume(playerVolume);
 
 		//adjust volume per sound
 		(Object.values(soundMap) as Sound[]).forEach((sound) => {
-			howl.volume(playerVolume * sound.soundVolume * sound.soundConfig.volume, sound.soundId);
+			playerOptions.howl.volume(
+				playerVolume * sound.soundVolume * sound.soundConfig.volume,
+				sound.soundId,
+			);
 		});
 	};
 
@@ -94,7 +104,7 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 		fade,
 		volume,
 		rate,
-		howl,
+		howl: playerOptions.howl,
 		debug,
 	};
 }
