@@ -112,11 +112,10 @@
   };
 
   const coinGlyphValue = (token: Token) => {
-    const itemValue = String(token.extra?.item ?? token.extra?.outcome ?? '').trim();
-    if (itemValue.startsWith('+')) {
-      const parsed = Number(itemValue.slice(1));
-      if (Number.isFinite(parsed)) return parsed;
+    if(!(token.extra?.coinValue ?? token.extra?.value ?? token.value)) {
+      console.log('Token is missing coin value for glyphs, defaulting to 0', token);
     }
+    
     return toFiniteNumber(token.extra?.coinValue ?? token.extra?.value ?? token.value, 0);
   };
 

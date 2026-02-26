@@ -2,10 +2,11 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	// @ts-ignore - types provided at runtime by workspace deps
-	import { createApp, setContextApp, App, Text, Container, Graphics, SpineProvider, SpineTrack, SpineBone } from 'pixi-svelte';
+	import { createApp, setContextApp, App, Text, Container, SpineProvider, SpineTrack, SpineBone } from 'pixi-svelte';
 	import PickupLayer from '../lib/components/pickups/PickupLayer.svelte';
 	import PenguinSpineEvents from '../lib/components/PenguinSpineEvents.svelte';
 	import PenguinSpineSkin from '../lib/components/PenguinSpineSkin.svelte';
+	import PenguinVestSlots from '../lib/components/PenguinVestSlots.svelte';
 	import SpineAutoTrack from '../lib/components/SpineAutoTrack.svelte';
 
 	const assetPath = (path: string) => path.startsWith('/') ? path : `/${path}`;
@@ -21,9 +22,15 @@
 	font-display: swap;
 }
 `;
-const SPAWN_DELAY_STEP = 0.18;
+const SPAWN_DELAY_STEP = 0.1;
+const SINKING_PRE_SLIP_MS = 460;
+const NORMAL_PICKUP_DESTROY_DELAY_MS = 280;
+const GOAL_PICKUP_DESTROY_DELAY_MS = 320;
+const LIFERING_PICKUP_DESTROY_DELAY_MS = 220;
 const LEFT_SPAWN_OFFSETS = [-0.66, -0.44, -0.24];
 const RIGHT_SPAWN_OFFSETS = [0.24, 0.44, 0.66];
+const LEFT_NOTHING_HIT_LANES = [-1, ...LEFT_SPAWN_OFFSETS];
+const RIGHT_NOTHING_HIT_LANES = [...RIGHT_SPAWN_OFFSETS, 1];
 const SPAWN_OFFSET_JITTER = 0.05;
 const MIN_SPAWN_OFFSET = 0.18;
 const PICKUP_SCALE_BOOST = 4.5;
@@ -50,75 +57,140 @@ function pickSpawnLane(lane: number) {
 		: Math.min(-MIN_SPAWN_OFFSET, Math.max(-1, raw));
 }
 
-function shuffleArray<T>(array: T[]) {
-	const list = array.slice();
-	for (let i = list.length - 1; i > 0; i -= 1) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[list[i], list[j]] = [list[j], list[i]];
-	}
-	return list;
+function pickNothingHitLane(lane: number) {
+	const options = lane >= 0 ? RIGHT_NOTHING_HIT_LANES : LEFT_NOTHING_HIT_LANES;
+	return options[Math.floor(Math.random() * options.length)] ?? lane;
+}
+
+function laneItemValue(pad: any) {
+	return String(pad?.item ?? pad?.outcome ?? '').trim().toUpperCase();
+}
+
+function laneStepTypeValue(pad: any) {
+	return String(pad?.stepType ?? pad?.padType ?? '').trim().toUpperCase();
+}
+
+function makeNothingPad(pad: any) {
+	return {
+		...(pad ?? {}),
+		item: 'NOTHING',
+		outcome: 'NOTHING'
+	};
+}
+
+function withStepPads(entry: any, stepPads: Record<string, any>) {
+	const hadSteps = entry?.steps != null;
+	const hadPads = entry?.pads != null;
+	return {
+		...entry,
+		steps: hadSteps ? stepPads : undefined,
+		pads: hadPads ? stepPads : undefined
+	};
 }
 
 function splitDualPadStep(entry: any) {
 	if (!entry || entry.type) return [entry];
 	const pads = entry.steps || entry.pads || {};
-	const padEntries = Object.entries(pads).map(([padKey, pad]) => ({
-		padKey,
-		pad
-	}));
-	if (padEntries.length <= 1) {
+	const leftPad = pads?.LEFT;
+	const rightPad = pads?.RIGHT;
+	if (!leftPad || !rightPad) {
 		return [entry];
 	}
-	const realPads = padEntries.filter(({ pad }) => {
-		const item = String(pad?.item ?? pad?.outcome ?? '').trim().toUpperCase();
-		return item && item !== 'NOTHING';
-	});
-	if (!realPads.length) {
+	if (laneStepTypeValue(leftPad) !== 'ICE' || laneStepTypeValue(rightPad) !== 'ICE') {
 		return [entry];
 	}
-	const chosenPad = shuffleArray(realPads)[0];
-	const otherPad = padEntries.find((slot) => slot.padKey !== chosenPad.padKey);
-	const placeholderLane = otherPad?.padKey ?? (chosenPad.padKey === 'LEFT' ? 'RIGHT' : 'LEFT');
-	const placeholderPad = {
-		...(otherPad?.pad as Record<string, unknown>),
-		item: 'NOTHING',
-		outcome: 'NOTHING',
-		stepType: otherPad?.pad?.stepType ?? 'ICE',
-		sinking: false
+	const leftItem = laneItemValue(leftPad);
+	const rightItem = laneItemValue(rightPad);
+	if (!leftItem || !rightItem || leftItem === 'NOTHING' || rightItem === 'NOTHING') {
+		return [entry];
+	}
+	const sourceLanded = String(entry?.landedStep ?? entry?.landedPad ?? '').trim().toUpperCase();
+	if (sourceLanded !== 'LEFT' && sourceLanded !== 'RIGHT') {
+		return [entry];
+	}
+	const hasFinish = Boolean(entry?.finish);
+	const itemStepPads =
+		sourceLanded === 'LEFT'
+			? {
+				LEFT: leftPad,
+				RIGHT: makeNothingPad(rightPad)
+			}
+			: {
+				LEFT: makeNothingPad(leftPad),
+				RIGHT: rightPad
+			};
+	const missStepPads =
+		sourceLanded === 'LEFT'
+			? {
+				LEFT: makeNothingPad(leftPad),
+				RIGHT: rightPad
+			}
+			: {
+				LEFT: leftPad,
+				RIGHT: makeNothingPad(rightPad)
+			};
+	const itemStep = {
+		...withStepPads(entry, itemStepPads),
+		landedStep: sourceLanded,
+		landedPad: sourceLanded,
+		finish: hasFinish
 	};
-	const baseIndex = Number(entry.stepIndex ?? entry.index ?? 0);
-	const firstStep = {
-		...entry,
-		stepIndex: baseIndex,
-		index: baseIndex,
-		steps: { [chosenPad.padKey]: chosenPad.pad },
-		pads: undefined,
-		finish: entry.finish,
-		landedStep: entry.landedStep
+	const missStep = {
+		...withStepPads(entry, missStepPads),
+		landedStep: sourceLanded,
+		landedPad: sourceLanded,
+		finish: false
 	};
-	const secondStep = {
-		...entry,
-		stepIndex: baseIndex + 0.1,
-		index: baseIndex + 0.1,
-		steps: { [placeholderLane]: placeholderPad },
-		pads: undefined,
-		finish: undefined,
-		landedStep: placeholderLane
-	};
-	return [firstStep, secondStep];
+
+	return Math.random() < 0.5 ? [itemStep, missStep] : [missStep, itemStep];
 }
 
 function normalizeRoundEvents(events: any[]) {
 	if (!Array.isArray(events)) return [];
-	// Keep raw RGS event payload as-is for now.
-	return events;
+	const normalized: any[] = [];
+	const oldToNewStepIndex = new Map<number, number>();
+	let nextStepIndex = 0;
+
+	for (const event of events) {
+		const hasStepPads = Boolean(event?.steps || event?.pads);
+		if (!hasStepPads) {
+			if (event?.type === 'vestPopped') {
+				const raw = Number(event?.index ?? event?.stepIndex);
+				if (Number.isFinite(raw) && oldToNewStepIndex.has(raw)) {
+					const mapped = oldToNewStepIndex.get(raw) as number;
+					normalized.push({ ...event, index: mapped, stepIndex: mapped });
+					continue;
+				}
+				if (nextStepIndex > 0) {
+					const fallback = nextStepIndex - 1;
+					normalized.push({ ...event, index: fallback, stepIndex: fallback });
+					continue;
+				}
+			}
+			normalized.push(event);
+			continue;
+		}
+
+		const splitSteps = splitDualPadStep(event);
+		const rawIndex = Number(event?.index ?? event?.stepIndex);
+		if (Number.isFinite(rawIndex) && !oldToNewStepIndex.has(rawIndex)) {
+			oldToNewStepIndex.set(rawIndex, nextStepIndex);
+		}
+
+		for (const stepEvent of splitSteps) {
+			const assignedIndex = nextStepIndex;
+			nextStepIndex += 1;
+			normalized.push({
+				...stepEvent,
+				index: assignedIndex,
+				stepIndex: assignedIndex
+			});
+		}
+	}
+
+	return normalized;
 }
 const accumulatedStrokeWidth = 12;
-const DEBUG_SHOW_SPAWN_MARKERS = false;
-const DEBUG_SHOW_PICKUP_PATHS = true;
-const DEBUG_PICKUP_OFFSETS = [
-	...new Set<number>([...LEFT_SPAWN_OFFSETS, ...RIGHT_SPAWN_OFFSETS, -1, 1])
-];
 
 const bitmapDigits = ['0','1','2','3','4','5','6','7','8','9'];
 const bitmapAssets: Record<string, { type: 'sprite'; src: string; preload: true }> = {};
@@ -593,6 +665,17 @@ type Token = {
 	extra?: Record<string, unknown>;
 };
 
+function tokenHasSlipProtection(token: Token) {
+	const vestCount = Number(token.extra?.lifeVests ?? 0);
+	return (
+		Boolean(token.extra?.savedByLifering) ||
+		vestCount > 0 ||
+		hasLifering ||
+		penguinSkin === 'vest' ||
+		liferingPickedStep != null
+	);
+}
+
 	let tokens = $state<Token[]>([]);
 	const removalTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
@@ -1005,7 +1088,7 @@ function buildFloes() {
 		setTargetStep(stepIndex);
 	}
 
-	function scheduleTokenRemoval(id: number, delayMs = 360) {
+	function scheduleTokenRemoval(id: number, delayMs = NORMAL_PICKUP_DESTROY_DELAY_MS) {
 		const existing = removalTimers.get(id);
 		if (existing) clearTimeout(existing);
 		const timer = setTimeout(() => {
@@ -1057,7 +1140,12 @@ function buildFloes() {
 	function parseOutcome(item: string, padType?: string, sinking?: boolean) {
 		const normalized = String(item || '').trim().toUpperCase();
 		const pad = String(padType || '').trim().toUpperCase();
-		if (pad === 'STONE' || normalized === 'STONE' || normalized === 'STONE_COLLECT') {
+		if (
+			pad === 'STONE' ||
+			normalized === 'STONE' ||
+			normalized === 'STONE_COLLECT' ||
+			normalized === 'GOAL'
+		) {
 			return { type: 'goal', extra: {} };
 		}
 		if (pad === 'LILY' && normalized === 'BANANA') {
@@ -1074,7 +1162,8 @@ function buildFloes() {
 			return { type: 'star', extra: { multiplier } };
 		}
 		if (normalized.startsWith('+')) {
-			const coinValue = Number(normalized.slice(1));
+			const coinValue = Number(normalized.slice(1)) * BET_COST_MULTIPLIER;
+			console.log('Parsed coin value:', coinValue);
 			return { type: 'coin', extra: { coinValue } };
 		}
 		if (normalized === 'GHOST') {
@@ -1181,9 +1270,9 @@ function buildFloes() {
 			return { padKey, pad, item };
 		})
 		.filter(({ item }) => item !== '' && item !== 'EMPTY');
-	let padSequence: Array<[string, any]> = padEntries.map(({ padKey, pad }) => [padKey, pad]);
-	let padSpawnIndex = 0;
-			const landedPadData = (pads as any)[landedKey] || (pads as any)[landedKey?.toUpperCase?.() ?? ''];
+let padSequence: Array<[string, any]> = padEntries.map(({ padKey, pad }) => [padKey, pad]);
+let padSpawnIndex = 0;
+			const hasGoalPad = padEntries.some(({ item }) => item === 'GOAL');
 	for (const [padKey, pad] of padSequence) {
 				const lane = laneMap[String(padKey).toUpperCase()] ?? -1;
 				const padData = pad as any;
@@ -1204,7 +1293,7 @@ function buildFloes() {
 						? stakeAmount() * itemNumber
 						: undefined;
 				const isHit = applies && lane === landedLane;
-				const spawnLane = pickSpawnLane(lane);
+				const spawnLane = isHit && type === 'empty' ? pickNothingHitLane(lane) : pickSpawnLane(lane);
 				const spawnDelay = padSpawnIndex * SPAWN_DELAY_STEP;
 				padSpawnIndex += 1;
 				addToken(
@@ -1230,6 +1319,7 @@ function buildFloes() {
 			}
 
 			if (entry.finish && applies) {
+				if (!hasGoalPad) {
 				addToken(
 					stepIndex,
 					'goal',
@@ -1238,25 +1328,12 @@ function buildFloes() {
 					true,
 					{ finish: true }
 				);
+				}
 				summaryEvent = {
 					result: 'goal',
 					steps: stepIndex + 1,
 					finalValue: Math.round(timelineValue * 100)
 				};
-			} else if (
-				applies &&
-				(entry.success === false ||
-					((landedPadData as any)?.sinking === true && Number(entry.lifeVests ?? 0) <= 0))
-			) {
-				summaryEvent = {
-					result: 'slip',
-					steps: stepIndex + 1,
-					finalValue: 0
-				};
-				slipTriggered = true;
-				if (slipStepIndex == null) {
-					slipStepIndex = stepIndex;
-				}
 			}
 		}
 
@@ -1287,9 +1364,9 @@ function buildFloes() {
 		let lastNow = performance.now();
 		let lastScrollNow = lastNow;
 		let scrollSteps = 0;
-		const baseStepPerMs = 0.117 * speedFactor * 3.4;
-		const maxAccel = 1.6;
-		const rampSteps = 30;
+		const baseStepPerMs = 0.117 * speedFactor * 3.0;
+		const maxAccel = 0.85;
+		const rampSteps = 48;
 		const laneSchedule = [];
 		for (const entry of stateEvents) {
 			const step = Number(entry.index ?? entry.stepIndex);
@@ -1363,12 +1440,14 @@ function buildFloes() {
 					token.type,
 					Number(token.extra?.spawnDelay ?? 0)
 				);
-				const sinkingPreSlipLead = stepPerMs * 300;
+				const sinkingPreSlipLead = stepPerMs * SINKING_PRE_SLIP_MS;
+				const hasVestProtection = tokenHasSlipProtection(token);
 				const shouldPreSlip =
 					!token.activate &&
 					token.hit &&
 					(token.type === 'coin' || token.type === 'star') &&
 					token.extra?.sinking === true &&
+					!hasVestProtection &&
 					!slipTriggered &&
 					!freezeMovement &&
 					renderStep >= triggerAt - sinkingPreSlipLead &&
@@ -1418,10 +1497,9 @@ function buildFloes() {
 						}
 						let effect = token.type;
 						const sinkingSlip = token.extra?.sinking === true || token.extra?.fall === true;
-						const savedByLifering = Boolean(token.extra?.savedByLifering);
-						const bananaSaved = token.type === 'banana' && (savedByLifering || hasLifering);
+						const bananaSaved = token.type === 'banana' && hasVestProtection;
 						const slipBeforePickup =
-							sinkingSlip && !bananaSaved && (token.type === 'coin' || token.type === 'star');
+							sinkingSlip && !hasVestProtection && (token.type === 'coin' || token.type === 'star');
 						if (slipBeforePickup) {
 							beginSlip(
 								stepIndex,
@@ -1429,12 +1507,11 @@ function buildFloes() {
 								Number(token.extra?.offsetFrac ?? 0)
 							);
 						}
-						const slipAfterPickup = sinkingSlip && !bananaSaved && !slipBeforePickup;
+						const slipAfterPickup = sinkingSlip && !hasVestProtection && !slipBeforePickup;
 						if (token.type === 'banana') {
 							const loss = bananaLossAmount(prevValue, currentStepValue, token, bananaSaved);
 							if (loss > 0) showBananaLossFloat(loss);
 						}
-						const vestCount = Number(token.extra?.lifeVests ?? 0);
 						if (token.type === 'banana') {
 							playOneShot('pickup_banana');
 						}
@@ -1442,15 +1519,13 @@ function buildFloes() {
 							if (token.type === 'banana') {
 								wobbleBoost = Math.min(3.2, wobbleBoost + 1.35);
 								}
-							if (vestCount > 0 || hasLifering) {
-								clearLiferingState(stepIndex, true);
-							} else {
-								beginSlip(
-									stepIndex,
-									token.lane,
-									Number(token.extra?.offsetFrac ?? 0)
-								);
-							}
+							beginSlip(
+								stepIndex,
+								token.lane,
+								Number(token.extra?.offsetFrac ?? 0)
+							);
+						} else if (sinkingSlip && hasVestProtection) {
+							clearLiferingState(stepIndex, true);
 						}
 						if (token.type === 'lifering') {
 							hasLifering = true;
@@ -1462,15 +1537,12 @@ function buildFloes() {
 							vestAnim = 'gain';
 							vestAnimKey += 1;
 						}
-							if (token.type === 'goal') {
-								playOneShot('penguin_finish');
-								startWinAmountPulse();
-								status = 'goal';
+						if (token.type === 'goal') {
+							playOneShot('penguin_finish');
+							startWinAmountPulse();
+							status = 'goal';
 							penguinAnim = 'win';
 							laneFreeze = true;
-							const goalLane = nearestLane(token.lane);
-							penguinLane = goalLane;
-							penguinTargetLane = goalLane;
 							penguinOffsetFrac = 0;
 							penguinSkidRotation = 0;
 							const stopStep = renderStep;
@@ -1486,7 +1558,14 @@ function buildFloes() {
 								endRound();
 							}
 						}
-						scheduleTokenRemoval(token.id, token.type === 'goal' ? 420 : token.type === 'lifering' ? 260 : 520);
+						scheduleTokenRemoval(
+							token.id,
+							token.type === 'goal'
+								? GOAL_PICKUP_DESTROY_DELAY_MS
+								: token.type === 'lifering'
+									? LIFERING_PICKUP_DESTROY_DELAY_MS
+									: NORMAL_PICKUP_DESTROY_DELAY_MS
+						);
 						return {
 							...token,
 							activate: true,
@@ -1682,7 +1761,9 @@ function buildFloes() {
 				const prevValue = currentValue;
 				const hitType = String(event.hitType ?? event.tileType ?? '');
 				lastHitType = hitType;
-				if (event.hitType === 'banana' && event.fall === true) {
+				const eventSavedByVest =
+					Boolean(event.savedByLifering) || Number(event.lifeVests ?? 0) > 0;
+				if (event.hitType === 'banana' && event.fall === true && !eventSavedByVest) {
 					slipTriggered = true;
 					slipStepIndex = Number(event.stepIndex);
 				}
@@ -1710,7 +1791,11 @@ function buildFloes() {
 						typeof item.lane === 'number' ? nearestLane(item.lane) : laneOffset;
 					const isHit =
 						Number(itemLane ?? laneOffset) === laneOffset && String(item.type) === hitType;
-					const spawnLane = pickSpawnLane(itemLane);
+					const itemType = String(item.type ?? '').trim().toLowerCase();
+					const isNothingHit = isHit && (itemType === 'empty' || itemType === 'nothing');
+					const spawnLane = isNothingHit
+						? pickNothingHitLane(Number(itemLane ?? laneOffset))
+						: pickSpawnLane(itemLane);
 					const spawnDelay = itemSpawnIndex * SPAWN_DELAY_STEP;
 					itemSpawnIndex += 1;
 					const tokenExtra = {
@@ -1771,9 +1856,9 @@ function buildFloes() {
 	let lastNow = performance.now();
 	let lastScrollNow = lastNow;
 	let scrollSteps = 0;
-	const baseStepPerMs = 0.117 * speedFactor * 3.4;
-	const maxAccel = 1.6;
-	const rampSteps = 30;
+	const baseStepPerMs = 0.117 * speedFactor * 3.0;
+	const maxAccel = 0.85;
+	const rampSteps = 48;
 	const laneSchedule = [];
 	for (const event of bookEvents) {
 		if (event.type === 'tileResult' && typeof event.laneOffset === 'number') {
@@ -1847,12 +1932,14 @@ const leadSeconds = 1.0;
 						token.type,
 						Number(token.extra?.spawnDelay ?? 0)
 					);
-					const sinkingPreSlipLead = stepPerMs * 300;
+					const sinkingPreSlipLead = stepPerMs * SINKING_PRE_SLIP_MS;
+					const hasVestProtection = tokenHasSlipProtection(token);
 					const shouldPreSlip =
 						!token.activate &&
 						token.hit &&
 						(token.type === 'coin' || token.type === 'star') &&
 						token.extra?.sinking === true &&
+						!hasVestProtection &&
 						!slipTriggered &&
 						!freezeMovement &&
 						renderStep >= triggerAt - sinkingPreSlipLead &&
@@ -1894,8 +1981,7 @@ const leadSeconds = 1.0;
 					nextCenterAt = performance.now() + 600;
 					let effect = token.type;
 					const sinkingSlip = token.extra?.sinking === true || token.extra?.fall === true;
-						const savedByLifering = Boolean(token.extra?.savedByLifering);
-						const bananaSaved = token.type === 'banana' && (savedByLifering || hasLifering);
+						const bananaSaved = token.type === 'banana' && hasVestProtection;
 					if (token.type === 'banana') {
 						const loss = bananaLossAmount(prevValue, currentStepValue, token, bananaSaved);
 						if (loss > 0) showBananaLossFloat(loss);
@@ -1903,25 +1989,26 @@ const leadSeconds = 1.0;
 					if (token.type === 'banana') {
 						playOneShot('pickup_banana');
 					}
-					if (sinkingSlip && !bananaSaved) {
+					if (sinkingSlip) {
 						if (token.type === 'banana') {
 							wobbleBoost = Math.min(3.2, wobbleBoost + 1.35);
 							}
+						if (hasVestProtection) {
+							clearLiferingState(stepIndex, true);
+						} else {
 							beginSlip(
 								stepIndex,
 								token.lane,
 								Number(token.extra?.offsetFrac ?? 0)
 							);
 						}
-						if (token.type === 'goal') {
-							playOneShot('penguin_finish');
-							startWinAmountPulse();
-							status = 'goal';
+					}
+					if (token.type === 'goal') {
+						playOneShot('penguin_finish');
+						startWinAmountPulse();
+						status = 'goal';
 						penguinAnim = 'win';
 						laneFreeze = true;
-						const goalLane = nearestLane(token.lane);
-						penguinLane = goalLane;
-						penguinTargetLane = goalLane;
 						penguinOffsetFrac = 0;
 						penguinSkidRotation = 0;
 						const stopStep = renderStep;
@@ -1969,7 +2056,14 @@ const leadSeconds = 1.0;
 						else if (token.extra?.lostHalf) effect = 'banana -50%';
 					}
 					
-					scheduleTokenRemoval(token.id, token.type === 'goal' ? 420 : token.type === 'lifering' ? 260 : 520);
+					scheduleTokenRemoval(
+						token.id,
+						token.type === 'goal'
+							? GOAL_PICKUP_DESTROY_DELAY_MS
+							: token.type === 'lifering'
+								? LIFERING_PICKUP_DESTROY_DELAY_MS
+								: NORMAL_PICKUP_DESTROY_DELAY_MS
+					);
 					return {
 						...token,
 						activate: true,
@@ -2029,16 +2123,14 @@ const leadSeconds = 1.0;
 			hitDelta = latest.value - (prev?.value ?? latest.value);
 		}
 		// drop tokens after they pass the penguin
-		const lateHideWindow = stepSpacing * 0.3;
+		const lateHideWindow = stepSpacing * 0.45;
 		tokens = tokens.filter((t) => {
-			if (stopRunEarly && t.hit && t.activate) return false;
 			if (t.activate) return true;
 				const trigger = pickupTriggerAt(
 					t.stepIndex,
 					t.type,
 					Number(t.extra?.spawnDelay ?? 0)
 				);
-			if (t.hit) return renderStep < trigger + lateHideWindow;
 			return renderStep < trigger + lateHideWindow;
 		});
 		let latestLane = penguinTargetLane;
@@ -2405,7 +2497,7 @@ function processBookEvents(bookEvents: any[]) {
 		const payload: Record<string, unknown> = {
 			mode: String(selectedMode).toUpperCase(),
 			sessionID: getParam('sessionID'),
-			amount: Math.round(betAmount * API_MULTIPLIER),
+			amount: Math.round(stakeAmount() * API_MULTIPLIER),
 			betSize: Math.round(betAmount * API_MULTIPLIER)
 		};
 		const currency = getParam('currency');
@@ -2454,8 +2546,8 @@ function processBookEvents(bookEvents: any[]) {
 
 
 
-	const lookaheadSteps = 2.0;
-const stepSpacing = 480;
+	const lookaheadSteps = 3.0;
+const stepSpacing = 360;
 	const penguinLaneScale = 1;
 
 	function tokenRender(stepIndex: number) {
@@ -2697,8 +2789,8 @@ const stepSpacing = 480;
 			const coinValue = Number(token.extra?.coinValue ?? token.extra?.value ?? 0);
 			const baseStake = stakeAmount();
 			const ratio = baseStake > 0 ? coinValue / baseStake : 0;
-			if (ratio <= 3) playOneShot('pickup_bronze');
-			else if (ratio <= 20) playOneShot('pickup_silver');
+			if (ratio <= 3 ) playOneShot('pickup_bronze');
+			else if (ratio <= 20 ) playOneShot('pickup_silver');
 			else playOneShot('pickup_gold');
 			return;
 		}
@@ -2822,13 +2914,19 @@ const stepSpacing = 480;
 		const dir = dirSign === 0 ? slipDirection : (dirSign > 0 ? 1 : -1);
 		const start = performance.now();
 		const preDuration = 140;
-		const distanceToSlipSide = dir > 0 ? Math.max(0, viewport.w - originX) : Math.max(0, originX);
-		const normalizedDistanceToSlipSide = Math.max(
+		const slipDepth = depthForPickupY(slipStartPose.y);
+		const baselineLane = dir > 0 ? 1 : -1;
+		const baselineX = lanePosition(slipDepth, baselineLane).x;
+		const baselineDistanceToSlipSide =
+			dir > 0 ? Math.max(0, viewport.w - baselineX) : Math.max(0, baselineX);
+		const baselineDistanceNorm = Math.max(
 			0,
-			Math.min(1, distanceToSlipSide / Math.max(1, viewport.w))
+			Math.min(1, baselineDistanceToSlipSide / Math.max(1, viewport.w))
 		);
-		const slipTravel = viewport.w * (0.11 + normalizedDistanceToSlipSide * 0.08);
-		const maxSlide = slipTravel * dir;
+		const baselineTravel = viewport.w * (0.11 + baselineDistanceNorm * 0.08);
+		const baselineSlide = baselineTravel * dir;
+		const baselineGap = Math.max(0, (baselineX - originX) * dir);
+		const maxSlide = baselineSlide + baselineGap * dir;
 		const preSlideDistance = Math.min(Math.abs(maxSlide) * 0.24, viewport.w * 0.06);
 		const preSlide = Math.min(preSlideDistance, Math.abs(maxSlide) * 0.65) * dir;
 		const mainDuration = Math.max(
@@ -2880,8 +2978,8 @@ function pickupTriggerAt(stepIndex: number, type = '', spawnDelay = 0) {
 		window.matchMedia('(pointer: coarse)').matches;
 	const isPortrait = renderSize.h > renderSize.w;
 	const leadFactor = type === 'goal'
-		? (isPortrait ? 0.78 : (isMobileLandscape ? 1.2 : 0.9))
-		: (isMobileLandscape ? 1.0 : 0.85);
+		? (isPortrait ? 0.9 : (isMobileLandscape ? 1.3 : 1.05))
+		: (isPortrait ? 1.24 : (isMobileLandscape ? 1.34 : 1.2));
 	const lead = stepSpacing * leadFactor;
 	return stepIndex * stepSpacing - span * (1 - depth) - lead - spawnDelay * stepSpacing;
 }
@@ -3005,57 +3103,6 @@ function lanePosition(depth: number, offset: number) {
 		return { x, y, width };
 	}
 
-	function pickupRenderOffset() {
-		return viewport.h * (renderSize.h > renderSize.w ? 0.3 : 0.25);
-	}
-
-	function nearestDebugPickupOffset(offset: number) {
-		let bestOffset = DEBUG_PICKUP_OFFSETS[0] ?? 0;
-		let bestDistance = Number.POSITIVE_INFINITY;
-		for (const candidate of DEBUG_PICKUP_OFFSETS) {
-			const distance = Math.abs(candidate - offset);
-			if (distance < bestDistance) {
-				bestDistance = distance;
-				bestOffset = candidate;
-			}
-		}
-		return bestOffset;
-	}
-
-	function activePickupDebugOffsets() {
-		const active = new Set<number>();
-		const yOffset = pickupRenderOffset();
-		for (const token of tokens) {
-			const lane = Number(token.spawnLane ?? token.extra?.spawnLane ?? token.lane);
-			if (!Number.isFinite(lane)) continue;
-			const pose = tokenRender(token.stepIndex);
-			if (!pose) continue;
-			const point = pickupLanePosition(pose.depth, lane);
-			const y = point.y + yOffset;
-			if (y > viewport.h + 40) continue;
-			active.add(nearestDebugPickupOffset(lane));
-		}
-		return active;
-	}
-
-	function drawPickupDebugPaths(graphics: any) {
-		const depthSteps = 32;
-		const yOffset = pickupRenderOffset();
-		const activeOffsets = activePickupDebugOffsets();
-
-		for (const offset of DEBUG_PICKUP_OFFSETS) {
-			const start = pickupLanePosition(0, offset);
-			graphics.moveTo(start.x, start.y + yOffset);
-			for (let i = 1; i <= depthSteps; i += 1) {
-				const depth = i / depthSteps;
-				const point = pickupLanePosition(depth, offset);
-				graphics.lineTo(point.x, point.y + yOffset);
-			}
-			const lineColor = activeOffsets.has(offset) ? 0x00ff00 : 0xff0000;
-			graphics.stroke({ width: 3, color: lineColor, alpha: 1 });
-		}
-	}
-
 	function itemSpawnOffset() {
 		return viewport.h * (renderSize.h > renderSize.w ? 0.35 : 0.25);
 	}
@@ -3133,7 +3180,7 @@ function pickupPosition(stepIndex: number, lane: number, spawnLane?: number) {
 		const baseStake = token?.extra?.baseStake ?? stakeAmount();
 		const normalized = baseStake > 0 ? coinValue / baseStake : coinValue;
 		if (normalized <= 3) return 'coin_bronze';
-		if (normalized <= 20) return 'coin_silver';
+		if (normalized <= 20 ) return 'coin_silver';
 		return 'coin_gold';
 	}
 
@@ -3623,9 +3670,6 @@ function setSpeed(value: number) {
 					{pickupTriggerAt}
 				/>
 			</Container>
-			{#if DEBUG_SHOW_PICKUP_PATHS}
-				<Graphics zIndex={250} draw={(graphics) => drawPickupDebugPaths(graphics)} />
-			{/if}
 			{@const pose = penguinPose()}
 			{@const tiltRot = ctrlRotation()}
 		<SpineProvider
@@ -3639,9 +3683,8 @@ function setSpeed(value: number) {
 				})}
 			>
 				<PenguinSpineEvents onEvent={handlePenguinEvent} />
-				{#key penguinSkin}
-					<PenguinSpineSkin skin={penguinSkin} />
-				{/key}
+				<PenguinSpineSkin skin={penguinSkin} />
+				<PenguinVestSlots enabled={penguinSkin === 'vest' || hasLifering} />
 				<SpineBone boneName="CTRL" rotation={tiltRot} />
 				{#key vestAnimKey}
 					{#if vestAnim === 'gain'}
