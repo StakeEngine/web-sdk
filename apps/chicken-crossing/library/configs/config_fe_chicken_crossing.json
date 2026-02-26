@@ -1,0 +1,19 @@
+{
+    "providerName": "sample_provider",
+    "gameName": "Chicken Crossing",
+    "gameID": "chicken_crossing",
+    "rtp": 0.99,
+    "numReels": 0,
+    "numRows": [],
+    "betModes": {
+        "base": {
+            "cost": 1.0,
+            "feature": true,
+            "buyBonus": false,
+            "rtp": 0.99,
+            "max_win": 32.0
+        }
+    },
+    "symbols": [],
+    "paddingReels": {}
+}

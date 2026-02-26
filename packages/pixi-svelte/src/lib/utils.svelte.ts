@@ -1,5 +1,3 @@
-import WebFont from 'webfontloader';
-
 import type { PixiPoint, Sizes } from './types';
 
 export const REM = 16;
@@ -58,9 +56,40 @@ export function detectWebGL() {
 	return -1;
 }
 
+let webfontLoaderPromise: Promise<typeof import('webfontloader') | null> | null = null;
+
+const loadWebFontLoader = async () => {
+	if (typeof window === 'undefined') {
+		return null;
+	}
+
+	if (!webfontLoaderPromise) {
+		webfontLoaderPromise = import('webfontloader').catch((error) => {
+			console.error('Unable to import webfontloader', error);
+			return null;
+		});
+	}
+
+	return webfontLoaderPromise;
+};
+
 export const preloadFont = () =>
-	new Promise<void>((resolve) => {
+	new Promise<void>(async (resolve) => {
+		if (typeof window === 'undefined') {
+			resolve();
+			return;
+		}
+
 		try {
+			const loaderModule = await loadWebFontLoader();
+			const WebFont =
+				loaderModule && 'default' in loaderModule ? loaderModule.default : loaderModule;
+
+			if (!WebFont) {
+				resolve();
+				return;
+			}
+
 			WebFont.load({
 				typekit: {
 					id: 'aba0ebl',
@@ -74,7 +103,7 @@ export const preloadFont = () =>
 				},
 			});
 		} catch (error) {
-			console.error(error);
+			console.error('Web font load failed', error);
 			resolve();
 		}
 	});
