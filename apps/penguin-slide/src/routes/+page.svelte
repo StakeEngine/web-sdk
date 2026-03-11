@@ -83,6 +83,8 @@ const PRE_STEP_SWEEP_PERIOD_MS = 3600;
 const PRE_STEP_SWEEP_INSET = 0.24;
 const PRE_STEP_SINGLE_SWEEP_MIN_MS = 700;
 const PRE_STEP_SINGLE_SWEEP_BASE_MS = 1500;
+const PRE_STEP_FIRST_LOCK_LEAD_MS = 620;
+const PRE_STEP_HANDOFF_DURATION_MS = 180;
 
 	function clampPenguinLane(value: number) {
 		return Math.max(-PENGUIN_LANE_RANGE, Math.min(PENGUIN_LANE_RANGE, value));
@@ -778,6 +780,9 @@ let preStepFreeRoamActive = $state(true);
 let preStepSweepStartMs = $state(0);
 let preStepSweepStartSide = $state(1);
 let preStepSweepCompleted = $state(false);
+let preStepHandoffActive = $state(false);
+let preStepHandoffStartMs = $state(0);
+let preStepHandoffFromLane = $state(0);
 let centerLockPendingTokenId = $state<number | null>(null);
 let postDestroyTeleportAtMs = $state(0);
 let postDestroyTeleportLane = $state<number | null>(null);
@@ -808,7 +813,9 @@ function normalizeCurrency(raw: unknown): SupportedCurrency {
 function formatCurrencyAmount(amount: number, fractionDigits = 2) {
 	const value = Number.isFinite(amount) ? amount : 0;
 	if (currentCurrency === 'XGC' || currentCurrency === 'XSC') {
-		return `${SOCIAL_CURRENCY_SYMBOL[currentCurrency]}${value.toFixed(fractionDigits)}`;
+		const sign = value < 0 ? '-' : '';
+		const abs = Math.abs(value);
+		return `${sign}${SOCIAL_CURRENCY_SYMBOL[currentCurrency]}${abs.toFixed(fractionDigits)}`;
 	}
 	try {
 		return new Intl.NumberFormat('en-US', {
@@ -1011,7 +1018,16 @@ function planSlidingTargetLane(
 		}
 		const targetIndex = targetLaneIndexForToken(targetToken);
 		const mappedLane = laneOffsetForTargetIndex(targetIndex);
-		lane = mappedLane != null ? mappedLane : targetLaneForToken(targetToken);
+		const directTargetLane = mappedLane != null ? mappedLane : targetLaneForToken(targetToken);
+		if (preStepHandoffActive) {
+			const elapsedMs = Math.max(0, nowMs - preStepHandoffStartMs);
+			const blend = Math.max(0, Math.min(1, elapsedMs / PRE_STEP_HANDOFF_DURATION_MS));
+			const eased = blend * blend * (3 - 2 * blend);
+			lane = preStepHandoffFromLane + (directTargetLane - preStepHandoffFromLane) * eased;
+			if (blend >= 1) preStepHandoffActive = false;
+		} else {
+			lane = directTargetLane;
+		}
 		const firstApproachActive =
 			pickupCount === 0 &&
 			firstApproachLockTokenId != null &&
@@ -2212,6 +2228,9 @@ function buildFloes() {
 		preStepSweepStartMs = 0;
 		preStepSweepStartSide = Math.random() < 0.5 ? -1 : 1;
 		preStepSweepCompleted = false;
+		preStepHandoffActive = false;
+		preStepHandoffStartMs = 0;
+		preStepHandoffFromLane = 0;
 		lockedTargetTokenId = null;
 		lockedTargetHoldUntilMs = 0;
 		centerLockPendingTokenId = null;
@@ -2771,7 +2790,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 				const currentStep = Math.max(0, Math.floor(renderStep / stepSpacing + 0.001));
 				consumePendingVestPops(currentStep);
 				updateWobbleRiskForStep(currentStep);
-				const t = Math.min(1, (renderStep - startStep) / (endStep - startStep));
+				const runProgress = Math.min(1, (renderStep - startStep) / (endStep - startStep));
 			if (runEndRenderStep != null && renderStep >= runEndRenderStep) {
 				stopRunEarly = true;
 				freezeMovement = true;
@@ -3103,7 +3122,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 				beginSlip(Math.floor(summarySlipStepIndex), slipSourceLane, slipOffset, true, false);
 				return;
 			}
-			if (t < 1) {
+			if (runProgress < 1) {
 				requestAnimationFrame(smoothTick);
 			} else if (summaryEvent) {
 				status = summaryEvent.result === 'goal' ? 'goal' : 'slip';
@@ -3320,7 +3339,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 		updateIceVisibility();
 		const currentStep = Math.max(0, Math.floor(renderStep / stepSpacing + 0.001));
 		consumePendingVestPops(currentStep);
-		const t = Math.min(1, (renderStep - startStep) / (endStep - startStep));
+		const runProgress = Math.min(1, (renderStep - startStep) / (endStep - startStep));
 		if (runEndRenderStep != null && renderStep >= runEndRenderStep) {
 			stopRunEarly = true;
 			freezeMovement = true;
@@ -3672,7 +3691,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 			beginSlip(Math.floor(summarySlipStepIndex), slipSourceLane, slipOffset, true, false);
 			return;
 		}
-		if (t < 1) {
+		if (runProgress < 1) {
 			requestAnimationFrame(smoothTick);
 		} else if (summaryEvent) {
 			status = summaryEvent.result === 'goal' ? 'goal' : 'slip';
@@ -4612,16 +4631,27 @@ function pickupTriggerAt(stepIndex: number, type = '', spawnDelay = 0) {
 	);
 }
 
-	function shouldUsePreStepFreeRoam(pendingHit: { trigger: number } | undefined) {
-		if (pickupCount > 0) {
+function shouldUsePreStepFreeRoam(pendingHit: { trigger: number } | undefined) {
+	const wasFreeRoamActive = preStepFreeRoamActive;
+	const startHandoffFromCurrentLane = () => {
+		if (wasFreeRoamActive && !preStepHandoffActive) {
+			preStepHandoffActive = true;
+			preStepHandoffStartMs = performance.now();
+			preStepHandoffFromLane = clampPenguinLane(penguinLane);
+		}
+	};
+	if (pickupCount > 0) {
+		startHandoffFromCurrentLane();
 			preStepFreeRoamActive = false;
 			return false;
 	}
 	if (lockedTargetTokenId != null) {
+		startHandoffFromCurrentLane();
 		preStepFreeRoamActive = false;
 		return false;
 	}
 		if (renderStep >= stepSpacing * 0.02) {
+			startHandoffFromCurrentLane();
 			preStepFreeRoamActive = false;
 			return false;
 		}
@@ -4630,6 +4660,7 @@ function pickupTriggerAt(stepIndex: number, type = '', spawnDelay = 0) {
 			return true;
 		}
 		preStepFreeRoamActive = !preStepSweepCompleted;
+		if (!preStepFreeRoamActive) startHandoffFromCurrentLane();
 		return preStepFreeRoamActive;
 	}
 
@@ -4667,7 +4698,7 @@ function pickupTriggerAt(stepIndex: number, type = '', spawnDelay = 0) {
 		let durationMs = PRE_STEP_SINGLE_SWEEP_BASE_MS;
 		if (pendingHit && stepPerMs && stepPerMs > 0) {
 			const remainingMs = Math.max(0, (pendingHit.trigger - renderStep) / stepPerMs);
-			const lockBudgetMs = Math.max(PRE_STEP_SINGLE_SWEEP_MIN_MS, remainingMs - 420);
+			const lockBudgetMs = Math.max(PRE_STEP_SINGLE_SWEEP_MIN_MS, remainingMs - PRE_STEP_FIRST_LOCK_LEAD_MS);
 			durationMs = Math.max(PRE_STEP_SINGLE_SWEEP_MIN_MS, Math.min(PRE_STEP_SINGLE_SWEEP_BASE_MS, lockBudgetMs));
 		}
 		const elapsed = Math.max(0, nowMs - preStepSweepStartMs);
