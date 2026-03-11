@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Penguin Slide">
+  <rect width="64" height="64" rx="12" fill="#0b2f5f"/>
+  <circle cx="32" cy="34" r="15" fill="#0f2f63"/>
+  <ellipse cx="32" cy="44" rx="11" ry="7" fill="#f7a31b"/>
+  <rect x="18" y="20" width="28" height="8" rx="4" fill="#e5332a"/>
+  <circle cx="26" cy="32" r="2" fill="#ffffff"/>
+  <circle cx="38" cy="32" r="2" fill="#ffffff"/>
+</svg>

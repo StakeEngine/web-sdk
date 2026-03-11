@@ -1,6 +1,6 @@
 {
 	"workbench.iconTheme": "material-icon-theme",
-	"workbench.colorTheme": "Atom One Dark",
+	"workbench.colorTheme": "Night Owl Black",
 	"workbench.statusBar.visible": true,
 	"editor.renderWhitespace": "all",
 	"editor.largeFileOptimizations": false,
@@ -43,12 +43,7 @@
 		"package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
 	},
 	"window.commandCenter": true,
-	"cSpell.words": [
-		"bigwin",
-		"Payline",
-		"pixi",
-		"xstate"
-	],
+	"cSpell.words": ["bigwin", "Payline", "pixi", "xstate"],
 	"workbench.editor.empty.hint": "hidden",
 	"scm.showHistoryGraph": false
 }

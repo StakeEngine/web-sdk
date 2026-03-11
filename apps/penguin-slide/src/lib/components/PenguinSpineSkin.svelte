@@ -5,17 +5,16 @@
 
   const spine = getContextSpine();
 
-  const applySkin = () => {
-    if (!spine) return;
-    const skeleton = spine.skeleton;
-    if (!skeleton) return;
-    if (typeof skeleton.setSkinByName === 'function') {
-      skeleton.setSkinByName(skin);
+  $: {
+    skin;
+    const skeleton = spine?.skeleton;
+    if (skeleton) {
+      if (typeof skeleton.setSkinByName === 'function') {
+        skeleton.setSkinByName(skin);
+      }
+      if (typeof skeleton.setSlotsToSetupPose === 'function') {
+        skeleton.setSlotsToSetupPose();
+      }
     }
-    if (typeof skeleton.setSlotsToSetupPose === 'function') {
-      skeleton.setSlotsToSetupPose();
-    }
-  };
-
-  $: applySkin();
+  }
 </script>

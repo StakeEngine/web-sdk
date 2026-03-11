@@ -11,9 +11,7 @@
       if (typeof name === 'string') {
         try {
           onEvent(name);
-        } catch (error) {
-          console.error('PenguinSpineEvents onEvent handler failed', error);
-        }
+        } catch {}
       }
     }
   };

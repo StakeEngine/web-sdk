@@ -8,6 +8,7 @@
     "format": "turbo run format",
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build-game": "bash ./scripts/build-game.sh",
     "preview": "turbo run preview",
     "real-build-storybook": "turbo run real-build-storybook",
     "storybook": "turbo run storybook",

@@ -130,6 +130,15 @@ pnpm run dev --filter=lines
 <a name="buildAGame"></a>
 
 ## Build a game
+Preferred one-command export:
+```
+pnpm run build-game penguin-slide
+```
+
+This builds the selected app and prepares an upload-ready folder at:
+`apps/penguin-slide/build`
+
+Manual flow (still supported):
 ```
 pnpm run build --filter=lines
 ```

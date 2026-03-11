@@ -31,7 +31,8 @@
 	export let onIncreaseBet: () => void = () => {};
 	export let onDecreaseBet: () => void = () => {};
 	export let onToggleMute: () => void = () => {};
-	export let onCycleSpeedFactor: () => void = () => {};
+	export let onSetSpeed: (value: number) => void = () => {};
+	export let onOpenSpeedSelector: () => void = () => {};
 	export let onChangeVolume: (value: number) => void = () => {};
 
 	const panelClass = () => (menuOpen ? 'hud-top menu-open' : 'hud-top');
@@ -137,13 +138,13 @@
 			<div class="panel-title">Speed</div>
 			<div class="panel-segment-wrap">
 				<div class="panel-row panel-speed-row">
-					<button class="panel-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onCycleSpeedFactor()} >
+					<button class="panel-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onSetSpeed(1)} >
 						Normal
 					</button>
-					<button class="panel-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onCycleSpeedFactor()} >
+					<button class="panel-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onSetSpeed(1.5)} >
 						Fast
 					</button>
-					<button class="panel-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onCycleSpeedFactor()} >
+					<button class="panel-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)} >
 						Turbo
 					</button>
 				</div>
@@ -220,9 +221,9 @@
 			</div>
 			<div class="autoplay-title">Speed</div>
 			<div class="autoplay-speed">
-				<button class="autoplay-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onCycleSpeedFactor()}>Normal</button>
-				<button class="autoplay-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onCycleSpeedFactor()}>Fast</button>
-				<button class="autoplay-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onCycleSpeedFactor()}>Turbo</button>
+				<button class="autoplay-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onSetSpeed(1)}>Normal</button>
+				<button class="autoplay-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onSetSpeed(1.5)}>Fast</button>
+				<button class="autoplay-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)}>Turbo</button>
 			</div>
 			<button class="autoplay-start" on:click={onStartAutoplay}>
 				{isMobileLandscapeUi ? 'START' : 'START AUTOSPINS'}
@@ -244,7 +245,7 @@
 		class:speed-normal={speedFactor === 1}
 		class:speed-quick={speedFactor === 1.5}
 		class:speed-turbo={speedFactor === 2}
-		on:click={onCycleSpeedFactor}
-		aria-label="Cycle speed"
+		on:click={onOpenSpeedSelector}
+		aria-label="Open speed selector"
 	></button>
 </div>

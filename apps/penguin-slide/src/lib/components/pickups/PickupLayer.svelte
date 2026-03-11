@@ -37,7 +37,6 @@
     y: 0,
     width: 0
   });
-  export let tokenScale: (depth: number) => number = () => 1;
   export let tokenSpineSize: (depth: number) => number = () => 64;
   export let coinAssetKey: (token: Token) => string = () => 'coin_bronze';
   export let itemSpawnOffset: number | (() => number) = 0;
@@ -48,34 +47,52 @@
   const getSpawnOffset = () =>
     typeof itemSpawnOffset === 'function' ? itemSpawnOffset() : Number(itemSpawnOffset ?? 0);
 
-  const PICKUP_VISUAL_SCALE = 0.32;
+  const PICKUP_VISUAL_SCALE = 0.256;
+  const GLOBAL_PICKUP_SIZE_MULTIPLIER = 1.0625;
+  // Goal art has more transparent padding, so it needs a stronger multiplier
+  // to remain the visibly largest pickup on screen.
+  const GOAL_PICKUP_SIZE_MULTIPLIER = 1.734;
+  const MIN_COIN_GLYPH_HEIGHT = 6.0;
+  const MIN_STAR_GLYPH_HEIGHT = 5.0;
 
   const resolveLane = (token: Token) =>
     Number.isFinite(token.spawnLane ?? token.lane) ? Number(token.spawnLane ?? token.lane) : token.lane;
 
+  const normalizeTokenType = (token: Token) => String(token.type ?? '').trim().toLowerCase();
+  const isCoinType = (type: string) => type === 'coin' || type.startsWith('coin_') || type.startsWith('+');
+  const isStarType = (type: string) => type === 'star' || type.startsWith('star_') || type.startsWith('x');
+  const isNothingType = (type: string) =>
+    !type || type === 'empty' || type === 'nothing' || type === 'none' || type === 'null' || type === 'undefined';
+
   const resolveAssetKey = (token: Token) => {
-    if (token.type === 'coin') return coinAssetKey(token);
-    if (token.type === 'star') return 'star';
-    if (token.type === 'lifering') return 'lifering';
-    if (token.type === 'goal') return 'goal';
-    if (token.type === 'banana') return 'banana';
-    return token.type || 'banana';
+    const type = normalizeTokenType(token);
+    if (isCoinType(type)) return coinAssetKey(token);
+    if (isStarType(type)) return 'star';
+    if (type === 'lifering' || type === 'life_ring' || type === 'life_vest' || type === 'lifebelt') return 'lifering';
+    if (type === 'goal') return 'goal';
+    if (type === 'stone' || type === 'stone_collect') return 'goal';
+    if (type === 'banana' || type === 'slip' || type === 'sink') return 'banana';
+    if (!type || type === 'empty' || type === 'nothing' || type === 'none' || type === 'null' || type === 'undefined') return 'empty';
+    return 'empty';
   };
 
   const getAnimationName = (token: Token) => {
-    if (token.type === 'goal') return 'activate';
-    if (token.activate && (token.type === 'coin' || token.type === 'star' || token.type === 'lifering' || token.type === 'banana')) {
+    const type = normalizeTokenType(token);
+    if (type === 'goal') return 'activate';
+    if (token.activate && (isCoinType(type) || isStarType(type) || type === 'lifering' || type === 'banana')) {
       return 'destroy';
     }
-    if (token.type === 'coin' || token.type === 'star' || token.type === 'lifering' || token.type === 'banana') {
+    if (isCoinType(type) || isStarType(type) || type === 'lifering' || type === 'banana') {
       return 'idle';
     }
     return 'idle';
   };
 
   const visualSizeMultiplier = (token: Token) => {
-    if (token.type === 'lifering' || token.type === 'goal') return 1.7;
-    return 1;
+    const type = normalizeTokenType(token);
+    if (type === 'lifering') return 1.7 * GLOBAL_PICKUP_SIZE_MULTIPLIER;
+    if (type === 'goal') return GOAL_PICKUP_SIZE_MULTIPLIER;
+    return GLOBAL_PICKUP_SIZE_MULTIPLIER;
   };
 
   const toFiniteNumber = (value: unknown, fallback = 0) => {
@@ -107,48 +124,148 @@
 
   const charWidth = (char: string, glyphHeight: number) => {
     if (char === '.' || char === ',') return glyphHeight * 0.32;
-    if (char === 'x' || char === 'X') return glyphHeight * 0.72;
+    if (char === 'x' || char === 'X') return glyphHeight * 0.62;
     return glyphHeight * 0.56;
   };
 
-  const coinGlyphValue = (token: Token) => {
-    if(!(token.extra?.coinValue ?? token.extra?.value ?? token.value)) {
-      console.log('Token is missing coin value for glyphs, defaulting to 0', token);
-    }
-    
-    return toFiniteNumber(token.extra?.coinValue ?? token.extra?.value ?? token.value, 0);
+  const coinDigitScale = (digitCount: number) => {
+    if (digitCount >= 5) return 0.7;
+    if (digitCount === 4) return 0.77;
+    if (digitCount === 3) return 0.84;
+    return 1;
   };
 
-  const buildGlyphs = (token: Token, assetKey: string, size: number, animationName: string): GlyphSprite[] => {
-    if (token.type !== 'coin' && token.type !== 'star') return [];
+  const logGlyphIssue = (token: Token, reason: string, details: Record<string, unknown> = {}) => {
+    void token;
+    void reason;
+    void details;
+  };
+
+  const parseFiniteNumber = (value: unknown): number | null => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const parseLooseNumber = (value: unknown): number | null => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const normalized = trimmed.replace(/,/g, '').replace(/[^\d.+-]/g, '');
+    if (!normalized || normalized === '+' || normalized === '-' || normalized === '.') return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const coinGlyphValue = (token: Token) => {
+    const rawValue = token.extra?.coinValue ?? token.extra?.value ?? token.value;
+    const parsedValue = parseLooseNumber(rawValue) ?? parseFiniteNumber(rawValue);
+    if (parsedValue != null && parsedValue > 0) {
+      return parsedValue;
+    }
+
+    const outcomeRaw = String(token.extra?.item ?? token.extra?.outcome ?? '').trim();
+    const fallbackOutcome = parseLooseNumber(outcomeRaw.startsWith('+') ? outcomeRaw.slice(1) : outcomeRaw);
+    if (fallbackOutcome != null && fallbackOutcome > 0) {
+      return fallbackOutcome;
+    }
+
+    if (parsedValue != null && parsedValue >= 0) {
+      return parsedValue;
+    }
+
+    logGlyphIssue(token, 'invalid_coin_value', {
+      rawValue,
+      coinValue: token.extra?.coinValue,
+      extraValue: token.extra?.value,
+      tokenValue: token.value,
+      outcomeRaw
+    });
+    return 1;
+  };
+
+  const buildGlyphs = (
+    token: Token,
+    assetKey: string,
+    size: number,
+    animationName: string,
+    sizeMultiplier: number
+  ): GlyphSprite[] => {
+    const type = normalizeTokenType(token);
+    const coinType = isCoinType(type);
+    const starType = isStarType(type);
+    if (!coinType && !starType) return [];
     if (token.activate || animationName === 'destroy') return [];
 
-    const effectiveSize = size * PICKUP_VISUAL_SCALE;
-    const glyphHeight = effectiveSize * (token.type === 'star' ? 0.14 : 0.12);
-    const glyphY = token.type === 'star' ? effectiveSize * 0.022 : 0;
-    const spacing = glyphHeight * 0.04;
-
     const valueString =
-      token.type === 'coin'
+      coinType
         ? formatNumberForGlyphs(coinGlyphValue(token))
-        : `x${formatNumberForGlyphs(toFiniteNumber(token.extra?.multiplier ?? 1, 1))}`;
+        : (() => {
+            const rawMultiplier = token.extra?.multiplier ?? 1;
+            const parsedMultiplier = parseFiniteNumber(rawMultiplier);
+            if (parsedMultiplier == null) {
+              logGlyphIssue(token, 'invalid_star_multiplier', {
+                rawMultiplier,
+                tokenExtra: token.extra
+              });
+              return 'x1';
+            }
+            return `x${formatNumberForGlyphs(parsedMultiplier)}`;
+          })();
 
-    const prefix = token.type === 'coin' ? coinGlyphPrefix(assetKey) : 'bitmap_mult_';
-    let chars = [...valueString].filter((char) => charToGlyphKey(prefix, char));
+    const prefix = coinType ? coinGlyphPrefix(assetKey) : 'bitmap_mult_';
+    const rawChars = [...valueString];
+    const invalidChars = rawChars.filter((char) => !charToGlyphKey(prefix, char));
+    if (invalidChars.length) {
+      logGlyphIssue(token, 'unsupported_glyph_characters', {
+        valueString,
+        prefix,
+        invalidChars: Array.from(new Set(invalidChars))
+      });
+    }
+    let chars = rawChars.filter((char) => charToGlyphKey(prefix, char));
     if (!chars.length) {
-      const fallbackChars = token.type === 'star' ? ['x', '1'] : ['0'];
+      const fallbackChars = starType ? ['x', '1'] : ['1'];
       chars = fallbackChars.filter((char) => charToGlyphKey(prefix, char));
     }
-    if (!chars.length) return [];
+    if (!chars.length) {
+      logGlyphIssue(token, 'no_glyph_sprites_generated', {
+        valueString,
+        prefix,
+        assetKey
+      });
+      return [];
+    }
 
+    const effectiveSize = size * PICKUP_VISUAL_SCALE * sizeMultiplier;
+    const baseGlyphHeight = effectiveSize * (starType ? 0.122 : 0.152);
+    const numericDigits = chars.filter((char) => char >= '0' && char <= '9').length;
+    const coinDigits = coinType ? numericDigits : 0;
+    const coinScale = coinType ? coinDigitScale(coinDigits) : 1;
+    const singleDigitBoost =
+      numericDigits === 1 ? (coinType ? 1.22 : starType ? 1.16 : 1) : 1;
+    const glyphHeight = Math.max(
+      baseGlyphHeight * coinScale * singleDigitBoost,
+      starType ? MIN_STAR_GLYPH_HEIGHT : MIN_COIN_GLYPH_HEIGHT
+    );
+    const glyphY = starType ? effectiveSize * 0.022 : 0;
+    const baseSpacing = glyphHeight * (starType ? 0.02 : 0.04);
+
+    const hasMultiCoinSymbols = coinType && chars.length > 1;
+    const compactCoinSpacing = coinType && coinDigits >= 3;
+    const spacing = hasMultiCoinSymbols
+      ? baseSpacing * (compactCoinSpacing ? 0.192 : 1.05)
+      : baseSpacing;
     const widths = chars.map((char) => charWidth(char, glyphHeight));
+    const advances = widths;
     const totalWidth = widths.reduce((sum, width) => sum + width, 0) + spacing * (chars.length - 1);
 
     let cursor = -totalWidth * 0.5;
     return chars.map((char, index) => {
       const width = widths[index] ?? glyphHeight * 0.56;
       const x = cursor + width * 0.5;
-      cursor += width + spacing;
+      const advance = advances[index] ?? width;
+      cursor += advance + spacing;
       return {
         id: `${token.id}:${index}:${char}`,
         key: charToGlyphKey(prefix, char),
@@ -169,7 +286,6 @@
     offsetY: number;
     size: number;
     scaledSize: number;
-    scale: number;
     animationName: string;
     glyphs: GlyphSprite[];
   };
@@ -196,10 +312,11 @@
       const lanePos = lanePosition(depth, lane);
       const offsetY = lanePos.y + getSpawnOffset();
       const assetKey = resolveAssetKey(token);
+      const tokenType = normalizeTokenType(token);
       const size = tokenSpineSize(depth);
-      const scale = tokenScale(depth);
       const animationName = getAnimationName(token);
       const sizeMultiplier = visualSizeMultiplier(token);
+      const scaledSize = size * PICKUP_VISUAL_SCALE * sizeMultiplier;
       return {
         token,
         pose,
@@ -208,10 +325,9 @@
         offsetX: lanePos.x,
         offsetY,
         size,
-        scaledSize: size * PICKUP_VISUAL_SCALE * sizeMultiplier,
-        scale,
+        scaledSize,
         animationName,
-        glyphs: buildGlyphs(token, assetKey, size, animationName)
+        glyphs: buildGlyphs(token, assetKey, size, animationName, sizeMultiplier)
       };
       })
       .filter((entry): entry is RenderEntry => entry !== null && entry.assetKey !== 'empty');
@@ -221,15 +337,17 @@
 <Container>
   {#each visibleTokens as entry (entry.token.id)}
     <Container x={entry.offsetX} y={entry.offsetY}>
-      <SpineProvider
-        key={entry.assetKey}
-        x={0}
-        y={0}
-        width={entry.scaledSize}
-        height={entry.scaledSize}
-      >
-        <SpineTrack trackIndex={0} animationName={entry.animationName} loop={entry.animationName !== 'destroy'} />
-      </SpineProvider>
+      {#if entry.assetKey !== 'empty'}
+        <SpineProvider
+          key={entry.assetKey}
+          x={0}
+          y={0}
+          width={entry.scaledSize}
+          height={entry.scaledSize}
+        >
+          <SpineTrack trackIndex={0} animationName={entry.animationName} loop={entry.animationName !== 'destroy'} />
+        </SpineProvider>
+      {/if}
 
       {#if entry.glyphs.length > 0}
         <Container>
