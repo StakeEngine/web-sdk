@@ -16,7 +16,7 @@
 	export let pendingRound = false;
 	export let hudVolume = 0;
 	export let musicMuted = false;
-	export let speedFactor = 1;
+	export let speedFactor = 2;
 	export let isMobileLandscapeUi = false;
 	export let selectedMode = 'BASE_HARD';
 	export let maxWinLabel = '1,000x';
@@ -138,13 +138,13 @@
 			<div class="panel-title">Speed</div>
 			<div class="panel-segment-wrap">
 				<div class="panel-row panel-speed-row">
-					<button class="panel-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onSetSpeed(1)} >
+					<button class="panel-chip panel-speed speed-normal" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)} >
 						Normal
 					</button>
-					<button class="panel-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onSetSpeed(1.5)} >
+					<button class="panel-chip panel-speed speed-quick" class:panel-active={speedFactor === 4} on:click={() => onSetSpeed(4)} >
 						Fast
 					</button>
-					<button class="panel-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)} >
+					<button class="panel-chip panel-speed speed-turbo" class:panel-active={speedFactor === 6} on:click={() => onSetSpeed(6)} >
 						Turbo
 					</button>
 				</div>
@@ -221,9 +221,9 @@
 			</div>
 			<div class="autoplay-title">Speed</div>
 			<div class="autoplay-speed">
-				<button class="autoplay-chip panel-speed speed-normal" class:panel-active={speedFactor === 1} on:click={() => onSetSpeed(1)}>Normal</button>
-				<button class="autoplay-chip panel-speed speed-quick" class:panel-active={speedFactor === 1.5} on:click={() => onSetSpeed(1.5)}>Fast</button>
-				<button class="autoplay-chip panel-speed speed-turbo" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)}>Turbo</button>
+				<button class="autoplay-chip panel-speed speed-normal" class:panel-active={speedFactor === 2} on:click={() => onSetSpeed(2)}>Normal</button>
+				<button class="autoplay-chip panel-speed speed-quick" class:panel-active={speedFactor === 4} on:click={() => onSetSpeed(4)}>Fast</button>
+				<button class="autoplay-chip panel-speed speed-turbo" class:panel-active={speedFactor === 6} on:click={() => onSetSpeed(6)}>Turbo</button>
 			</div>
 			<button class="autoplay-start" on:click={onStartAutoplay}>
 				{isMobileLandscapeUi ? 'START' : 'START AUTOSPINS'}
@@ -242,9 +242,9 @@
 	</div>
 	<button
 		class="hud-speed-cycle"
-		class:speed-normal={speedFactor === 1}
-		class:speed-quick={speedFactor === 1.5}
-		class:speed-turbo={speedFactor === 2}
+		class:speed-normal={speedFactor === 2}
+		class:speed-quick={speedFactor === 4}
+		class:speed-turbo={speedFactor === 6}
 		on:click={onOpenSpeedSelector}
 		aria-label="Open speed selector"
 	></button>

@@ -1,0 +1,66 @@
+import {
+	authenticateWallet,
+	endRoundWallet,
+	extractPendingRoundState,
+	extractPayoutMultiplier,
+	extractRoundEvents,
+	extractWalletSnapshot,
+	playWallet,
+	resolveBetConfigFromAuth
+} from './penguinSlideApiService';
+
+export async function runAuthenticateFlow(args: {
+	search: string;
+	language: string;
+	apiMultiplier: number;
+	fallbackBetOptions: number[];
+	currentBetAmount: number;
+	modeFromQuery: string | null | undefined;
+}) {
+	const response = await authenticateWallet(args.search, args.language);
+	const wallet = extractWalletSnapshot(response, args.apiMultiplier);
+	const betConfig = resolveBetConfigFromAuth(
+		response,
+		args.apiMultiplier,
+		args.fallbackBetOptions,
+		args.currentBetAmount
+	);
+	const pendingRoundEvents = extractPendingRoundState(response);
+	const mode = response?.round?.mode
+		? String(response.round.mode)
+		: args.modeFromQuery
+			? String(args.modeFromQuery)
+			: null;
+	const failed = !response || response?.error;
+	const shouldClearError = Boolean(response?.balance?.amount != null || response?.config);
+	return { response, wallet, betConfig, pendingRoundEvents, mode, failed, shouldClearError };
+}
+
+export async function runPlayFlow(args: {
+	search: string;
+	mode: string;
+	amount: number;
+	betSize: number;
+	apiMultiplier: number;
+}) {
+	const response = await playWallet(args.search, {
+		mode: args.mode,
+		amount: args.amount,
+		betSize: args.betSize
+	});
+	const wallet = extractWalletSnapshot(response, args.apiMultiplier);
+	const events = extractRoundEvents(response);
+	const payoutMultiplier = extractPayoutMultiplier(response);
+	const errorMessage = response?.error
+		? response?.message
+			? String(response.message)
+			: 'Play failed.'
+		: null;
+	return { response, wallet, events, payoutMultiplier, errorMessage };
+}
+
+export async function runEndRoundFlow(args: { search: string; apiMultiplier: number }) {
+	const response = await endRoundWallet(args.search);
+	const wallet = extractWalletSnapshot(response, args.apiMultiplier);
+	return { response, wallet };
+}

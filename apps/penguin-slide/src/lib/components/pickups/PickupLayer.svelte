@@ -47,7 +47,7 @@
   const getSpawnOffset = () =>
     typeof itemSpawnOffset === 'function' ? itemSpawnOffset() : Number(itemSpawnOffset ?? 0);
 
-  const PICKUP_VISUAL_SCALE = 0.256;
+  const PICKUP_VISUAL_SCALE = 0.333;
   const GLOBAL_PICKUP_SIZE_MULTIPLIER = 1.0625;
   // Goal art has more transparent padding, so it needs a stronger multiplier
   // to remain the visibly largest pickup on screen.
@@ -128,10 +128,11 @@
     return glyphHeight * 0.56;
   };
 
-  const coinDigitScale = (digitCount: number) => {
-    if (digitCount >= 5) return 0.7;
-    if (digitCount === 4) return 0.77;
-    if (digitCount === 3) return 0.84;
+  const digitScale = (digitCount: number) => {
+    if (digitCount >= 6) return 0.38;
+    if (digitCount === 5) return 0.44;
+    if (digitCount === 4) return 0.6;
+    if (digitCount === 3) return 0.78;
     return 1;
   };
 
@@ -241,11 +242,12 @@
     const baseGlyphHeight = effectiveSize * (starType ? 0.122 : 0.152);
     const numericDigits = chars.filter((char) => char >= '0' && char <= '9').length;
     const coinDigits = coinType ? numericDigits : 0;
-    const coinScale = coinType ? coinDigitScale(coinDigits) : 1;
+    const coinScale = coinType ? digitScale(coinDigits) : 1;
+    const starScale = starType ? digitScale(numericDigits) : 1;
     const singleDigitBoost =
       numericDigits === 1 ? (coinType ? 1.22 : starType ? 1.16 : 1) : 1;
     const glyphHeight = Math.max(
-      baseGlyphHeight * coinScale * singleDigitBoost,
+      baseGlyphHeight * coinScale * starScale * singleDigitBoost,
       starType ? MIN_STAR_GLYPH_HEIGHT : MIN_COIN_GLYPH_HEIGHT
     );
     const glyphY = starType ? effectiveSize * 0.022 : 0;

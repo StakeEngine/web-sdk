@@ -1,8 +1,8 @@
 {
-	"extends": "config-ts/base.json",
+	"extends": "./.svelte-kit/tsconfig.json",
 	"include": ["."],
 	"exclude": ["dist", "build", "node_modules"],
 	"compilerOptions": {
-		    "types": ["svelte"]
+		"types": ["svelte"]
 	}
 }
