@@ -37,7 +37,9 @@
 	} from '../lib/helpers/testRoundFixtures';
 	import {
 		computeTurnTiltState,
-		computeSmoothedLaneState
+		computeSmoothedLaneState,
+		laneToSlotPosition,
+		slotPositionToLane
 	} from '../lib/helpers/penguinMotionHelpers';
 	import { createAudioEngine } from '../lib/helpers/audioEngineHelpers';
 	import { buildBitmapAssetsWithClones } from '../lib/helpers/bitmapAssetHelpers';
@@ -133,6 +135,8 @@
 	} from '../lib/helpers/sequenceEventParseHelpers';
 	import {
 		findFirstTargetableHitToken,
+		computeBaseStepPerMs,
+		effectiveSpeedFactor,
 		computeSequenceScrollWindow
 	} from '../lib/helpers/sequencePlaybackSetupHelpers';
 	import {
@@ -143,6 +147,7 @@
 	} from '../lib/helpers/sequenceTickHelpers';
 	import {
 		targetLaneForTokenHelper,
+		nextTargetableHitTokenHelper,
 		slipTriggerRenderStepForTokenHelper
 	} from '../lib/helpers/sequenceTargetHelpers';
 	import {
@@ -199,8 +204,6 @@
 		SLIP_EDGE_ALIGN_MIN_DELTA,
 		SLIP_EDGE_ALIGN_MIN_DURATION_MS,
 		SLIP_EDGE_ALIGN_MAX_DURATION_MS,
-		SLIP_EDGE_ALIGN_SPEED,
-		SLIP_EDGE_ALIGN_CENTER_SLOW_MULT,
 		SLIP_EDGE_ALIGN_LIFT_FRAC,
 		DISABLE_PENGUIN_SLIDE_MOTION,
 		DEBUG_GAME_SPEED_MULT,
@@ -308,11 +311,13 @@ let currentCurrency = $state<SupportedCurrency>('USD');
 	let runId = $state(0);
 	let slipSlide = $state(0);
 	let slipDirection = $state<1 | -1>(1);
-	let slipTriggered = $state(false);
-	let slipAnimationStarted = $state(false);
-	let slipAnimationToken = $state(0);
-	let slipOriginX = $state<number | null>(null);
-	let driftActive = $state(false);
+let slipTriggered = $state(false);
+let slipAnimationStarted = $state(false);
+let slipAnimationToken = $state(0);
+let slipOriginX = $state<number | null>(null);
+let slipHandoffOriginX = $state<number | null>(null);
+let slipProxyImmediateActive = $state(false);
+let driftActive = $state(false);
 	let slipStepIndex = $state<number | null>(null);
 	let slipEndRenderStep = $state<number | null>(null);
 	let runEndRenderStep = $state<number | null>(null);
@@ -333,11 +338,25 @@ let currentCurrency = $state<SupportedCurrency>('USD');
 	
 	let pickupCount = $state(0);
 	let hitPopup = $state<{ text: string; until: number; x: number; y: number } | null>(null);
-	let vestAnim = $state<'gain' | 'lose' | null>(null);
+	let vestAnim = $state<'gain' | null>(null);
 	let vestAnimKey = $state(0);
-	let penguinAnim = $state<'idle' | 'slide_in' | 'slide_idle' | 'win' | 'lose_L' | 'lose_R'>('idle');
+	let penguinAnim = $state<
+		| 'idle'
+		| 'slide_in'
+		| 'slide_idle'
+		| 'slide_in_revive'
+		| 'win'
+		| 'lose_L'
+		| 'lose_R'
+		| 'lose_L_vest'
+		| 'lose_R_vest'
+	>('idle');
 	let penguinSkin = $state<'base' | 'vest'>('base');
-	let autoScrollActive = $state(false);
+let invincibleLoop = $state(false);
+let vestReviveActive = $state(false);
+let revivePauseActive = $state(false);
+let loseStopFreezeActive = $state(false);
+let autoScrollActive = $state(false);
 	let slideInStart = $state(0);
 	let pendingRound = $state(false);
 	let pendingRoundEvents = $state<any[] | null>(null);
@@ -347,9 +366,19 @@ let currentCurrency = $state<SupportedCurrency>('USD');
 	let liferingPickedStep = $state<number | null>(null);
 	let lastVestGainStep = $state<number | null>(null);
 	let lastVestLoseStep = $state<number | null>(null);
+	let pendingVestLossStep = $state<number | null>(null);
 	let lastVestAnimAtMs = $state(0);
 	let pendingVestPopSteps = $state<number[]>([]);
 	let pendingVestPopCursor = $state(0);
+	let reviveRecoveryTimer: ReturnType<typeof setTimeout> | null = null;
+	let reviveFlashTimer: ReturnType<typeof setTimeout> | null = null;
+	let reviveBlinkStepsRemaining = $state(0);
+	let vestLoseFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+	let vestLoseEventSeen = $state(false);
+	let vestLossMotionComplete = $state(false);
+	let reviveRingVisible = $state(false);
+	let reviveStartGhostStepIndex = $state<number | null>(null);
+	let reviveStartGhostPassed = $state(true);
 	let stopRunEarly = $state(false);
 	let freezeMovement = $state(false);
 	let betLevels = $state<number[]>([...betOptions]);
@@ -398,10 +427,18 @@ let animationStatus: 'idle' | 'running' | 'done' = $state('idle');
 let penguinLane = $state(0);
 let penguinTargetLane = $state(0);
 let penguinOffsetFrac = $state(0);
+let lastApproachLaneSpeedAbs = $state(0);
 let penguinSkidPhase = $state(0);
 let penguinSkidRotation = $state(0);
 let slipDropY = $state(0);
+let vestLossMotionActive = $state(false);
+let vestLossMotionToken = $state(0);
 let laneVelocity = $state(0);
+let laneTravelPlanTokenId = $state<number | null>(null);
+let laneTravelPlanOriginSlot = $state(0);
+let laneTravelPlanTargetSlot = $state(0);
+let laneTravelPlanStartRenderStep = $state(Number.NaN);
+let laneTravelPlanTriggerRenderStep = $state(Number.NaN);
 let ctrlTurnTilt = $state(0);
 let pickupSkidScale = $state(1);
 let amountWinPulse = $state(1);
@@ -423,21 +460,54 @@ let preStepHandoffFromLane = $state(0);
 let centerLockPendingTokenId = $state<number | null>(null);
 let lockedTargetTokenId = $state<number | null>(null);
 let ctrlTurnIntentFiltered = $state(0);
-function setPenguinLane(nextLane: number) {
-	penguinLane = clampPenguinLane(nextLane);
+let lastLaneWriteSource = $state('unknown');
+let lastLaneWriteFrom = $state(0);
+let lastLaneWriteTo = $state(0);
+let lastLaneWriteRenderStep = $state(0);
+let lastPenguinJumpSample = $state<{ x: number; y: number; at: number; renderStep: number } | null>(null);
+function setPenguinLane(nextLane: number, source = 'unknown') {
+	const clampedNextLane = clampPenguinLane(nextLane);
+	lastLaneWriteSource = source;
+	lastLaneWriteFrom = penguinLane;
+	lastLaneWriteTo = clampedNextLane;
+	lastLaneWriteRenderStep = renderStep;
+	penguinLane = clampedNextLane;
 }
 
 function setPenguinTargetLane(nextLane: number) {
 	penguinTargetLane = clampPenguinLane(nextLane);
 }
 
-function setLockedTargetToken(tokenId: number | null, nowMs: number, force = false) {
+function setLockedTargetToken(
+	tokenId: number | null,
+	nowMs: number,
+	force = false,
+	preserveMotion = false
+) {
 	void nowMs;
 	void force;
 	if (lockedTargetTokenId === tokenId) return;
 	lockedTargetTokenId = tokenId;
-	laneVelocity = 0;
-	ctrlTurnIntentFiltered = 0;
+	laneTravelPlanTokenId = null;
+	laneTravelPlanOriginSlot = laneToSlotPosition(penguinLane, SLOT_OFFSETS);
+	laneTravelPlanTargetSlot = laneTravelPlanOriginSlot;
+	laneTravelPlanStartRenderStep = Number.NaN;
+	laneTravelPlanTriggerRenderStep = Number.NaN;
+	if (!preserveMotion) {
+		laneVelocity = 0;
+		ctrlTurnIntentFiltered = 0;
+	}
+}
+
+function resetPickupTargetingState() {
+	setLockedTargetToken(null, performance.now(), true, true);
+	centerLockPendingTokenId = null;
+	lockCenterStrict = false;
+	laneTravelPlanTokenId = null;
+	laneTravelPlanOriginSlot = laneToSlotPosition(penguinLane, SLOT_OFFSETS);
+	laneTravelPlanTargetSlot = laneTravelPlanOriginSlot;
+	laneTravelPlanStartRenderStep = Number.NaN;
+	laneTravelPlanTriggerRenderStep = Number.NaN;
 }
 
 function formatCurrencyAmount(amount: number, fractionDigits = 2) {
@@ -462,9 +532,155 @@ function updateCtrlTurnTilt(dt: number, lockToPickup: boolean) {
 	ctrlTurnIntentFiltered = next.ctrlTurnIntentFiltered;
 }
 
-function smoothPenguinLaneTowardTarget(dt: number) {
+function samplePenguinJump(nowMs: number) {
+	const pose = penguinPose();
+	const previous = lastPenguinJumpSample;
+	lastPenguinJumpSample = {
+		x: pose.x,
+		y: pose.y,
+		at: nowMs,
+		renderStep
+	};
+	if (!previous) return;
+	const deltaMs = nowMs - previous.at;
+	if (!Number.isFinite(deltaMs) || deltaMs <= 0 || deltaMs > 34) return;
+	const deltaX = pose.x - previous.x;
+	const thresholdPx = Math.max(52, viewport.w * 0.035);
+	if (Math.abs(deltaX) < thresholdPx) return;
+	console.log('[penguin-slide][x-jump]', {
+		deltaX: Number(deltaX.toFixed(2)),
+		thresholdPx: Number(thresholdPx.toFixed(2)),
+		deltaMs: Number(deltaMs.toFixed(1)),
+		deltaRenderStep: Number((renderStep - previous.renderStep).toFixed(3)),
+		renderStep: Number(renderStep.toFixed(3)),
+		status,
+		penguinX: Number(pose.x.toFixed(2)),
+		penguinY: Number(pose.y.toFixed(2)),
+		penguinLane: Number(penguinLane.toFixed(3)),
+		penguinTargetLane: Number(penguinTargetLane.toFixed(3)),
+		laneVelocity: Number(laneVelocity.toFixed(3)),
+		penguinOffsetFrac: Number(penguinOffsetFrac.toFixed(3)),
+		lockCenterStrict,
+		laneWriteSource: lastLaneWriteSource,
+		laneWriteFrom: Number(lastLaneWriteFrom.toFixed(3)),
+		laneWriteTo: Number(lastLaneWriteTo.toFixed(3)),
+		laneWriteRenderStep: Number(lastLaneWriteRenderStep.toFixed(3)),
+		slipTriggered,
+		slipAnimationStarted,
+		driftActive,
+		vestLossMotionActive,
+		slipSlide: Number(slipSlide.toFixed(3)),
+		slipOriginX: slipOriginX == null ? null : Number(slipOriginX.toFixed(2)),
+		slipDropY: Number(slipDropY.toFixed(2)),
+		ctrlTurnTilt: Number(ctrlTurnTilt.toFixed(3)),
+		lastApproachLaneSpeedAbs: Number(lastApproachLaneSpeedAbs.toFixed(3))
+	});
+}
+
+function currentBaseStepPerMs() {
+	return computeBaseStepPerMs({
+		speedFactor,
+		pickupStepPaceMultiplier: PICKUP_STEP_PACE_MULTIPLIER,
+		pickupTravelSpeed: PICKUP_TRAVEL_SPEED,
+		debugGameSpeedMult: DEBUG_GAME_SPEED_MULT
+	});
+}
+
+function durationMsForSteps(stepCount: number) {
+	return (stepSpacing * stepCount) / Math.max(0.0001, currentBaseStepPerMs());
+}
+
+function currentReviveDurationSteps() {
+	return 10.74;
+}
+
+function currentReviveRingDurationSteps() {
+	return 2.7;
+}
+
+function currentLinearSpeedScale() {
+	return Math.max(1, effectiveSpeedFactor(speedFactor) / 2) * 0.891;
+}
+
+function smoothPenguinLaneTowardTarget(
+	dt: number,
+	stepPerMs: number,
+	pendingHit?:
+		| {
+				trigger: number;
+				t: { id: number; stepIndex: number; type?: string; extra?: Record<string, unknown> };
+		  }
+		| undefined
+) {
 	const targetLane = clampPenguinLane(penguinTargetLane);
-	const laneMotionSpeedScale = Math.max(1, Math.pow(speedFactor, 1.02));
+	const targetArrivalBufferSteps = pendingHit?.t?.type === 'goal' ? 0.04 : 0.06;
+	const smoothBridgeApproach = pendingHit?.t?.extra?.bridgeStep === true;
+	if (lockCenterStrict && pendingHit && laneTravelPlanTokenId === pendingHit.t.id) {
+		const totalSlotDistance = Math.abs(laneTravelPlanTargetSlot - laneTravelPlanOriginSlot);
+		const totalTravelSteps = Math.max(
+			0.08,
+			(Number(laneTravelPlanTriggerRenderStep) - Number(laneTravelPlanStartRenderStep)) /
+				stepSpacing -
+				targetArrivalBufferSteps
+		);
+		const elapsedSteps = Math.max(
+			0,
+			(renderStep - Number(laneTravelPlanStartRenderStep)) / stepSpacing
+		);
+		const travelT = Math.max(0, Math.min(1, elapsedSteps / totalTravelSteps));
+		const direction = Math.sign(laneTravelPlanTargetSlot - laneTravelPlanOriginSlot);
+		const overshootSlots =
+			totalSlotDistance > 0.18 && direction !== 0
+				? Math.min(0.18, 0.04 + totalSlotDistance * 0.03)
+				: 0;
+		const overshootTargetSlot = laneTravelPlanTargetSlot + direction * overshootSlots;
+		const overshootPhaseT = overshootSlots > 0 ? 0.78 : 1;
+		let desiredSlot = laneTravelPlanTargetSlot;
+		if (totalSlotDistance > 0.0001) {
+			if (travelT <= overshootPhaseT) {
+				const phaseT = Math.max(0, Math.min(1, travelT / Math.max(0.001, overshootPhaseT)));
+				const eased = phaseT * phaseT * (3 - 2 * phaseT);
+				desiredSlot =
+					laneTravelPlanOriginSlot +
+					(overshootTargetSlot - laneTravelPlanOriginSlot) * eased;
+			} else {
+				const phaseT = Math.max(
+					0,
+					Math.min(1, (travelT - overshootPhaseT) / Math.max(0.001, 1 - overshootPhaseT))
+				);
+				const eased = phaseT * phaseT * (3 - 2 * phaseT);
+				desiredSlot =
+					overshootTargetSlot +
+					(laneTravelPlanTargetSlot - overshootTargetSlot) * eased;
+			}
+		}
+		const prevSlot = laneToSlotPosition(penguinLane, SLOT_OFFSETS);
+		const motionDt = Math.max(1 / 240, Math.min(PENGUIN_MOTION_STEP_DT_MAX, dt));
+		const stepIntervalSec = stepSpacing / Math.max(0.0001, stepPerMs * 1000);
+		const totalTravelSec = Math.max(1 / 240, totalTravelSteps * stepIntervalSec);
+		const plannedSlotSpeedPerSec = (totalSlotDistance / totalTravelSec) * 1.18;
+		const maxSlotDelta = plannedSlotSpeedPerSec * motionDt;
+		const slotDelta = desiredSlot - prevSlot;
+		const nextSlot =
+			Math.abs(slotDelta) <= maxSlotDelta
+				? desiredSlot
+				: prevSlot + Math.sign(slotDelta) * maxSlotDelta;
+		const nextLane = clampPenguinLane(slotPositionToLane(nextSlot, SLOT_OFFSETS));
+		const prevLane = penguinLane;
+		setPenguinLane(nextLane, 'smooth_plan');
+		laneVelocity = (nextLane - prevLane) / motionDt;
+		rememberApproachLaneSpeed(laneVelocity);
+		return;
+	}
+	const laneMotionSpeedScale = currentLinearSpeedScale();
+	const availableTravelSteps =
+		pendingHit && !smoothBridgeApproach && Number.isFinite(Number(pendingHit.trigger))
+			? Math.max(
+					0.08,
+					(Number(pendingHit.trigger) - renderStep) / stepSpacing -
+						targetArrivalBufferSteps
+				)
+			: null;
 	const next = computeSmoothedLaneState({
 		dt,
 		targetLane,
@@ -473,6 +689,10 @@ function smoothPenguinLaneTowardTarget(dt: number) {
 		lockCenterStrict,
 		disablePenguinSlideMotion: DISABLE_PENGUIN_SLIDE_MOTION,
 		laneMotionSpeedScale,
+		stepPerMs,
+		stepSpacing,
+		slotOffsets: SLOT_OFFSETS,
+		availableTravelSteps,
 		penguinMotionStepDtMax: PENGUIN_MOTION_STEP_DT_MAX,
 		penguinLaneBaseFollowRate: PENGUIN_LANE_BASE_FOLLOW_RATE,
 		penguinLaneDistanceFollowRate: PENGUIN_LANE_DISTANCE_FOLLOW_RATE,
@@ -480,8 +700,9 @@ function smoothPenguinLaneTowardTarget(dt: number) {
 		penguinLaneMaxSpeed: PENGUIN_LANE_MAX_SPEED,
 		penguinLaneMaxSpeedCenterLock: PENGUIN_LANE_MAX_SPEED_CENTER_LOCK
 	});
-	setPenguinLane(next.lane);
+	setPenguinLane(next.lane, 'smooth_solver');
 	laneVelocity = next.laneVelocity;
+	rememberApproachLaneSpeed(laneVelocity);
 }
 
 function destroyDelayForTokenType(type: string) {
@@ -491,7 +712,60 @@ function destroyDelayForTokenType(type: string) {
 }
 
 function currentSlipSpeedScale() {
-	return Math.max(1.33, speedFactor / 2);
+	return currentLinearSpeedScale();
+}
+
+function currentRespawnSpeedScale() {
+	return currentLinearSpeedScale();
+}
+
+function currentRespawnAnimationSpeedScale() {
+	return currentLinearSpeedScale();
+}
+
+function currentVestLossSpeedScale() {
+	return currentSlipSpeedScale();
+}
+
+function currentVestLossDelayScale() {
+	return Math.max(currentRespawnSpeedScale(), currentVestLossSpeedScale());
+}
+
+function rememberApproachLaneSpeed(sampleLaneVelocity: number) {
+	if (
+		status !== 'sliding' ||
+		slipTriggered ||
+		slipAnimationStarted ||
+		revivePauseActive ||
+		loseStopFreezeActive ||
+		vestLossMotionActive
+	) {
+		return;
+	}
+	const absVelocity = Math.abs(sampleLaneVelocity);
+	if (absVelocity >= 0.08) {
+		lastApproachLaneSpeedAbs = absVelocity;
+	}
+}
+
+function currentEdgeDriftLaneSpeedAbs(fromLane: number, toLane: number) {
+	const liveSpeedAbs = Math.max(Math.abs(laneVelocity), lastApproachLaneSpeedAbs);
+	if (liveSpeedAbs >= 0.08) return liveSpeedAbs;
+	const fromSlot = laneToSlotPosition(fromLane, SLOT_OFFSETS);
+	const toSlot = laneToSlotPosition(toLane, SLOT_OFFSETS);
+	const distanceSlots = Math.abs(toSlot - fromSlot);
+	const stepIntervalMs = stepSpacing / Math.max(0.0001, currentBaseStepPerMs());
+	const rawDurationSec = (distanceSlots * stepIntervalMs) / 1000;
+	const durationSec = Math.max(
+		SLIP_EDGE_ALIGN_MIN_DURATION_MS / 1000,
+		Math.min(SLIP_EDGE_ALIGN_MAX_DURATION_MS / 1000, rawDurationSec)
+	);
+	const laneDistance = Math.abs(toLane - fromLane);
+	return laneDistance / Math.max(1 / 240, durationSec);
+}
+
+function vestLossVisualDelayMs(type: string) {
+	return (destroyDelayForTokenType(type) / currentVestLossDelayScale()) * 0.18;
 }
 
 function laneOffsetForTargetIndex(targetIndex: number | null) {
@@ -757,6 +1031,18 @@ function tokenMatchesLandedStep(token: Token) {
 	return tokenMatchesLandedStepHelper(token, nearestLane);
 }
 
+function shouldForceCollectProtectedSinkingHit(args: {
+	token: Token;
+	hasVestProtection: boolean;
+	triggerReached: boolean;
+	band: { passedBand?: boolean } | null;
+}) {
+	const sinkingSlip = args.token.extra?.sinking === true || args.token.extra?.fall === true;
+	if (!sinkingSlip || !args.hasVestProtection) return false;
+	if (!(args.token.type === 'coin' || args.token.type === 'star')) return false;
+	return tokenMatchesLandedStep(args.token) && (args.triggerReached || Boolean(args.band?.passedBand));
+}
+
 function setPendingVestPopSteps(steps: number[]) {
 	pendingVestPopSteps = [...steps].sort((a, b) => a - b);
 	pendingVestPopCursor = 0;
@@ -767,12 +1053,59 @@ function consumePendingVestPops(currentStep: number) {
 		pendingVestPopCursor < pendingVestPopSteps.length &&
 		currentStep > pendingVestPopSteps[pendingVestPopCursor]
 	) {
-		const popStep = pendingVestPopSteps[pendingVestPopCursor];
-		if (hasLifering) {
-			clearLiferingState(popStep, true);
-		}
+		// Visual vest-loss must start from the actual protected sinking pickup,
+		// not from the parsed vestPopped timeline marker, otherwise it can fire
+		// before the saving pickup resolves and then restart after collection.
 		pendingVestPopCursor += 1;
 	}
+}
+
+function isCosmeticBridgeGhostToken(token: Token) {
+	return token.extra?.bridgeStep === true && token.extra?.cosmetic === true;
+}
+
+function standardPenguinBandPose() {
+	const pose = penguinPose();
+	return {
+		...pose,
+		y: pose.y - slipDropY
+	};
+}
+
+function thirdRespawnGhostStepAfter(stepIndex: number | null) {
+	if (!Number.isFinite(Number(stepIndex))) return null;
+	const uniqueStepIndices = [...new Set(
+		tokens
+			.filter(
+				(token) =>
+					isCosmeticBridgeGhostToken(token) &&
+					Number(token.stepIndex) > Number(stepIndex)
+			)
+			.map((token) => Number(token.stepIndex))
+			.filter((value) => Number.isFinite(value))
+	)].sort((a, b) => a - b);
+	return uniqueStepIndices[2] ?? null;
+}
+
+function hasGhostStepPassedPenguin(stepIndex: number | null) {
+	if (!Number.isFinite(Number(stepIndex))) return true;
+	const earlyRespawnGateStep = Number(stepIndex) - 0.5;
+	if (renderStep >= earlyRespawnGateStep * stepSpacing) {
+		return true;
+	}
+	const ghostStepTokens = tokens.filter(
+		(token) =>
+			isCosmeticBridgeGhostToken(token) &&
+			Number(token.stepIndex) === Number(stepIndex)
+	);
+	if (!ghostStepTokens.length) {
+		return renderStep >= Number(stepIndex) * stepSpacing;
+	}
+	const referencePose = standardPenguinBandPose();
+	return ghostStepTokens.every((token) => {
+		const band = pickupBandState(token, referencePose);
+		return band?.passedBand ?? renderStep >= Number(stepIndex) * stepSpacing;
+	});
 }
 
 function tokenUpdatesAccumulatedValue(token: Token) {
@@ -781,6 +1114,18 @@ function tokenUpdatesAccumulatedValue(token: Token) {
 
 function tokenAdvancesPathProgress(token: Token) {
 	return token.hit && token.extra?.bridgeStep !== true;
+}
+
+function tokenCountsForRespawnBlink(token: Token) {
+	return tokenAdvancesPathProgress(token) && token.extra?.cosmetic !== true;
+}
+
+function consumeRespawnBlinkStep(token: Token) {
+	if (!tokenCountsForRespawnBlink(token) || reviveBlinkStepsRemaining <= 0) return;
+	reviveBlinkStepsRemaining = Math.max(0, reviveBlinkStepsRemaining - 1);
+	if (reviveBlinkStepsRemaining === 0) {
+		invincibleLoop = false;
+	}
 }
 
 function hasPendingValuePickup() {
@@ -921,6 +1266,14 @@ function buildFloes() {
 		const initialRenderStep = -initialPickupLookahead * stepSpacing;
 		renderStep = initialRenderStep;
 		targetStep = initialRenderStep;
+		lastPickupRenderStep = initialRenderStep;
+		lastPickupLane = 0;
+		lastApproachLaneSpeedAbs = 0;
+		lastLaneWriteSource = 'reset';
+		lastLaneWriteFrom = 0;
+		lastLaneWriteTo = 0;
+		lastLaneWriteRenderStep = initialRenderStep;
+		lastPenguinJumpSample = null;
 		animationStatus = 'idle';
 		// Keep token IDs monotonic across rounds so keyed pickup/glyph rendering never reuses stale nodes.
 		slipSlide = 0;
@@ -929,6 +1282,8 @@ function buildFloes() {
 		slipAnimationStarted = false;
 		slipAnimationToken += 1;
 		slipOriginX = null;
+		slipHandoffOriginX = null;
+		slipProxyImmediateActive = false;
 		driftActive = false;
 		slipStepIndex = null;
 		slipEndRenderStep = null;
@@ -939,10 +1294,24 @@ function buildFloes() {
 		endRoundTriggered = false;
 		lastTurnSoundLane = 0;
 		lastTurnSoundAt = 0;
-		
 		hitPopup = null;
 		vestAnim = null;
 		vestAnimKey = 0;
+		cancelReviveRecovery();
+		cancelReviveFlash();
+		cancelVestLoseFallback();
+		invincibleLoop = false;
+		reviveBlinkStepsRemaining = 0;
+		reviveRingVisible = false;
+		vestReviveActive = false;
+		revivePauseActive = false;
+		loseStopFreezeActive = false;
+		vestLoseEventSeen = false;
+		vestLossMotionComplete = false;
+		reviveStartGhostStepIndex = null;
+		reviveStartGhostPassed = true;
+		vestLossMotionActive = false;
+		vestLossMotionToken += 1;
 		cancelLiferingVisualClear();
 		hasLifering = false;
 		liferingVisualActive = false;
@@ -952,22 +1321,37 @@ function buildFloes() {
 		liferingPickedStep = null;
 		lastVestGainStep = null;
 		lastVestLoseStep = null;
+		pendingVestLossStep = null;
 		lastVestAnimAtMs = 0;
 		pendingVestPopSteps = [];
 		pendingVestPopCursor = 0;
+		reviveStartGhostStepIndex = null;
+		reviveStartGhostPassed = true;
+		reviveRecoveryTimer = null;
+		reviveFlashTimer = null;
 		stopRunEarly = false;
 		freezeMovement = false;
 		laneFreeze = false;
 		penguinAnim = 'idle';
 		penguinSkin = 'base';
 		autoScrollActive = false;
-		setPenguinLane(0);
+		setPenguinLane(0, 'reset');
 		setPenguinTargetLane(0);
+		laneTravelPlanTokenId = null;
+		laneTravelPlanOriginSlot = 0;
+		laneTravelPlanTargetSlot = 0;
+		laneTravelPlanStartRenderStep = Number.NaN;
+		laneTravelPlanTriggerRenderStep = Number.NaN;
 		ctrlTurnTilt = 0;
 		ctrlTurnIntentFiltered = 0;
 		pickupSkidScale = 1;
 		penguinOffsetFrac = 0;
 		penguinSkidPhase = Math.random() * Math.PI * 2;
+		slipOriginX = null;
+		slipHandoffOriginX = null;
+		slipSlide = 0;
+		slipDropY = 0;
+		penguinSkidRotation = 0;
 		penguinSkidRotation = 0;
 		slipDropY = 0;
 		lockCenterStrict = false;
@@ -994,6 +1378,11 @@ function buildFloes() {
 	function markRoundEnded() {
 		animationStatus = 'done';
 		lastRoundEndAt = performance.now();
+		invincibleLoop = false;
+		reviveBlinkStepsRemaining = 0;
+		reviveRingVisible = false;
+		reviveStartGhostStepIndex = null;
+		reviveStartGhostPassed = true;
 		stopSlideLoop();
 	}
 
@@ -1116,22 +1505,94 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 		});
 	}
 
+function nextRespawnPendingHit() {
+	const upcoming = buildUpcomingTokens<Token>({ tokens, pickupTriggerAt });
+	return resolvePendingTargetableHit(upcoming);
+}
+
+function nextRespawnPickupLane() {
+	const pendingHit = nextRespawnPendingHit();
+	if (!pendingHit) return null;
+	return targetLaneForToken(pendingHit.t);
+}
+
+function handoffToImmediateBridgeTarget(activatedTokenId: number, afterStepIndex: number) {
+	const nextTarget = nextTargetableHitTokenHelper({
+		tokens,
+		afterStepIndex,
+		activatedTokenId,
+		isTargetableHitToken
+	});
+	if (!nextTarget || nextTarget.extra?.bridgeStep !== true) return false;
+	const nextTargetLane = targetLaneForToken(nextTarget);
+	setLockedTargetToken(nextTarget.id, performance.now(), true, true);
+	centerLockPendingTokenId = null;
+	lockCenterStrict = false;
+	laneTravelPlanTokenId = null;
+	laneTravelPlanOriginSlot = laneToSlotPosition(penguinLane, SLOT_OFFSETS);
+	laneTravelPlanTargetSlot = laneToSlotPosition(nextTargetLane, SLOT_OFFSETS);
+	laneTravelPlanStartRenderStep = Number.NaN;
+	laneTravelPlanTriggerRenderStep = Number.NaN;
+	const handoffDirection = Math.sign(nextTargetLane - penguinLane);
+	if (handoffDirection !== 0) {
+		const preservedSpeedAbs = Math.max(Math.abs(laneVelocity), lastApproachLaneSpeedAbs);
+		if (preservedSpeedAbs >= 0.08) {
+			laneVelocity = handoffDirection * preservedSpeedAbs;
+		}
+	}
+	setPenguinTargetLane(nextTargetLane);
+	return true;
+}
+
+function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: Token; trigger: number }) {
+	pickupCount = 0;
+	lastPickupRenderStep =
+		respawnPendingHit != null
+			? Number(respawnPendingHit.trigger) - stepSpacing * 0.5
+			: renderStep - stepSpacing * 0.5;
+	lastPickupLane = resumeLane;
+	setLockedTargetToken(null, performance.now(), true);
+	centerLockPendingTokenId = null;
+	laneTravelPlanTokenId = null;
+	laneTravelPlanOriginSlot = laneToSlotPosition(resumeLane, SLOT_OFFSETS);
+	laneTravelPlanTargetSlot = laneTravelPlanOriginSlot;
+	laneTravelPlanStartRenderStep = Number.NaN;
+	laneTravelPlanTriggerRenderStep = Number.NaN;
+	lockCenterStrict = false;
+	preStepRoamTargetLane = resumeLane;
+	preStepFreeRoamActive = false;
+	preStepSweepStartRenderStep = renderStep;
+	preStepSweepCompleted = true;
+	preStepHandoffActive = false;
+	preStepHandoffStartRenderStep = Number.NaN;
+	preStepHandoffFromLane = resumeLane;
+	if (respawnPendingHit) {
+		setLockedTargetToken(respawnPendingHit.t.id, performance.now(), true);
+		penguinOffsetFrac = Number(respawnPendingHit.t.extra?.offsetFrac ?? 0);
+	}
+}
+
 	function updateSlidingPenguinTarget(
 		nowMs: number,
 		dt: number,
 		stepPerMs: number,
 		upcoming: Array<{ t: Token; trigger: number }>
 	) {
-		let pendingHit = resolvePendingTargetableHit(upcoming);
-		if (lockedTargetTokenId == null && pendingHit) {
-			setLockedTargetToken(pendingHit.t.id, nowMs, true);
-			pendingHit = resolvePendingTargetableHit(upcoming);
-		}
-		const preStepFreeRoam = shouldUsePreStepFreeRoam(pendingHit);
-		if (!preStepFreeRoam) {
-			setLockedTargetToken(pendingHit ? pendingHit.t.id : null, nowMs, true);
-			pendingHit = resolvePendingTargetableHit(upcoming);
-		}
+	let pendingHit = resolvePendingTargetableHit(upcoming);
+	if (lockedTargetTokenId == null && pendingHit) {
+		setLockedTargetToken(pendingHit.t.id, nowMs, true, pendingHit.t.extra?.bridgeStep === true);
+		pendingHit = resolvePendingTargetableHit(upcoming);
+	}
+	const preStepFreeRoam = shouldUsePreStepFreeRoam(pendingHit);
+	if (!preStepFreeRoam) {
+		setLockedTargetToken(
+			pendingHit ? pendingHit.t.id : null,
+			nowMs,
+			true,
+			pendingHit?.t.extra?.bridgeStep === true
+		);
+		pendingHit = resolvePendingTargetableHit(upcoming);
+	}
 		if (!pendingHit) {
 			setLockedTargetToken(null, nowMs, true);
 			centerLockPendingTokenId = null;
@@ -1139,15 +1600,40 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 		if (!freezeMovement && status === 'sliding') {
 			const targetPlan = planSlidingTargetLane(nowMs, dt, pendingHit, preStepFreeRoam, stepPerMs);
 			setPenguinTargetLane(targetPlan.lane);
+			if (targetPlan.shouldCenterLock && pendingHit) {
+				const directTargetLane = clampPenguinLane(targetLaneForToken(pendingHit.t));
+				const targetSlot = laneToSlotPosition(directTargetLane, SLOT_OFFSETS);
+				if (laneTravelPlanTokenId !== pendingHit.t.id) {
+					laneTravelPlanTokenId = pendingHit.t.id;
+					const seededOriginLane =
+						Number.isFinite(lastPickupLane) ? lastPickupLane : penguinLane;
+					laneTravelPlanOriginSlot = laneToSlotPosition(seededOriginLane, SLOT_OFFSETS);
+					laneTravelPlanStartRenderStep = Number.isFinite(lastPickupRenderStep)
+						? Math.min(renderStep, lastPickupRenderStep)
+						: renderStep;
+					const direction = Math.sign(targetSlot - laneTravelPlanOriginSlot);
+					if (direction !== 0) {
+						penguinOffsetFrac =
+							direction * Math.min(0.16, 0.06 + Math.abs(targetSlot - laneTravelPlanOriginSlot) * 0.02);
+					}
+				}
+				laneTravelPlanTargetSlot = targetSlot;
+				laneTravelPlanTriggerRenderStep = Number(pendingHit.trigger);
+			} else {
+				laneTravelPlanTokenId = null;
+				laneTravelPlanStartRenderStep = Number.NaN;
+				laneTravelPlanTriggerRenderStep = Number.NaN;
+			}
 			if (DISABLE_PENGUIN_SLIDE_MOTION && preStepFreeRoam) {
-				setPenguinLane(targetPlan.lane);
+				setPenguinLane(targetPlan.lane, 'prestep_snap');
 				laneVelocity = 0;
 			}
-			penguinOffsetFrac = 0;
+			penguinOffsetFrac *= Math.exp(-dt * 8);
+			if (Math.abs(penguinOffsetFrac) < 0.002) penguinOffsetFrac = 0;
 			if (!slipTriggered) penguinSkidRotation = 0;
 			lockCenterStrict = targetPlan.shouldCenterLock;
 			maybePlayTurnSound(penguinTargetLane);
-			smoothPenguinLaneTowardTarget(dt);
+			smoothPenguinLaneTowardTarget(dt, stepPerMs, pendingHit);
 			return;
 		}
 		lockCenterStrict = false;
@@ -1242,7 +1728,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 				markRoundEnded();
 				return;
 			}
-			if (!autoScrollActive && animationStatus === 'running') {
+			if (!revivePauseActive && !autoScrollActive && animationStatus === 'running') {
 				const slideInElapsed = performance.now() - slideInStart;
 				if (penguinAnim !== 'slide_in' || slideInElapsed > 700) {
 					startAutoScroll();
@@ -1259,6 +1745,11 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 			}
 			const dtMs = Math.min(40, Math.max(0, now - lastScrollNow));
 			lastScrollNow = now;
+			if (revivePauseActive) {
+				slideTimeScale = 0;
+				requestAnimationFrame(smoothTick);
+				return;
+			}
 			const stepSpeed = baseStepPerMs;
 			slideTimeScale = PENGUIN_SLIDE_TIME_SCALE;
 				scrollSteps += (stepSpeed / stepSpacing) * dtMs;
@@ -1304,7 +1795,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					!slipTriggered &&
 					!freezeMovement &&
 					!goalPriorityActive &&
-					tokenShouldSlipOnPreviousStep(token) &&
+					(tokenShouldSlipOnPreviousStep(token) || token.extra?.proxySlip === true) &&
 					renderStep >= slipTriggerRenderStepForToken(token);
 				if (forcePreviousStepCoinStarSlip) {
 					const slipSourceLane = isNothingTokenType(token.type) ? penguinLane : token.lane;
@@ -1313,7 +1804,18 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						slipSourceLane,
 						Number(token.extra?.offsetFrac ?? 0),
 						true,
-						true
+						true,
+						'force_previous_step_slip',
+						{
+							currentStep,
+							tokenId: token.id,
+							tokenStepIndex: Number(token.stepIndex),
+							tokenType: String(token.type ?? ''),
+							tokenLane: Number(token.lane),
+							tokenProxySlip: token.extra?.proxySlip === true,
+							tokenSinking: token.extra?.sinking === true || token.extra?.fall === true,
+							triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+						}
 					);
 					return token;
 				}
@@ -1324,7 +1826,17 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						slipSourceLane,
 						Number(token.extra?.offsetFrac ?? 0),
 						true,
-						true
+						true,
+						'pre_slip_before_pickup',
+						{
+							currentStep,
+							tokenId: token.id,
+							tokenStepIndex: Number(token.stepIndex),
+							tokenType: String(token.type ?? ''),
+							tokenLane: Number(token.lane),
+							tokenSinking: token.extra?.sinking === true || token.extra?.fall === true,
+							triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+						}
 					);
 					return token;
 				}
@@ -1386,10 +1898,19 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						laneAlignedForPickup &&
 						tokenMatchesLandedStep(token) &&
 						(meetsPenguinBand || triggerReached);
-					const canActivateThisToken = isNothingToken
+					const forceCollectProtectedSinkingHit = shouldForceCollectProtectedSinkingHit({
+						token,
+						hasVestProtection,
+						triggerReached,
+						band
+					});
+					const canActivateThisToken = token.extra?.proxySlip === true
+						? false
+						: isNothingToken
 						? autoCollectNothing || Boolean(band?.passedBand)
 						: (meetsPenguinBand && laneAlignedForPickup) ||
 							forceActivateOnTargetLane ||
+							forceCollectProtectedSinkingHit ||
 							forceResolveStaleHit ||
 							forceActivateTerminalBanana;
 					if (
@@ -1416,7 +1937,17 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 									slipSourceLane,
 									Number(token.extra?.offsetFrac ?? 0),
 									true,
-									true
+									true,
+									'should_slip_before_pickup',
+									{
+										currentStep,
+										tokenId: token.id,
+										tokenStepIndex: Number(token.stepIndex),
+										tokenType: String(token.type ?? ''),
+										tokenLane: Number(token.lane),
+										tokenSinking: true,
+										triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+									}
 								);
 								return token;
 							}
@@ -1439,8 +1970,16 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					}
 						if (tokenAdvancesPathProgress(token)) {
 							pickupCount += 1;
-							lastPickupRenderStep = renderStep;
+							lastPickupRenderStep = pickupTriggerAt(
+								stepIndex,
+								String(token.type ?? ''),
+								Number(token.extra?.spawnDelay ?? 0)
+							);
 							lastPickupLane = targetLaneForToken(token);
+							consumeRespawnBlinkStep(token);
+							if (!handoffToImmediateBridgeTarget(token.id, stepIndex)) {
+								resetPickupTargetingState();
+							}
 						}
 						penguinOffsetFrac = Number(token.extra?.offsetFrac ?? 0);
 						let effect = token.type;
@@ -1468,11 +2007,19 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 									slipSourceLane,
 									Number(token.extra?.offsetFrac ?? 0),
 									true,
-									true
+									true,
+									'terminal_slip_at_hit',
+									{
+										currentStep,
+										tokenId: token.id,
+										tokenStepIndex: Number(token.stepIndex),
+										tokenType: String(token.type ?? ''),
+										tokenLane: Number(token.lane)
+									}
 								);
 						} else if (slipAfterPickup) {
 							if (token.type === 'banana') {
-								wobbleBoost = Math.min(1.4, wobbleBoost + 0.55);
+								wobbleBoost = Math.min(0.8, wobbleBoost + 0.22);
 								}
 						const slipSourceLane = isNothingTokenType(token.type) ? penguinLane : token.lane;
 						beginSlip(
@@ -1480,14 +2027,22 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 							slipSourceLane,
 							Number(token.extra?.offsetFrac ?? 0),
 							true,
-							true
+							true,
+							'slip_after_pickup',
+							{
+								currentStep,
+								tokenId: token.id,
+								tokenStepIndex: Number(token.stepIndex),
+								tokenType: String(token.type ?? ''),
+								tokenLane: Number(token.lane),
+								tokenSinking: true
+							}
 						);
 						} else if (sinkingSlip && hasVestProtection) {
-							clearLiferingState(stepIndex, true, destroyDelayForTokenType(token.type));
+							clearLiferingState(stepIndex, true, vestLossVisualDelayMs(token.type));
 						}
 						if (token.type === 'lifering') {
 							hasLifering = true;
-							penguinSkin = 'vest';
 							triggerVestGain(stepIndex);
 						}
 							if (token.type === 'goal') {
@@ -1544,8 +2099,9 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 			lastNow = now;
 			updateSlidingPenguinTarget(nowMs, dt, stepPerMs, upcoming);
 			wobbleTime += dt;
-			wobbleBoost = Math.max(0, wobbleBoost - dt * 0.7);
+			wobbleBoost = Math.max(0, wobbleBoost - dt * 0.24);
 			updateCtrlTurnTilt(dt, false);
+			samplePenguinJump(now);
 			const summarySlipTrigger = buildSummarySlipTrigger({
 				summaryEvent,
 				slipTriggered,
@@ -1562,11 +2118,19 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					summarySlipTrigger.slipSourceLane,
 					summarySlipTrigger.slipOffset,
 					true,
-					true
+					true,
+					'summary_slip_trigger',
+					{
+						currentStep,
+						summarySteps: Number(summaryEvent?.steps ?? Number.NaN),
+						summaryTriggerAtStep: Number(summaryEvent?.triggerAtStep ?? Number.NaN)
+					}
 				);
 				return;
 			}
 			if (runProgress < 1) {
+				requestAnimationFrame(smoothTick);
+			} else if (slipTriggered && !loseStopFreezeActive) {
 				requestAnimationFrame(smoothTick);
 			} else {
 				const summaryCompletion = buildSummaryCompletionState({
@@ -1593,6 +2157,28 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						displayValue = summaryCompletion.finalValue;
 						updateRoundWinDisplay(summaryCompletion.finalValue);
 					}
+					if (summaryCompletion.shouldTriggerSlipAnimation) {
+						if (summaryCompletion.shouldClearLifering) {
+							clearLiferingState(summaryCompletion.clearLiferingStep, true);
+						}
+						const fallbackSlipStep = Number.isFinite(Number(summaryCompletion.nextSlipStepIndex))
+							? Number(summaryCompletion.nextSlipStepIndex)
+							: Math.max(0, Math.floor(renderStep / stepSpacing));
+						beginSlip(
+							Math.floor(fallbackSlipStep),
+							penguinLane,
+							Number(penguinOffsetFrac ?? 0),
+							true,
+							true,
+							'summary_completion_slip',
+							{
+								currentStep,
+								summarySteps: Number(summaryEvent?.steps ?? Number.NaN),
+								summaryTriggerAtStep: Number(summaryEvent?.triggerAtStep ?? Number.NaN)
+							}
+						);
+						return;
+					}
 					markRoundEnded();
 					if (summaryCompletion.shouldStopRunEarly) stopRunEarly = true;
 					if (summaryCompletion.shouldFreezeMovement && !summaryCompletion.shouldTriggerSlipAnimation) {
@@ -1611,19 +2197,6 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					slipStepIndex = summaryCompletion.nextSlipStepIndex;
 					if (summaryCompletion.shouldClearLifering) {
 						clearLiferingState(summaryCompletion.clearLiferingStep, true);
-					}
-					if (summaryCompletion.shouldTriggerSlipAnimation) {
-						const fallbackSlipStep = Number.isFinite(Number(summaryCompletion.nextSlipStepIndex))
-							? Number(summaryCompletion.nextSlipStepIndex)
-							: Math.max(0, Math.floor(renderStep / stepSpacing));
-						beginSlip(
-							Math.floor(fallbackSlipStep),
-							penguinLane,
-							Number(penguinOffsetFrac ?? 0),
-							true,
-							true
-						);
-						return;
 					}
 				}
 			}
@@ -1706,7 +2279,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 			markRoundEnded();
 			return;
 		}
-		if (!autoScrollActive && animationStatus === 'running') {
+		if (!revivePauseActive && !autoScrollActive && animationStatus === 'running') {
 			const slideInElapsed = performance.now() - slideInStart;
 			if (penguinAnim !== 'slide_in' || slideInElapsed > 700) {
 				startAutoScroll();
@@ -1723,6 +2296,11 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 		}
 		const dtMs = Math.min(40, Math.max(0, now - lastScrollNow));
 		lastScrollNow = now;
+		if (revivePauseActive) {
+			slideTimeScale = 0;
+			requestAnimationFrame(smoothTick);
+			return;
+		}
 		const stepSpeed = baseStepPerMs;
 		slideTimeScale = PENGUIN_SLIDE_TIME_SCALE;
 		scrollSteps += (stepSpeed / stepSpacing) * dtMs;
@@ -1766,7 +2344,7 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						!slipTriggered &&
 						!freezeMovement &&
 						!goalPriorityActive &&
-						tokenShouldSlipOnPreviousStep(token) &&
+						(tokenShouldSlipOnPreviousStep(token) || token.extra?.proxySlip === true) &&
 						renderStep >= slipTriggerRenderStepForToken(token);
 					if (forcePreviousStepCoinStarSlip) {
 						const slipSourceLane = isNothingTokenType(token.type) ? penguinLane : token.lane;
@@ -1775,7 +2353,18 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 							slipSourceLane,
 							Number(token.extra?.offsetFrac ?? 0),
 							true,
-							true
+							true,
+							'force_previous_step_slip',
+							{
+								currentStep,
+								tokenId: token.id,
+								tokenStepIndex: Number(token.stepIndex),
+								tokenType: String(token.type ?? ''),
+								tokenLane: Number(token.lane),
+								tokenProxySlip: token.extra?.proxySlip === true,
+								tokenSinking: token.extra?.sinking === true || token.extra?.fall === true,
+								triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+							}
 						);
 						return token;
 					}
@@ -1786,7 +2375,17 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 							slipSourceLane,
 							Number(token.extra?.offsetFrac ?? 0),
 							true,
-							true
+							true,
+							'pre_slip_before_pickup',
+							{
+								currentStep,
+								tokenId: token.id,
+								tokenStepIndex: Number(token.stepIndex),
+								tokenType: String(token.type ?? ''),
+								tokenLane: Number(token.lane),
+								tokenSinking: token.extra?.sinking === true || token.extra?.fall === true,
+								triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+							}
 						);
 						return token;
 					}
@@ -1848,10 +2447,19 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 							laneAlignedForPickup &&
 							tokenMatchesLandedStep(token) &&
 							(meetsPenguinBand || triggerReached);
-						const canActivateThisToken = isNothingToken
+						const forceCollectProtectedSinkingHit = shouldForceCollectProtectedSinkingHit({
+							token,
+							hasVestProtection,
+							triggerReached,
+							band
+						});
+						const canActivateThisToken = token.extra?.proxySlip === true
+							? false
+							: isNothingToken
 							? autoCollectNothing || Boolean(band?.passedBand)
 							: (meetsPenguinBand && laneAlignedForPickup) ||
 								forceActivateOnTargetLane ||
+								forceCollectProtectedSinkingHit ||
 								forceResolveStaleHit ||
 								forceActivateTerminalBanana;
 						if (
@@ -1878,7 +2486,17 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 								slipSourceLane,
 								Number(token.extra?.offsetFrac ?? 0),
 								true,
-								true
+								true,
+								'should_slip_before_pickup',
+								{
+									currentStep,
+									tokenId: token.id,
+									tokenStepIndex: Number(token.stepIndex),
+									tokenType: String(token.type ?? ''),
+									tokenLane: Number(token.lane),
+									tokenSinking: true,
+									triggerRenderStep: Number(slipTriggerRenderStepForToken(token).toFixed(3))
+								}
 							);
 							return token;
 						}
@@ -1901,8 +2519,16 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					}
 						if (tokenAdvancesPathProgress(token)) {
 							pickupCount += 1;
-							lastPickupRenderStep = renderStep;
+							lastPickupRenderStep = pickupTriggerAt(
+								stepIndex,
+								String(token.type ?? ''),
+								Number(token.extra?.spawnDelay ?? 0)
+							);
 							lastPickupLane = targetLaneForToken(token);
+							consumeRespawnBlinkStep(token);
+							if (!handoffToImmediateBridgeTarget(token.id, stepIndex)) {
+								resetPickupTargetingState();
+							}
 						}
 						penguinOffsetFrac = Number(token.extra?.offsetFrac ?? 0);
 					let effect = token.type;
@@ -1925,14 +2551,22 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 							slipSourceLane,
 							Number(token.extra?.offsetFrac ?? 0),
 							true,
-							true
+							true,
+							'terminal_slip_at_hit',
+							{
+								currentStep,
+								tokenId: token.id,
+								tokenStepIndex: Number(token.stepIndex),
+								tokenType: String(token.type ?? ''),
+								tokenLane: Number(token.lane)
+							}
 						);
 					} else if (sinkingSlip && !goalPriorityActive && isNearEdgeForSlip(band, currentPenguinPose)) {
 							if (token.type === 'banana') {
-								wobbleBoost = Math.min(1.4, wobbleBoost + 0.55);
+									wobbleBoost = Math.min(0.8, wobbleBoost + 0.22);
 								}
 						if (hasVestProtection) {
-							clearLiferingState(stepIndex, true, destroyDelayForTokenType(token.type));
+							clearLiferingState(stepIndex, true, vestLossVisualDelayMs(token.type));
 						} else {
 							const slipSourceLane = isNothingTokenType(token.type) ? penguinLane : token.lane;
 							beginSlip(
@@ -1940,7 +2574,16 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 								slipSourceLane,
 								Number(token.extra?.offsetFrac ?? 0),
 								true,
-								true
+								true,
+								'slip_after_pickup',
+								{
+									currentStep,
+									tokenId: token.id,
+									tokenStepIndex: Number(token.stepIndex),
+									tokenType: String(token.type ?? ''),
+									tokenLane: Number(token.lane),
+									tokenSinking: true
+								}
 							);
 						}
 					}
@@ -1968,12 +2611,10 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 						}
 					if (token.type === 'lifering') {
 						hasLifering = true;
-						penguinSkin = 'vest';
 						triggerVestGain(stepIndex);
-						
 					}
 					if (bananaSaved) {
-						clearLiferingState(stepIndex, true, destroyDelayForTokenType(token.type));
+						clearLiferingState(stepIndex, true, vestLossVisualDelayMs(token.type));
 					}
 					if (token.type === 'coin') {
 						const cv = token.extra?.coinValue ?? token.extra?.value ?? 0;
@@ -2023,8 +2664,9 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 		lastNow = now;
 		updateSlidingPenguinTarget(nowMs, dt, stepPerMs, upcoming);
 		wobbleTime += dt;
-		wobbleBoost = Math.max(0, wobbleBoost - dt * 0.7);
+		wobbleBoost = Math.max(0, wobbleBoost - dt * 0.24);
 		updateCtrlTurnTilt(dt, false);
+		samplePenguinJump(now);
 		const summarySlipTrigger = buildSummarySlipTrigger({
 			summaryEvent,
 			slipTriggered,
@@ -2041,11 +2683,19 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 				summarySlipTrigger.slipSourceLane,
 				summarySlipTrigger.slipOffset,
 				true,
-				true
+				true,
+				'summary_slip_trigger',
+				{
+					currentStep,
+					summarySteps: Number(summaryEvent?.steps ?? Number.NaN),
+					summaryTriggerAtStep: Number(summaryEvent?.triggerAtStep ?? Number.NaN)
+				}
 			);
 			return;
 		}
 		if (runProgress < 1) {
+			requestAnimationFrame(smoothTick);
+		} else if (slipTriggered && !loseStopFreezeActive) {
 			requestAnimationFrame(smoothTick);
 		} else {
 			const summaryCompletion = buildSummaryCompletionState({
@@ -2072,6 +2722,28 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 					displayValue = summaryCompletion.finalValue;
 					updateRoundWinDisplay(summaryCompletion.finalValue);
 				}
+				if (summaryCompletion.shouldTriggerSlipAnimation) {
+					if (summaryCompletion.shouldClearLifering) {
+						clearLiferingState(summaryCompletion.clearLiferingStep, true);
+					}
+					const fallbackSlipStep = Number.isFinite(Number(summaryCompletion.nextSlipStepIndex))
+						? Number(summaryCompletion.nextSlipStepIndex)
+						: Math.max(0, Math.floor(renderStep / stepSpacing));
+					beginSlip(
+						Math.floor(fallbackSlipStep),
+						penguinLane,
+						Number(penguinOffsetFrac ?? 0),
+						true,
+						true,
+						'summary_completion_slip',
+						{
+							currentStep,
+							summarySteps: Number(summaryEvent?.steps ?? Number.NaN),
+							summaryTriggerAtStep: Number(summaryEvent?.triggerAtStep ?? Number.NaN)
+						}
+					);
+					return;
+				}
 				markRoundEnded();
 				if (summaryCompletion.shouldStopRunEarly) stopRunEarly = true;
 				if (summaryCompletion.shouldFreezeMovement && !summaryCompletion.shouldTriggerSlipAnimation) {
@@ -2090,19 +2762,6 @@ function targetLaneForToken(token: { lane: number; spawnLane?: number; extra?: R
 				slipStepIndex = summaryCompletion.nextSlipStepIndex;
 				if (summaryCompletion.shouldClearLifering) {
 					clearLiferingState(summaryCompletion.clearLiferingStep, true);
-				}
-				if (summaryCompletion.shouldTriggerSlipAnimation) {
-					const fallbackSlipStep = Number.isFinite(Number(summaryCompletion.nextSlipStepIndex))
-						? Number(summaryCompletion.nextSlipStepIndex)
-						: Math.max(0, Math.floor(renderStep / stepSpacing));
-					beginSlip(
-						Math.floor(fallbackSlipStep),
-						penguinLane,
-						Number(penguinOffsetFrac ?? 0),
-						true,
-						true
-					);
-					return;
 				}
 			}
 		}
@@ -2226,8 +2885,12 @@ async function authenticate() {
 
 
 
-	const lookaheadSteps = 8.9;
+const lookaheadSteps = 8.9;
 const stepSpacing = 420;
+const SLOT_OFFSETS = Object.keys(SLOT_TO_OFFSET)
+	.map((key) => Number(key))
+	.sort((a, b) => a - b)
+	.map((key) => SLOT_TO_OFFSET[key]);
 	const penguinLaneScale = 1;
 
 	function tokenRender(stepIndex: number) {
@@ -2260,11 +2923,38 @@ const stepSpacing = 420;
 		return Math.max(110, viewport.w * 0.12) * (0.7 + depth * 0.6) * 0.63 * mobileFactor * 1.25 * 1.25 * 0.85 * 1.3 * 0.8 * portraitBoost * mobilePortraitBoost;
 	}
 
+	function slipDriftAnchorXForLane(rawLane: number, offsetFracValue = 0) {
+		const depth = penguinDepth();
+		const lane = rawLane * penguinLaneScale;
+		const pos = lanePosition(depth, lane);
+		const size = penguinSizeAtDepth(depth);
+		const maxOffset = Math.min(0.35, Math.max(0, 1 - Math.abs(rawLane)));
+		const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, offsetFracValue || 0));
+		const offsetX = clampedOffset * pos.width;
+		const portraitDown = renderSize.h > renderSize.w ? viewport.h * -0.08 : 0;
+		const isMobilePortrait = renderSize.h > renderSize.w && renderSize.w <= 500;
+		const mobilePortraitUp = isMobilePortrait ? viewport.h * 0.1 : 0;
+		const landscapeUp = renderSize.w > renderSize.h && renderSize.h <= 500 ? viewport.h * 0.06 : 0;
+		const basePenguinY = pos.y + size * 0.25 - viewport.h * 0.25 + portraitDown - landscapeUp;
+		const penguinY = basePenguinY + viewport.h * 0.055 - mobilePortraitUp;
+		const clampDepth = depthForPickupPathY(penguinY);
+		const clampPos = lanePosition(clampDepth, 0);
+		const offsetLimit = clampPos.width * 0.04;
+		const offsetXLimited = Math.max(-offsetLimit, Math.min(offsetLimit, offsetX));
+		const laneX = clampPos.x + lane * clampPos.width * laneSpread(clampDepth);
+		const clampXs = clampLaneXs(clampDepth);
+		return Math.max(clampXs.minX, Math.min(clampXs.maxX, laneX + offsetXLimited));
+	}
+
 	function penguinPose() {
+		const debug = computePenguinPoseDebug();
+		return { x: debug.x, y: debug.y, size: debug.size, depth: debug.depth };
+	}
+
+	function computePenguinPoseDebug() {
 		const depth = penguinDepth();
 		const lane = (slipAnimationStarted ? penguinLane : clampPenguinLane(penguinLane)) * penguinLaneScale;
 		const pos = lanePosition(depth, lane);
-		const mobileFactor = window.innerWidth < 600 ? 0.6 : 1;
 		const size = penguinSizeAtDepth(depth);
 		const maxOffset = Math.min(0.35, Math.max(0, 1 - Math.abs(penguinLane)));
 		const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, penguinOffsetFrac || 0));
@@ -2285,9 +2975,8 @@ const stepSpacing = 420;
 		const clampDepth = depthForPickupPathY(penguinY);
 		const clampPos = lanePosition(clampDepth, 0);
 		const followLanePrecisely =
-			(status === 'sliding' || status === 'goal') &&
-			!slipAnimationStarted &&
-			!slipTriggered;
+			((status === 'sliding' || status === 'goal') && !slipAnimationStarted && !slipTriggered) ||
+			(status === 'slip' && !slipAnimationStarted);
 		const clampXs = clampLaneXs(clampDepth);
 		const minClamp = clampXs.minX;
 		const maxClamp = clampXs.maxX;
@@ -2300,17 +2989,18 @@ const stepSpacing = 420;
 		const laneX = followLanePrecisely
 			? pickupLanePosition(clampDepth, lane).x
 			: clampPos.x + lane * clampPos.width * laneSpread(clampDepth);
+		const externalSlipMotionActive = slipAnimationStarted || vestLossMotionActive;
 		const wobble = wobbleSignal();
 		const laneNorm = Math.min(1, Math.abs(penguinLane) / Math.max(0.01, PENGUIN_LANE_RANGE));
 		const sideLaneFactor = Math.max(0.28, 1.5 - laneNorm * 1.05 - laneNorm * laneNorm * 0.35 + wobbleRisk * 0.24);
 		const wobbleSidePx =
-			!slipAnimationStarted && !followLanePrecisely
+			!externalSlipMotionActive && !followLanePrecisely
 				? wobble.wave * wobble.amp * clampPos.width * 0.0062 * sideLaneFactor * (lockCenterStrict ? 0.35 : 1)
 				: 0;
 		const turnIntent = (penguinTargetLane - penguinLane) + laneVelocity * 0.34;
 		const turnDirection = Math.sign(turnIntent);
 		const turnDriftPx =
-			!slipAnimationStarted && !followLanePrecisely
+			!externalSlipMotionActive && !followLanePrecisely
 				? turnDirection *
 					Math.min(clampPos.width * 0.055, Math.abs(turnIntent) * clampPos.width * 0.085) *
 					(lockCenterStrict ? 0.55 : 1)
@@ -2318,14 +3008,28 @@ const stepSpacing = 420;
 		const baseXLimited = laneX + offsetXLimited;
 		clampedX = Math.max(minClamp, Math.min(maxClamp, baseXLimited));
 		const x =
-			slipAnimationStarted && slipOriginX != null
+			externalSlipMotionActive && slipOriginX != null
 				? slipOriginX + slipSlide
-				: slipTriggered
+				: slipTriggered && !driftActive
 					? clampedX + slipSlide
 					: clampedX + wobbleSidePx + turnDriftPx;
-	const y = penguinY + slipDropY;
-	return { x, y, size, depth };
-}
+		const y = penguinY + slipDropY;
+		return {
+			x,
+			y,
+			size,
+			depth,
+			lane,
+			offsetX,
+			offsetXLimited,
+			laneX,
+			clampedX,
+			wobbleSidePx,
+			turnDriftPx,
+			followLanePrecisely,
+			externalSlipMotionActive
+		};
+	}
 
 	function startAutoScroll() {
 		autoScrollActive = true;
@@ -2420,7 +3124,7 @@ const stepSpacing = 420;
 		}
 	}
 
-	function maybePlayTurnSound(nextTargetLane: number) {
+function maybePlayTurnSound(nextTargetLane: number) {
 		if (!soundEnabled || status !== 'sliding') return;
 		const steerDelta = nextTargetLane - penguinLane;
 		const visibleTurn = Math.abs(laneVelocity) >= 0.288 || Math.abs(steerDelta) >= 0.576;
@@ -2440,48 +3144,340 @@ const stepSpacing = 420;
 		playOneShot('penguin_turn');
 	}
 
+	function freezeForLoseStopEvent() {
+		if (loseStopFreezeActive) return;
+		const stopStep = renderStep;
+		loseStopFreezeActive = true;
+		stopRunEarly = true;
+		freezeMovement = true;
+		autoScrollActive = false;
+		targetStep = renderStep;
+		animationActive = false;
+		slipEndRenderStep = stopStep;
+		runEndRenderStep = stopStep;
+		markRoundEnded();
+	}
+
 	function handlePenguinEvent(name: string) {
 		if (name === 'start') {
 			startAutoScroll();
 			return;
 		}
 		if (name === 'stop') {
+			if (status === 'slip' && slipTriggered) {
+				freezeForLoseStopEvent();
+				return;
+			}
 			autoScrollActive = false;
 			return;
 		}
-		if (name === 'vest_gain') {
-			penguinSkin = 'vest';
+	if (name === 'vest_gain') {
+		if (revivePauseActive || penguinAnim === 'slide_in_revive') {
 			return;
 		}
+		vestAnim = null;
+		penguinSkin = 'vest';
+		invincibleLoop = false;
+		return;
+	}
 		if (name === 'vest_lose') {
-			penguinSkin = 'base';
+			vestLoseEventSeen = true;
+			tryBeginVestReviveTransition();
 			return;
 		}
 	}
 
-	function triggerVestGain(stepIndex: number | null = null) {
-		const normalizedStep = Number.isFinite(Number(stepIndex)) ? Math.floor(Number(stepIndex)) : null;
-		const now = performance.now();
-		if (normalizedStep != null && normalizedStep === lastVestGainStep) return false;
-		if (normalizedStep == null && now - lastVestAnimAtMs < 120) return false;
-		cancelLiferingVisualClear();
-		liferingVisualActive = true;
-		lastVestGainStep = normalizedStep;
+function triggerVestGain(stepIndex: number | null = null) {
+	const normalizedStep = Number.isFinite(Number(stepIndex)) ? Math.floor(Number(stepIndex)) : null;
+	const now = performance.now();
+	if (normalizedStep != null && normalizedStep === lastVestGainStep) return false;
+	if (normalizedStep == null && now - lastVestAnimAtMs < 120) return false;
+	cancelLiferingVisualClear();
+	liferingVisualActive = true;
+	pendingVestLossStep = null;
+	lastVestGainStep = normalizedStep;
 		lastVestAnimAtMs = now;
 		vestAnim = 'gain';
 		vestAnimKey += 1;
+		vestReviveActive = false;
+		invincibleLoop = false;
 		return true;
 	}
 
-	function triggerVestLose(stepIndex: number | null = null) {
-		const normalizedStep = Number.isFinite(Number(stepIndex)) ? Math.floor(Number(stepIndex)) : null;
-		const now = performance.now();
-		if (normalizedStep != null && normalizedStep === lastVestLoseStep) return false;
-		if (normalizedStep == null && now - lastVestAnimAtMs < 120) return false;
-		lastVestLoseStep = normalizedStep;
+	function cancelReviveRecovery() {
+		if (!reviveRecoveryTimer) return;
+		clearTimeout(reviveRecoveryTimer);
+		reviveRecoveryTimer = null;
+	}
+
+	function cancelReviveFlash() {
+		if (!reviveFlashTimer) return;
+		clearTimeout(reviveFlashTimer);
+		reviveFlashTimer = null;
+	}
+
+	function clearReviveVestVisual() {
+		reviveRingVisible = false;
+		vestReviveActive = false;
+		liferingVisualActive = false;
+		penguinSkin = 'base';
+	}
+
+	function beginPostReviveHold() {
+		if (penguinAnim === 'slide_in_revive') {
+			penguinAnim = status === 'goal' ? 'win' : status === 'slip' ? penguinAnim : 'slide_idle';
+		}
+		invincibleLoop = true;
+	}
+
+	function cancelVestLoseFallback() {
+		if (!vestLoseFallbackTimer) return;
+		clearTimeout(vestLoseFallbackTimer);
+		vestLoseFallbackTimer = null;
+	}
+
+	function tryBeginVestReviveTransition() {
+		if (!vestLoseEventSeen || !vestLossMotionComplete || !reviveStartGhostPassed) return;
+		beginVestReviveTransition();
+	}
+
+function beginVestReviveTransition() {
+	cancelVestLoseFallback();
+	pendingVestLossStep = null;
+	vestLoseEventSeen = false;
+		vestLossMotionComplete = false;
+		reviveStartGhostStepIndex = null;
+		reviveStartGhostPassed = true;
+		vestLossMotionActive = false;
+		vestLossMotionToken += 1;
+		reviveRingVisible = true;
+		vestReviveActive = true;
+		penguinSkin = 'vest';
+		invincibleLoop = true;
+		slipOriginX = null;
+		slipSlide = 0;
+		slipDropY = 0;
+		penguinSkidRotation = 0;
+		if (penguinAnim === 'lose_L_vest' || penguinAnim === 'lose_R_vest') {
+			penguinAnim = 'slide_in_revive';
+			scheduleReviveRecovery();
+		}
+	}
+
+	function scheduleReviveRecovery() {
+		cancelReviveRecovery();
+		cancelReviveFlash();
+		const currentRunId = runId;
+		const reviveDurationMs = durationMsForSteps(currentReviveDurationSteps());
+		const reviveRingDurationMs = Math.min(
+			reviveDurationMs,
+			durationMsForSteps(currentReviveRingDurationSteps())
+		);
+		reviveFlashTimer = setTimeout(() => {
+			reviveFlashTimer = null;
+			if (currentRunId !== runId) return;
+			clearReviveVestVisual();
+		}, reviveRingDurationMs);
+		reviveRecoveryTimer = setTimeout(() => {
+			reviveRecoveryTimer = null;
+			if (currentRunId !== runId) return;
+			cancelReviveFlash();
+			clearReviveVestVisual();
+			beginPostReviveHold();
+			const respawnPendingHit = nextRespawnPendingHit();
+			const respawnLane =
+				respawnPendingHit != null ? targetLaneForToken(respawnPendingHit.t) : nextRespawnPickupLane();
+			if (respawnLane != null) {
+				setPenguinTargetLane(respawnLane);
+				laneVelocity = 0;
+				resetTargetingForRespawn(penguinLane, respawnPendingHit ?? undefined);
+			}
+			if (penguinAnim === 'slide_in_revive') {
+				penguinAnim = status === 'goal' ? 'win' : status === 'slip' ? penguinAnim : 'slide_idle';
+			}
+			revivePauseActive = false;
+			invincibleLoop = true;
+			reviveBlinkStepsRemaining = 8;
+		}, reviveDurationMs);
+	}
+
+	function triggerVestLossMotion() {
+		const startPose = penguinPose();
+		slipOriginX = null;
+		const leftDistance = Math.abs(startPose.x);
+		const rightDistance = Math.abs(viewport.w - startPose.x);
+		const fallbackDir = Math.sign(penguinLane) || Math.sign(penguinTargetLane) || 1;
+		const dir = rightDistance < leftDistance ? 1 : leftDistance < rightDistance ? -1 : fallbackDir >= 0 ? 1 : -1;
+		const currentLane = clampPenguinLane(penguinLane);
+		const outerEdgeLane = dir > 0 ? SLOT_TO_OFFSET[7] : SLOT_TO_OFFSET[0];
+		const edgeAlignDistance = Math.abs(outerEdgeLane - currentLane);
+		const activeRunId = runId;
+		const activeToken = vestLossMotionToken + 1;
+		vestLossMotionToken = activeToken;
+		vestLossMotionActive = true;
+		vestLossMotionComplete = false;
+		const slipSpeedScale = currentVestLossSpeedScale();
+		const startSlipPhase = () => {
+			if (
+				activeRunId !== runId ||
+				activeToken !== vestLossMotionToken ||
+				!(penguinAnim === 'lose_L_vest' || penguinAnim === 'lose_R_vest')
+			) {
+				return;
+			}
+			const slipStartPose = penguinPose();
+			const outwardStartBias = viewport.w * 0.045;
+			const originClampMargin = Math.max(18, slipStartPose.size * 0.2);
+			slipOriginX = Math.max(
+				originClampMargin,
+				Math.min(
+					viewport.w - originClampMargin,
+					slipStartPose.x + dir * outwardStartBias
+				)
+			);
+			slipSlide = 0;
+			slipDropY = 0;
+			const slipDepth = depthForPickupY(slipStartPose.y);
+			const baselineLane = dir > 0 ? 1 : -1;
+			const baselineX = lanePosition(slipDepth, baselineLane).x;
+			const config = computeSlipAnimationConfig({
+				viewportWidth: viewport.w,
+				originX: slipStartPose.x,
+				baselineX,
+				direction: dir > 0 ? 1 : -1,
+				durationMultiplier: SLIP_ANIMATION_DURATION_MULT / slipSpeedScale
+			});
+			const start = performance.now();
+			const animateVestLoss = (now: number) => {
+				if (
+					activeRunId !== runId ||
+					!vestLossMotionActive ||
+					activeToken !== vestLossMotionToken ||
+					!(penguinAnim === 'lose_L_vest' || penguinAnim === 'lose_R_vest')
+				) {
+					return;
+				}
+				const elapsed = now - start;
+				const frame = computeSlipAnimationFrame({
+					elapsed,
+					preDuration: config.preDuration,
+					mainDuration: config.mainDuration,
+					preSlide: config.preSlide,
+					maxSlide: config.maxSlide,
+					direction: dir > 0 ? 1 : -1,
+					viewportHeight: viewport.h
+				});
+				slipSlide = frame.slipSlide;
+				slipDropY = frame.slipDropY;
+				penguinSkidRotation = frame.penguinSkidRotation;
+				if (elapsed < config.duration) {
+					requestAnimationFrame(animateVestLoss);
+				} else {
+					vestLossMotionComplete = true;
+					tryBeginVestReviveTransition();
+				}
+			};
+			requestAnimationFrame(animateVestLoss);
+		};
+		if (edgeAlignDistance <= SLIP_EDGE_ALIGN_MIN_DELTA) {
+			startSlipPhase();
+			return;
+		}
+		const driftSpeedAbs = currentEdgeDriftLaneSpeedAbs(currentLane, clampPenguinLane(outerEdgeLane));
+		const driftStartOffsetFrac = penguinOffsetFrac;
+		const driftToLane = clampPenguinLane(outerEdgeLane);
+		const totalDriftDistance = Math.abs(driftToLane - currentLane);
+		let lastDriftNow = performance.now();
+		const tickVestDrift = (now: number) => {
+			if (
+				activeRunId !== runId ||
+				!vestLossMotionActive ||
+					activeToken !== vestLossMotionToken ||
+					!(penguinAnim === 'lose_L_vest' || penguinAnim === 'lose_R_vest')
+				) {
+					return;
+				}
+			const dtSec = Math.max(
+				1 / 240,
+				Math.min(PENGUIN_MOTION_STEP_DT_MAX, (now - lastDriftNow) / 1000)
+			);
+			lastDriftNow = now;
+			const driftFromLane = clampPenguinLane(penguinLane);
+			const remainingLane = driftToLane - driftFromLane;
+			const direction = Math.sign(remainingLane) || dir;
+			const laneStep = Math.min(Math.abs(remainingLane), driftSpeedAbs * dtSec);
+			const nextLane = driftFromLane + direction * laneStep;
+			const progress =
+				totalDriftDistance > 0
+					? Math.max(0, Math.min(1, 1 - Math.abs(driftToLane - nextLane) / totalDriftDistance))
+					: 1;
+			const nextOffsetFrac = driftStartOffsetFrac * (1 - progress);
+			setPenguinLane(nextLane, 'vest_loss_edge_drift');
+			setPenguinTargetLane(driftToLane);
+			laneVelocity = direction * driftSpeedAbs;
+			slipSlide = 0;
+			slipDropY = -viewport.h * SLIP_EDGE_ALIGN_LIFT_FRAC * progress;
+			penguinSkidRotation = -dir * (2 + 7 * progress);
+			penguinOffsetFrac = nextOffsetFrac;
+			if (Math.abs(driftToLane - nextLane) > 0.0005) {
+				requestAnimationFrame(tickVestDrift);
+				return;
+			}
+			setPenguinLane(driftToLane, 'vest_loss_edge_drift_end');
+			setPenguinTargetLane(driftToLane);
+			penguinOffsetFrac = 0;
+			laneVelocity = 0;
+			slipOriginX = null;
+			penguinSkidRotation = -dir * 9;
+			startSlipPhase();
+		};
+		requestAnimationFrame(tickVestDrift);
+	}
+
+	function currentVestLossAnim() {
+		const laneForDirection = clampPenguinLane(
+			Number.isFinite(Number(penguinTargetLane)) ? penguinTargetLane : penguinLane
+		);
+		return laneForDirection > 0 ? 'lose_R_vest' : 'lose_L_vest';
+	}
+
+function triggerVestLossSequence(stepIndex: number | null = null) {
+	const normalizedStep = Number.isFinite(Number(stepIndex)) ? Math.floor(Number(stepIndex)) : null;
+	const now = performance.now();
+	if (
+		vestLossMotionActive ||
+		vestReviveActive ||
+		reviveRingVisible ||
+		penguinAnim === 'lose_L_vest' ||
+		penguinAnim === 'lose_R_vest' ||
+		penguinAnim === 'slide_in_revive'
+	) {
+		return false;
+	}
+	if (normalizedStep != null && normalizedStep === lastVestLoseStep) return false;
+	if (normalizedStep == null && now - lastVestAnimAtMs < 120) return false;
+	pendingVestLossStep = null;
+	lastVestLoseStep = normalizedStep;
 		lastVestAnimAtMs = now;
-		vestAnim = 'lose';
-		vestAnimKey += 1;
+		vestReviveActive = true;
+		revivePauseActive = false;
+		invincibleLoop = false;
+		reviveBlinkStepsRemaining = 0;
+		vestAnim = null;
+		penguinSkin = 'vest';
+		penguinAnim = currentVestLossAnim();
+		cancelReviveRecovery();
+		cancelVestLoseFallback();
+		vestLoseEventSeen = false;
+		vestLossMotionComplete = false;
+		reviveStartGhostStepIndex = thirdRespawnGhostStepAfter(normalizedStep);
+		reviveStartGhostPassed = hasGhostStepPassedPenguin(reviveStartGhostStepIndex);
+		const respawnSpeedScale = currentRespawnSpeedScale();
+		vestLoseFallbackTimer = setTimeout(() => {
+			vestLoseEventSeen = true;
+			tryBeginVestReviveTransition();
+		}, 520 / respawnSpeedScale);
+		triggerVestLossMotion();
 		return true;
 	}
 
@@ -2491,22 +3487,40 @@ const stepSpacing = 420;
 		liferingVisualClearTimer = null;
 	}
 
-	function clearLiferingState(stepIndex: number | null = null, animateLose = false, visualDelayMs = 0) {
-		const hadLifering = hasLifering || penguinSkin === 'vest';
-		hasLifering = false;
-		liferingPickedStep = null;
-		liferingGainStep = null;
-		liferingForcedOff = false;
-		liferingOverrideStep = null;
-		cancelLiferingVisualClear();
-		const finalizeVisualClear = () => {
-			liferingVisualActive = false;
-			const playLoseAnim = animateLose && hadLifering;
+function clearLiferingState(stepIndex: number | null = null, animateLose = false, visualDelayMs = 0) {
+	const normalizedStep = Number.isFinite(Number(stepIndex)) ? Math.floor(Number(stepIndex)) : null;
+	const hadLifering = hasLifering || penguinSkin === 'vest';
+	hasLifering = false;
+	liferingPickedStep = null;
+	liferingGainStep = null;
+	liferingForcedOff = false;
+	liferingOverrideStep = null;
+	const vestLossAlreadyPending =
+		animateLose &&
+		((normalizedStep != null &&
+			(normalizedStep === pendingVestLossStep || normalizedStep === lastVestLoseStep)) ||
+			vestLossMotionActive ||
+			vestReviveActive ||
+			reviveRingVisible ||
+			penguinAnim === 'lose_L_vest' ||
+			penguinAnim === 'lose_R_vest' ||
+			penguinAnim === 'slide_in_revive');
+	if (vestLossAlreadyPending) {
+		return;
+	}
+	cancelLiferingVisualClear();
+	const finalizeVisualClear = () => {
+		pendingVestLossStep = null;
+		liferingVisualActive = false;
+		const playLoseAnim = animateLose && hadLifering;
 			if (!playLoseAnim) {
+				reviveRingVisible = false;
+				vestReviveActive = false;
+				invincibleLoop = false;
 				penguinSkin = 'base';
 				return;
 			}
-			if (triggerVestLose(stepIndex)) {
+			if (triggerVestLossSequence(stepIndex)) {
 				playOneShot('pickup_banana');
 				const pose = penguinPose();
 				hitPopup = {
@@ -2516,12 +3530,13 @@ const stepSpacing = 420;
 					y: pose.y - Math.max(24, viewport.h * 0.05)
 				};
 			}
-		};
-		if (visualDelayMs > 0 && hadLifering) {
-			liferingVisualActive = true;
-			liferingVisualClearTimer = setTimeout(() => {
-				liferingVisualClearTimer = null;
-				finalizeVisualClear();
+	};
+	if (visualDelayMs > 0 && hadLifering) {
+		liferingVisualActive = true;
+		pendingVestLossStep = normalizedStep;
+		liferingVisualClearTimer = setTimeout(() => {
+			liferingVisualClearTimer = null;
+			finalizeVisualClear();
 			}, Math.max(0, visualDelayMs));
 			return;
 		}
@@ -2533,26 +3548,71 @@ const stepSpacing = 420;
 		lane: number,
 		offsetFrac: number,
 		playFallSound = true,
-		withPreDrift = false
+		withPreDrift = false,
+		source = 'unknown',
+		context: Record<string, unknown> = {}
 	) {
-		if (slipTriggered && (driftActive || slipAnimationStarted)) return;
+		if (slipTriggered && (driftActive || slipAnimationStarted)) {
+			console.log('[penguin-slide][slip-ignored]', {
+				source,
+				stepIndex,
+				renderStep: Number(renderStep.toFixed(3)),
+				status,
+				penguinLane: Number(penguinLane.toFixed(3)),
+				penguinTargetLane: Number(penguinTargetLane.toFixed(3)),
+				laneVelocity: Number(laneVelocity.toFixed(3)),
+				slipTriggered,
+				slipAnimationStarted,
+				driftActive,
+				freezeMovement,
+				stopRunEarly,
+				...context
+			});
+			return;
+		}
+		console.log('[penguin-slide][slip-init]', {
+			source,
+			stepIndex,
+			renderStep: Number(renderStep.toFixed(3)),
+			status,
+			penguinLane: Number(penguinLane.toFixed(3)),
+			penguinTargetLane: Number(penguinTargetLane.toFixed(3)),
+			laneVelocity: Number(laneVelocity.toFixed(3)),
+			offsetFrac: Number(offsetFrac.toFixed(3)),
+			playFallSound,
+			withPreDrift,
+			slipTriggered,
+			slipAnimationStarted,
+			driftActive,
+			freezeMovement,
+			stopRunEarly,
+			...context
+		});
 		if (!slipTriggered) {
 			queueSlipLossPresentation();
 		}
+		const preSlipPose = penguinPose();
 		status = 'slip';
 		penguinAnim = 'slide_idle';
+		cancelReviveRecovery();
+		cancelReviveFlash();
+		cancelVestLoseFallback();
+		invincibleLoop = false;
+		vestReviveActive = false;
+		revivePauseActive = false;
+		vestLoseEventSeen = false;
+		vestLossMotionComplete = false;
 		clearLiferingState(stepIndex, true);
 		laneFreeze = true;
-		ctrlTurnTilt = 0;
-		const currentPose = penguinPose();
+		rememberApproachLaneSpeed(laneVelocity);
+		slipHandoffOriginX = preSlipPose.x;
+		const currentPose = preSlipPose;
 		const leftDistance = Math.abs(currentPose.x);
 		const rightDistance = Math.abs(viewport.w - currentPose.x);
 		const xBasedDirection = rightDistance < leftDistance ? 1 : leftDistance < rightDistance ? -1 : 0;
 		const laneSign = Math.sign(lane) || Math.sign(penguinLane) || 1;
 		const currentLane = clampPenguinLane(penguinLane);
-		setPenguinTargetLane(penguinLane);
 		penguinOffsetFrac = Math.max(-0.04, Math.min(0.04, offsetFrac));
-		laneVelocity = 0;
 		slipDirection = xBasedDirection === 0 ? (laneSign >= 0 ? 1 : -1) : xBasedDirection;
 		liferingPickedStep = null;
 		slipTriggered = true;
@@ -2564,72 +3624,70 @@ const stepSpacing = 420;
 
 		const outerEdgeLane = slipDirection > 0 ? SLOT_TO_OFFSET[7] : SLOT_TO_OFFSET[0];
 		const edgeAlignDistance = Math.abs(outerEdgeLane - currentLane);
-		const shouldAlignToEdge = withPreDrift && edgeAlignDistance > SLIP_EDGE_ALIGN_MIN_DELTA;
-
-		stopRunEarly = true;
-		freezeMovement = true;
-		autoScrollActive = false;
-		targetStep = renderStep;
-		animationActive = false;
+		const proxyImmediateSlip =
+			source === 'force_previous_step_slip' ||
+			source === 'pre_slip_before_pickup' ||
+			context['tokenProxySlip'] === true;
+		slipProxyImmediateActive = proxyImmediateSlip;
+		const shouldAlignToEdge =
+			withPreDrift && !proxyImmediateSlip && edgeAlignDistance > SLIP_EDGE_ALIGN_MIN_DELTA;
+		const driftToLane = clampPenguinLane(outerEdgeLane);
+		setPenguinTargetLane(shouldAlignToEdge ? driftToLane : penguinLane);
 
 		const finalize = (skipPrePhase = false) => {
 			driftActive = false;
-			const stopStep = renderStep;
-			markRoundEnded();
 			if (playFallSound) {
 				playOneShot('penguin_fall');
 			}
-			slipEndRenderStep = stopStep;
-			runEndRenderStep = stopStep;
 			triggerSlipAnimation(skipPrePhase);
 		};
 
 		if (!shouldAlignToEdge) {
-			finalize(false);
+			finalize(proxyImmediateSlip);
 			return;
 		}
 
-		const driftStart = performance.now();
-		const driftToLane = clampPenguinLane(outerEdgeLane);
 		const driftStartOffsetFrac = penguinOffsetFrac;
-		const slipSpeedScale = currentSlipSpeedScale();
-		const centerDistanceRatio = Math.max(
-			0,
-			Math.min(1, edgeAlignDistance / Math.max(0.001, Math.abs(outerEdgeLane)))
-		);
-		const centerSlowMult = 1 + centerDistanceRatio * SLIP_EDGE_ALIGN_CENTER_SLOW_MULT;
-		const driftDurationMs = Math.max(
-			SLIP_EDGE_ALIGN_MIN_DURATION_MS,
-			Math.min(
-				SLIP_EDGE_ALIGN_MAX_DURATION_MS,
-				((edgeAlignDistance / Math.max(0.001, SLIP_EDGE_ALIGN_SPEED)) * 1000) * centerSlowMult
-			)
-		) / slipSpeedScale;
+		const driftSpeedAbs = currentEdgeDriftLaneSpeedAbs(currentLane, driftToLane);
+		const totalDriftDistance = Math.abs(driftToLane - currentLane);
 		const activeRunId = runId;
 		driftActive = true;
+		let lastDriftNow = performance.now();
 		const tickDrift = (now: number) => {
 			if (activeRunId !== runId || !slipTriggered || slipAnimationStarted) {
 				driftActive = false;
 				return;
 			}
-			const t = Math.max(0, Math.min(1, (now - driftStart) / driftDurationMs));
-			const eased = t * t * (3 - 2 * t);
-			const nextLane = currentLane + (driftToLane - currentLane) * eased;
-			setPenguinLane(nextLane);
+			const dtSec = Math.max(
+				1 / 240,
+				Math.min(PENGUIN_MOTION_STEP_DT_MAX, (now - lastDriftNow) / 1000)
+			);
+			lastDriftNow = now;
+			const driftFromLane = clampPenguinLane(penguinLane);
+			const remainingLane = driftToLane - driftFromLane;
+			const direction = Math.sign(remainingLane) || slipDirection;
+			const laneStep = Math.min(Math.abs(remainingLane), driftSpeedAbs * dtSec);
+			const nextLane = driftFromLane + direction * laneStep;
+			const progress =
+				totalDriftDistance > 0
+					? Math.max(0, Math.min(1, 1 - Math.abs(driftToLane - nextLane) / totalDriftDistance))
+					: 1;
+			setPenguinLane(nextLane, 'slip_edge_drift');
 			setPenguinTargetLane(driftToLane);
-			laneVelocity = 0;
-			penguinOffsetFrac = driftStartOffsetFrac * (1 - eased);
-			slipDropY = -viewport.h * SLIP_EDGE_ALIGN_LIFT_FRAC * eased;
-			penguinSkidRotation = -slipDirection * (2 + 7 * eased);
-			if (t < 1) {
+			laneVelocity = direction * driftSpeedAbs;
+			penguinOffsetFrac = driftStartOffsetFrac * (1 - progress);
+			slipDropY = -viewport.h * SLIP_EDGE_ALIGN_LIFT_FRAC * progress;
+			penguinSkidRotation = -slipDirection * (2 + 7 * progress);
+			if (Math.abs(driftToLane - nextLane) > 0.0005) {
 				requestAnimationFrame(tickDrift);
 				return;
 			}
-			setPenguinLane(driftToLane);
+			setPenguinLane(driftToLane, 'slip_edge_drift_end');
 			setPenguinTargetLane(driftToLane);
 			penguinOffsetFrac = 0;
 			laneVelocity = 0;
 			penguinSkidRotation = -slipDirection * 9;
+			slipHandoffOriginX = penguinPose().x;
 			finalize(true);
 		};
 		requestAnimationFrame(tickDrift);
@@ -2638,18 +3696,39 @@ const stepSpacing = 420;
 
 	function triggerSlipAnimation(skipPrePhase = false) {
 		if (slipAnimationStarted) return;
-		driftActive = false;
 		const slipStartPose = penguinPose();
-		const originX = slipStartPose.x;
+		driftActive = false;
+		const dirSign = Math.sign(penguinLane);
+		const dir = dirSign === 0 ? slipDirection : (dirSign > 0 ? 1 : -1);
+		const handoffOriginX = slipHandoffOriginX;
+		const previousRenderedX =
+			lastPenguinJumpSample &&
+			Number.isFinite(lastPenguinJumpSample.x) &&
+			Math.abs(renderStep - lastPenguinJumpSample.renderStep) <= stepSpacing * 0.5
+				? lastPenguinJumpSample.x
+				: null;
+		const preservedOriginX = handoffOriginX ?? previousRenderedX;
+		let originX = preservedOriginX ?? slipStartPose.x;
+		if (slipProxyImmediateActive && preservedOriginX == null) {
+			const slipDepth = depthForPickupY(slipStartPose.y);
+			const centerPickupPos = pickupLanePosition(slipDepth, 0);
+			const centerSideX =
+				centerPickupPos.x +
+				dir * Math.max(centerPickupPos.width * 0.52, viewport.w * 0.045);
+			const biasedCurrentX = originX + dir * Math.min(viewport.w * 0.038, 48);
+			originX =
+				dir > 0
+					? Math.max(biasedCurrentX, centerSideX)
+					: Math.min(biasedCurrentX, centerSideX);
+			originX = Math.max(0, Math.min(viewport.w, originX));
+		}
 		slipOriginX = originX;
+		slipHandoffOriginX = null;
+		slipProxyImmediateActive = false;
 		slipAnimationStarted = true;
 		slipAnimationToken += 1;
 		const activeSlipToken = slipAnimationToken;
 		const activeRunId = runId;
-		stopRunEarly = true;
-		autoScrollActive = false;
-		const dirSign = Math.sign(penguinLane);
-		const dir = dirSign === 0 ? slipDirection : (dirSign > 0 ? 1 : -1);
 		const start = performance.now();
 		const slipSpeedScale = currentSlipSpeedScale();
 		const slipDepth = depthForPickupY(slipStartPose.y);
@@ -2703,6 +3782,7 @@ const stepSpacing = 420;
 				else {
 					flushSlipLossPresentation();
 					penguinSkidRotation = 0;
+					freezeForLoseStopEvent();
 				}
 			};
 		requestAnimationFrame(animateSlip);
@@ -2749,6 +3829,7 @@ function shouldUsePreStepFreeRoam(pendingHit: { trigger: number; t?: { stepIndex
 			stepSpacing,
 			openingFreeRoamSteps: PRE_STEP_OPENING_FREE_ROAM_STEPS,
 			preStepLockLeadSteps: 0.08,
+			preStepFirstLockLeadSteps: PRE_STEP_FIRST_LOCK_LEAD_STEPS,
 			penguinLane,
 			clampPenguinLane
 		});
@@ -2875,6 +3956,9 @@ function nearestPickupSlotIndex(lane: number) {
 		}
 
 function ctrlRotation() {
+	if (revivePauseActive || penguinAnim === 'slide_in_revive') {
+		return 0;
+	}
 	return computeCtrlRotationValue({
 		status,
 		penguinAnim,
@@ -3152,12 +4236,20 @@ function stepDebugGuides(): StepDebugGuide[] {
 	$effect(() => {
 		if (!vestAnim) return;
 		const currentKey = vestAnimKey;
+		const timeoutMs = 1800;
 		const timeout = setTimeout(() => {
 			if (vestAnimKey === currentKey) {
 				vestAnim = null;
 			}
-		}, 1600);
+		}, timeoutMs);
 		return () => clearTimeout(timeout);
+	});
+
+	$effect(() => {
+		if (reviveStartGhostStepIndex == null || reviveStartGhostPassed) return;
+		if (!hasGhostStepPassedPenguin(reviveStartGhostStepIndex)) return;
+		reviveStartGhostPassed = true;
+		tryBeginVestReviveTransition();
 	});
 
 	$effect(() => {
@@ -3169,7 +4261,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 	$effect(() => {
 		if (vestAnim) return;
-		penguinSkin = hasLifering || liferingVisualActive ? 'vest' : 'base';
+		penguinSkin = hasLifering || liferingVisualActive || vestReviveActive ? 'vest' : 'base';
 	});
 
 	$effect(() => {
@@ -3194,7 +4286,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 	function updateWobbleRiskForStep(stepIndex: number) {
 		const latest = stepStateAt(stepIndex);
 		wobbleRisk = latest
-			? Math.max(0, Math.min(2.4, Number(latest.bananaCount ?? 0) / 2.4))
+			? Math.max(0, Math.min(1.6, Number(latest.bananaCount ?? 0) / 3.2))
 			: 0;
 	}
 
@@ -3417,11 +4509,16 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{penguinAnim}
 				{penguinSkin}
 				{hasLifering}
+				{reviveRingVisible}
 				{vestAnim}
 				{vestAnimKey}
+				penguinActorKey={runId}
+				{invincibleLoop}
+				reviveAnimationSpeedMult={currentRespawnAnimationSpeedScale()}
 				slipAnimationSpeedMult={SLIP_ANIMATION_SPEED_MULT * currentSlipSpeedScale()}
 				{handlePenguinEvent}
 				{slideTimeScale}
+				sceneAnimationTimeScale={revivePauseActive || loseStopFreezeActive ? 0 : 1}
 				{roundWinDisplay}
 				{amountWinPulse}
 				{accumulatedStrokeWidth}

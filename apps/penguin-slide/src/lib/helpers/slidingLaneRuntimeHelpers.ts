@@ -50,7 +50,7 @@ export function planSlidingTargetLaneHelper(params: {
 			};
 		}
 		const directTargetLane = params.targetLaneForToken(targetToken);
-		centerLockPendingTokenId = targetToken.id;
+		const prefersSmoothApproach = targetToken.extra?.bridgeStep === true;
 		const handoffDistance = Math.max(
 			params.stepSpacing * 0.04,
 			params.stepSpacing * params.preStepHandoffSteps
@@ -69,7 +69,8 @@ export function planSlidingTargetLaneHelper(params: {
 		} else {
 			preStepHandoffActive = false;
 			lane = directTargetLane;
-			shouldCenterLock = true;
+			centerLockPendingTokenId = prefersSmoothApproach ? null : targetToken.id;
+			shouldCenterLock = !prefersSmoothApproach;
 		}
 	}
 

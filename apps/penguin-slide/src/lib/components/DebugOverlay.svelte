@@ -25,7 +25,7 @@
 	};
 	type LineCrossing = { slot: number; offset: number; x: number; y: number; lane: number };
 
-	export let enabled = false;
+	export let enabled = true;
 	export let viewport: Viewport;
 	export let renderStep: number;
 	export let penguinTargetLane: number;
@@ -117,6 +117,12 @@
 		.filter((entry) => entry.pos != null)}
 	{@const debugWillPickupMarkers = debugMarkers.filter((entry) => entry.willPickup)}
 	{@const debugWontPickupMarkers = debugMarkers.filter((entry) => !entry.willPickup)}
+	{@const debugGapMarkers = tokens
+		.filter((t) => t.extra?.bridgeStep === true && t.extra?.cosmetic === true && !t.activate)
+		.map((t) => ({
+			pos: pickupPosition(t.stepIndex, t.lane, Number(t.extra?.spawnLane ?? t.lane))
+		}))
+		.filter((entry) => entry.pos != null)}
 	<Graphics
 		draw={(graphics) => {
 			for (const guide of debugGuides) {
@@ -162,6 +168,19 @@
 				graphics.circle(crossing.x, crossing.y, Math.max(7, viewport.w * 0.005));
 			}
 			graphics.stroke({ width: 3, color: 0x2f8fff, alpha: 0.95 });
+		}}
+	/>
+	<Graphics
+		draw={(graphics) => {
+			const markerSize = Math.max(10, viewport.w * 0.008);
+			for (const marker of debugGapMarkers) {
+				if (!marker.pos) continue;
+				graphics.moveTo(marker.pos.x - markerSize, marker.pos.y - markerSize);
+				graphics.lineTo(marker.pos.x + markerSize, marker.pos.y + markerSize);
+				graphics.moveTo(marker.pos.x - markerSize, marker.pos.y + markerSize);
+				graphics.lineTo(marker.pos.x + markerSize, marker.pos.y - markerSize);
+			}
+			graphics.stroke({ width: 3, color: 0xff2d2d, alpha: 0.98 });
 		}}
 	/>
 	<Graphics

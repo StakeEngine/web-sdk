@@ -12,7 +12,8 @@ export function computeSlipAnimationConfig(args: {
 	const sideNorm = Math.max(0, Math.min(1, distanceToSlipSide / Math.max(1, args.viewportWidth)));
 	const sideTravel = args.viewportWidth * (0.1 + sideNorm * 0.12);
 	const sideBias = Math.max(0, (args.baselineX - args.originX) * args.direction) * 0.22;
-	const maxSlide = args.direction * (sideTravel + sideBias);
+	const animationSideBoost = args.viewportWidth * 0.05;
+	const maxSlide = args.direction * (sideTravel + sideBias + animationSideBoost);
 	const preSlideDistance = Math.min(Math.abs(maxSlide) * 0.24, args.viewportWidth * 0.06);
 	const preSlide = Math.min(preSlideDistance, Math.abs(maxSlide) * 0.65) * args.direction;
 	const preDuration = 140 * args.durationMultiplier;

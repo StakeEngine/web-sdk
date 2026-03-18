@@ -5,6 +5,23 @@ export type SequenceTimelineEntry = {
 	bananaCount: number;
 };
 
+const VEST_POP_EXTRA_STEPS = 3;
+
+function extendSummaryStepsForVestPops(
+	summaryEvent: any,
+	vestPopSteps: number[]
+) {
+	if (!summaryEvent || vestPopSteps.length === 0) return summaryEvent;
+	const explicitSummarySteps = Number(summaryEvent.steps);
+	const baseSummarySteps = Number.isFinite(explicitSummarySteps) ? explicitSummarySteps : 0;
+	const latestVestPopStep = Math.max(...vestPopSteps);
+	const minStepsAfterVestPop = latestVestPopStep + 1 + VEST_POP_EXTRA_STEPS;
+	return {
+		...summaryEvent,
+		steps: Math.max(baseSummarySteps, minStepsAfterVestPop)
+	};
+}
+
 export function parsePadSequenceEvents(args: {
 	events: any[];
 	steps: number;
@@ -151,7 +168,11 @@ export function parsePadSequenceEvents(args: {
 		}
 	}
 
-	return { summaryEvent, vestPopSteps, timeline };
+	return {
+		summaryEvent: extendSummaryStepsForVestPops(summaryEvent, vestPopSteps),
+		vestPopSteps,
+		timeline
+	};
 }
 
 export function parseBookSequenceEvents(args: {
@@ -215,13 +236,13 @@ export function parseBookSequenceEvents(args: {
 			}
 			if (hitType === 'lifering') timelineLifering = true;
 			if (event.savedByLifering) timelineLifering = false;
+			const eventStepIndex = Number(event.stepIndex);
 			timeline.push({
-				step: Number(event.stepIndex),
+				step: eventStepIndex,
 				value: timelineValue,
 				hasLifering: timelineLifering,
 				bananaCount: Number(event.bananaCount ?? 0)
 			});
-			const eventStepIndex = Number(event.stepIndex);
 			args.buildTileResultTokens({
 				event,
 				hitType,
@@ -250,5 +271,9 @@ export function parseBookSequenceEvents(args: {
 		}
 	}
 
-	return { summaryEvent, vestPopSteps, timeline };
+	return {
+		summaryEvent: extendSummaryStepsForVestPops(summaryEvent, vestPopSteps),
+		vestPopSteps,
+		timeline
+	};
 }

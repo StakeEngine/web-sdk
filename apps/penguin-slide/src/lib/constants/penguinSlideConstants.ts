@@ -31,7 +31,7 @@ export const OUTER_LANE_OFFSET = Math.max(
 export const PENGUIN_LANE_RANGE = OUTER_LANE_OFFSET + 0.24;
 export const PENGUIN_LANE_SIDE_PAD = 0.2;
 
-export const WOBBLE_INTENSITY = 5;
+export const WOBBLE_INTENSITY = 4;
 export const PICKUP_LOOKAHEAD_EXTRA_STEPS = 0.025;
 export const PICKUP_TRAVEL_SPEED = 3.4;
 export const PICKUP_TOP_ENTRY_BUFFER_STEPS = 0.08;

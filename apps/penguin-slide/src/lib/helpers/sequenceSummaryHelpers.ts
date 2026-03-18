@@ -10,7 +10,16 @@ type TokenLike = {
 };
 
 type RunStatus = 'goal' | 'idle' | 'sliding' | 'slip';
-type PenguinAnim = 'idle' | 'slide_in' | 'slide_idle' | 'win' | 'lose_L' | 'lose_R';
+type PenguinAnim =
+	| 'idle'
+	| 'slide_in'
+	| 'slide_idle'
+	| 'slide_in_revive'
+	| 'win'
+	| 'lose_L'
+	| 'lose_R'
+	| 'lose_L_vest'
+	| 'lose_R_vest';
 
 export function buildSummarySlipTrigger(args: {
 	summaryEvent: any;
@@ -55,6 +64,22 @@ export function buildSummarySlipTrigger(args: {
 				Number(entry.stepIndex) <= summarySlipStepIndex + 1
 		);
 	if (pendingTerminalBanana.length > 0) {
+		return null;
+	}
+
+	// If a sinking coin/star is going to be saved by a lifering, the slip must
+	// originate from that pickup resolution, not from summary slip timing.
+	const pendingProtectedSinkingPickup = args.tokens.filter(
+		(entry) =>
+			entry.hit &&
+			!entry.activate &&
+			(Number(entry.stepIndex) <= summarySlipStepIndex + 1) &&
+			(String(entry.type ?? '').toLowerCase() === 'coin' ||
+				String(entry.type ?? '').toLowerCase() === 'star') &&
+			(entry.extra?.sinking === true || entry.extra?.fall === true) &&
+			(Boolean(entry.extra?.savedByLifering) || Number(entry.extra?.lifeVests ?? 0) > 0)
+	);
+	if (pendingProtectedSinkingPickup.length > 0) {
 		return null;
 	}
 

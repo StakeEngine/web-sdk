@@ -48,8 +48,8 @@ export function wobbleLaneGateForState(args: {
 	wobbleRisk: number;
 }) {
 	const laneNorm = Math.min(1, Math.abs(args.penguinLane) / Math.max(0.01, args.penguinLaneRange));
-	const bananaNorm = Math.max(0, Math.min(2.4, args.wobbleRisk)) / 2.4;
-	return Math.min(1.3, 0.36 + laneNorm * 0.62 + bananaNorm * 0.24);
+	const bananaNorm = Math.max(0, Math.min(1.6, args.wobbleRisk)) / 1.6;
+	return Math.min(1.18, 0.36 + laneNorm * 0.62 + bananaNorm * 0.14);
 }
 
 export function computeWobbleSignal(args: {
@@ -73,9 +73,9 @@ export function computeWobbleSignal(args: {
 	const outerLane = slot === 0 || slot === 1 || slot === 6 || slot === 7;
 	const wobbleLaneMultiplier = outerLane ? 3.4 : 1.12;
 	const wobbleAmp =
-		Math.max(0.12, (1.7 - laneNorm * 1.05 + args.wobbleBoost * 0.7) * (1 + bananaBoost * 0.12)) *
+		Math.max(0.1, (1.35 - laneNorm * 0.82 + args.wobbleBoost * 0.34) * (1 + bananaBoost * 0.08)) *
 		slipDamp;
-	const wobbleSpeed = Math.max(0.9, (0.76 - laneNorm * 0.1 + bananaBoost * 0.03) * 2.1);
+	const wobbleSpeed = Math.max(0.78, (0.7 - laneNorm * 0.08 + bananaBoost * 0.02) * 1.9);
 	const waveA = Math.sin(args.wobbleTime * wobbleSpeed * Math.PI * 2);
 	const waveB = Math.sin(args.wobbleTime * wobbleSpeed * Math.PI + 1.1);
 	const wave = waveA * 0.75 + waveB * 0.25;

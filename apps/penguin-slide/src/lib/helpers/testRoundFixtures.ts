@@ -1,224 +1,1868 @@
-export const FORCE_TEST_ROUND = false;
+export const FORCE_TEST_ROUND = true;
 
 export const FORCED_TEST_ROUND_STATE = [
-    {
-        "index": 0,
-        "landedStep": "RIGHT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "+2",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "+1",
-                "sinking": true
-            }
-        },
-        "accumulatedWinAmount": 0,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-			success: false,
-			applies: true,
-			terminal: true
-    },
-    {
-        "index": 1,
-        "landedStep": "LEFT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "+2",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 200,
-        "winAmount": 200,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": true,
-        "applies": true,
-        "terminal": false
-    },
-    {
-        "index": 2,
-        "landedStep": "RIGHT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "+2",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 200,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": true,
-        "applies": true
-    },
-    {
-        "index": 3,
-        "landedStep": "RIGHT",
-        "steps": {
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "GOAL",
-                "sinking": false
-            },
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": true,
-        "applies": true,
-        "finish": true
-    },
-    {
-        "index": 4,
-        "landedStep": "LEFT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "BANANA",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": false,
-        "applies": false
-    },
-    {
-        "index": 5,
-        "landedStep": "RIGHT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "+3",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": false,
-        "applies": false
-    },
-    {
-        "index": 6,
-        "landedStep": "RIGHT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "+2",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": false,
-        "applies": false
-    },
-    {
-        "index": 7,
-        "landedStep": "LEFT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "+5",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": false,
-        "applies": false
-    },
-    {
-        "index": 8,
-        "landedStep": "RIGHT",
-        "steps": {
-            "LEFT": {
-                "stepType": "ICE",
-                "item": "+1",
-                "sinking": false
-            },
-            "RIGHT": {
-                "stepType": "ICE",
-                "item": "NOTHING",
-                "sinking": false
-            }
-        },
-        "accumulatedWinAmount": 400,
-        "winAmount": 0,
-        "lifeVests": 0,
-        "bananaCount": 0,
-        "success": false,
-        "applies": false
-    },
-    {
-        "index": 9,
-        "type": "setWin",
-        "amount": 400,
-        "winLevel": 1
-    },
-    {
-        "index": 10,
-        "type": "setTotalWin",
-        "amount": 400
-    },
-    {
-        "index": 11,
-        "type": "finalWin",
-        "amount": 400
-    }
+	{
+		index: 0,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'BANANA',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 1,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 1,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: '+3',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 300,
+		winAmount: 300,
+		lifeVests: 0,
+		bananaCount: 1,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 2,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+2',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 300,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 1,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 3,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+1',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 400,
+		winAmount: 100,
+		lifeVests: 0,
+		bananaCount: 1,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 4,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: '+3',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 700,
+		winAmount: 300,
+		lifeVests: 0,
+		bananaCount: 1,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 5,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'BANANA',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 350,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 2,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 6,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'LIFE_RING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 350,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 2,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 7,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'BANANA',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 175,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 3,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 8,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: '+1',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 175,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 3,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 9,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+1',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 175,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 3,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 10,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: '+2',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 175,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 3,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 11,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'BANANA',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 87,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: true,
+		applies: true,
+	},
+	{
+		index: 12,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: true,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+5',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: true,
+		terminal: true,
+	},
+	{
+		index: 13,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: 'LIFE_RING',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: false,
+	},
+	{
+		index: 14,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+2',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: false,
+	},
+	{
+		index: 15,
+		landedStep: 'LEFT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+2',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: false,
+	},
+	{
+		index: 16,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+1',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: false,
+	},
+	{
+		index: 17,
+		landedStep: 'RIGHT',
+		steps: {
+			LEFT: {
+				stepType: 'ICE',
+				item: 'NOTHING',
+				sinking: false,
+			},
+			RIGHT: {
+				stepType: 'ICE',
+				item: '+1',
+				sinking: false,
+			},
+		},
+		accumulatedWinAmount: 0,
+		winAmount: 0,
+		lifeVests: 0,
+		bananaCount: 4,
+		success: false,
+		applies: false,
+	},
+	{
+		index: 18,
+		type: 'setTotalWin',
+		amount: 0,
+	},
+	{
+		index: 19,
+		type: 'finalWin',
+		amount: 0,
+	},
 ];
+// [
+// 	{
+// 		index: 0,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 300,
+// 		winAmount: 300,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 1,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 500,
+// 		winAmount: 200,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 2,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 500,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 3,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 250,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 4,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 350,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 5,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 450,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 6,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 225,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 7,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 325,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 8,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 162,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 9,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 81,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 10,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+10',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 81,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 11,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'LIFE_RING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 81,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 12,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+4',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 481,
+// 		winAmount: 400,
+// 		lifeVests: 1,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 13,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: true,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 681,
+// 		winAmount: 200,
+// 		lifeVests: 1,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 14,
+// 		type: 'vestPopped',
+// 	},
+// 	{
+// 		index: 15,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'x2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 1362,
+// 		winAmount: 681,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 16,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 681,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 17,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 981,
+// 		winAmount: 300,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 18,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 1181,
+// 		winAmount: 200,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 19,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 590,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 20,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 590,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 21,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 295,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 22,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 147,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 23,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 247,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 4,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 24,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 123,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 5,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 25,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 61,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 6,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 26,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 61,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 6,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 27,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 161,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 6,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 28,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 161,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 6,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 29,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 30,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'GOAL',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: true,
+// 		applies: true,
+// 		finish: true,
+// 	},
+// 	{
+// 		index: 31,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'LIFE_RING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 32,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 33,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 34,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 35,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 80,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 7,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 36,
+// 		type: 'setWin',
+// 		amount: 80,
+// 		winLevel: 1,
+// 	},
+// 	{
+// 		index: 37,
+// 		type: 'setTotalWin',
+// 		amount: 80,
+// 	},
+// 	{
+// 		index: 38,
+// 		type: 'finalWin',
+// 		amount: 80,
+// 	},
+// ];
+// [
+// 	{
+// 		index: 0,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 200,
+// 		winAmount: 200,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 1,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 200,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 2,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 300,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 3,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 4,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 5,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 6,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 200,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 7,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'x2',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 200,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 8,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 9,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 200,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 10,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 300,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 11,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 12,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'LIFE_RING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 13,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 0,
+// 		lifeVests: 1,
+// 		bananaCount: 2,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 14,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 200,
+// 		winAmount: 0,
+// 		lifeVests: 1,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 15,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 300,
+// 		winAmount: 100,
+// 		lifeVests: 1,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 16,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 400,
+// 		winAmount: 100,
+// 		lifeVests: 1,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 17,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 700,
+// 		winAmount: 300,
+// 		lifeVests: 1,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 18,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: true,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 700,
+// 		winAmount: 0,
+// 		lifeVests: 1,
+// 		bananaCount: 3,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 19,
+// 		type: 'vestPopped',
+// 	},
+// 	{
+// 		index: 20,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+3',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 1000,
+// 		winAmount: 300,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 21,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 1100,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 22,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 1200,
+// 		winAmount: 100,
+// 		lifeVests: 0,
+// 		bananaCount: 0,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 23,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 	},
+// 	{
+// 		index: 24,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'GOAL',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: true,
+// 		applies: true,
+// 		finish: true,
+// 	},
+// 	{
+// 		index: 25,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+2',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 26,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 27,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: '+1',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 28,
+// 		landedStep: 'LEFT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: 'BANANA',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 29,
+// 		landedStep: 'RIGHT',
+// 		steps: {
+// 			LEFT: {
+// 				stepType: 'ICE',
+// 				item: '+4',
+// 				sinking: false,
+// 			},
+// 			RIGHT: {
+// 				stepType: 'ICE',
+// 				item: 'NOTHING',
+// 				sinking: false,
+// 			},
+// 		},
+// 		accumulatedWinAmount: 600,
+// 		winAmount: 0,
+// 		lifeVests: 0,
+// 		bananaCount: 1,
+// 		success: false,
+// 		applies: false,
+// 	},
+// 	{
+// 		index: 30,
+// 		type: 'setWin',
+// 		amount: 600,
+// 		winLevel: 2,
+// 	},
+// 	{
+// 		index: 31,
+// 		type: 'setTotalWin',
+// 		amount: 600,
+// 	},
+// 	{
+// 		index: 32,
+// 		type: 'finalWin',
+// 		amount: 600,
+// 	},
+// ];
 
 export function buildSimulatedLossEvents(stakeAmount: number) {
 	const startValue = Math.round(stakeAmount * 100);
@@ -228,15 +1872,22 @@ export function buildSimulatedLossEvents(stakeAmount: number) {
 			landedStep: 'LEFT',
 			steps: {
 				LEFT: { item: 'BANANA', sinking: true },
-				RIGHT: { item: 'NOTHING', sinking: false }
+				RIGHT: { item: 'NOTHING', sinking: false },
 			},
 			accumulatedWinAmount: 0,
 			winAmount: -startValue,
 			lifeVests: 0,
 			success: false,
 			applies: true,
-			terminal: true
+			terminal: true,
 		},
-		{ type: 'finish', totalSteps: 1, totalWinAmount: 0, betAmount: startValue, multiplier: 0, success: false }
+		{
+			type: 'finish',
+			totalSteps: 1,
+			totalWinAmount: 0,
+			betAmount: startValue,
+			multiplier: 0,
+			success: false,
+		},
 	];
 }

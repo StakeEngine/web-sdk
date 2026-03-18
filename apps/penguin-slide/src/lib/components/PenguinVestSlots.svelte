@@ -2,46 +2,50 @@
   import { onDestroy } from 'svelte';
   import { getContextSpine } from 'pixi-svelte';
 
-  export let enabled = false;
+  export let mode: 'hidden' | 'force' | 'passthrough' = 'hidden';
 
   const spine = getContextSpine();
-  const VEST_SLOT_NAMES = ['life belt', 'vest'];
-  const VEST_ATTACHMENT_NAMES = ['life belt', 'life_belt', 'lifebelt', 'vest'];
-  let vestSlot: any = null;
+  const VEST_SLOT_NAMES = ['life belt', 'life belt2', 'vest'];
+  const VEST_ATTACHMENT_NAMES = ['life belt', 'life_belt', 'lifebelt', 'life belt2', 'life_belt2', 'vest'];
+  let vestSlots: any[] = [];
   let lastSkeletonRef: any = null;
   let enforceRafId: number | null = null;
 
-  const findVestSlot = () => {
+  const findVestSlots = () => {
     const skeleton = spine?.skeleton;
-    if (!skeleton) return null;
+    if (!skeleton) return [];
     if (skeleton !== lastSkeletonRef) {
       lastSkeletonRef = skeleton;
-      vestSlot = null;
+      vestSlots = [];
     }
-    if (vestSlot) return vestSlot;
+    if (vestSlots.length) return vestSlots;
+    const matches: any[] = [];
     for (const name of VEST_SLOT_NAMES) {
       const slotMatch = skeleton.findSlot(name);
-      if (slotMatch) {
-        vestSlot = slotMatch;
-        return vestSlot;
-      }
+      if (slotMatch && !matches.includes(slotMatch)) matches.push(slotMatch);
     }
     const slots = (skeleton.slots ?? skeleton.drawOrder ?? []) as any[];
     const normalizedAttachmentNames = new Set(
       VEST_ATTACHMENT_NAMES.map((name) => String(name).trim().toLowerCase()).filter(Boolean)
     );
     for (const slot of slots) {
+      const slotName = String(slot?.data?.name ?? slot?.name ?? '')
+        .trim()
+        .toLowerCase();
       const setupName = String(
         slot?.data?.attachmentName ?? slot?.data?.attachment?.name ?? ''
       )
         .trim()
         .toLowerCase();
-      if (setupName && normalizedAttachmentNames.has(setupName)) {
-        vestSlot = slot;
-        return vestSlot;
+      if (
+        (setupName && normalizedAttachmentNames.has(setupName)) ||
+        (slotName && normalizedAttachmentNames.has(slotName))
+      ) {
+        if (!matches.includes(slot)) matches.push(slot);
       }
     }
-    return null;
+    vestSlots = matches;
+    return vestSlots;
   };
 
   const uniqueNames = (names: unknown[]) => {
@@ -97,26 +101,27 @@
   };
 
   const manageVestSlots = () => {
-    const slot = findVestSlot();
-    if (!slot) return;
+    const slots = findVestSlots();
+    if (!slots.length) return;
 
-    try {
-      if (!enabled) {
-        slot.attachment = null;
-        if (slot?.color) {
-          slot.color.a = 0;
+    for (const slot of slots) {
+      try {
+        if (mode === 'hidden') {
+          slot.attachment = null;
+          if (slot?.color) {
+            slot.color.a = 0;
+          }
+        } else {
+          restoreVestAttachment(slot);
+          if (slot?.color) {
+            slot.color.r = 1;
+            slot.color.g = 1;
+            slot.color.b = 1;
+            slot.color.a = 1;
+          }
         }
-      } else {
-        restoreVestAttachment(slot);
-        // Some tracks keep this slot alpha at 0; force it visible while enabled.
-        if (slot?.color) {
-          slot.color.r = 1;
-          slot.color.g = 1;
-          slot.color.b = 1;
-          slot.color.a = 1;
-        }
-      }
-    } catch {}
+      } catch {}
+    }
   };
 
   const stopEnforceLoop = () => {
@@ -127,9 +132,9 @@
   };
 
   const startEnforceLoop = () => {
-    if (typeof window === 'undefined' || enforceRafId != null || !enabled) return;
+    if (typeof window === 'undefined' || enforceRafId != null || mode !== 'force') return;
     const tick = () => {
-      if (!enabled) {
+      if (mode !== 'force') {
         enforceRafId = null;
         return;
       }
@@ -140,10 +145,10 @@
   };
 
   $: {
-    enabled;
+    mode;
     spine?.skeleton;
     manageVestSlots();
-    if (enabled) startEnforceLoop();
+    if (mode === 'force') startEnforceLoop();
     else stopEnforceLoop();
   }
 

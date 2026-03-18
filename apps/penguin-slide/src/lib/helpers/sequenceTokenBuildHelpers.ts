@@ -98,8 +98,12 @@ export function buildPadStepTokens({
 		const placement = isHit
 			? pickPathHitSpawnTarget(lane, stepIndex, minSlotGap, forceOuterSinking)
 			: pickSpawnTargetForStep(stepIndex, lane, false, minSlotGap, forceOuterSinking);
+		const exactOuterBridgeSpawn =
+			entry.bridgeStep === true && isHit && forceOuterSinking;
+		const spawnLaneOffset = exactOuterBridgeSpawn
+			? placement.lockLaneOffset
+			: placement.laneOffset;
 		const targetSlot = placement.slot;
-		const lockLane = placement.laneOffset;
 		const spawnDelay = padSpawnIndex * spawnDelayStep;
 		padSpawnIndex += 1;
 		addToken(stepIndex, type, timelineValue, lane, isHit, {
@@ -108,6 +112,7 @@ export function buildPadStepTokens({
 			...(valueOverride != null ? { coinValue: valueOverride } : null),
 			padKey,
 			bridgeStep: entry.bridgeStep === true,
+			proxySlip: entry.proxySlip === true,
 			landedPad: landedKey,
 			applies,
 			targetLane: stepTargetLane,
@@ -117,7 +122,7 @@ export function buildPadStepTokens({
 			accumulatedWinAmount: entry.accumulatedWinAmount,
 			targetSlot,
 			lockLane: placement.lockLaneOffset,
-			spawnLane: placement.laneOffset,
+			spawnLane: spawnLaneOffset,
 			spawnDelay
 		});
 	}

@@ -59,6 +59,7 @@ export function shouldUsePreStepFreeRoamHelper(args: {
 	stepSpacing: number;
 	openingFreeRoamSteps?: number;
 	preStepLockLeadSteps?: number;
+	preStepFirstLockLeadSteps?: number;
 	penguinLane: number;
 	clampPenguinLane: (lane: number) => number;
 }) {
@@ -90,7 +91,12 @@ export function shouldUsePreStepFreeRoamHelper(args: {
 	const isOpeningTarget = args.pickupCount === 0 && pendingStepIndex === 0;
 	const isSecondStepTarget = pendingStepIndex === 1;
 	if (isOpeningTarget) {
-		if (sweepDistance < openingFreeRoamDistance) {
+		const openingLockLeadSteps = Number.isFinite(args.preStepFirstLockLeadSteps)
+			? Number(args.preStepFirstLockLeadSteps)
+			: Math.max(0.62, Number(args.preStepLockLeadSteps ?? 0.08));
+		const shouldDelayOpeningLock =
+			args.renderStep < Number(args.pendingHit.trigger) - args.stepSpacing * openingLockLeadSteps;
+		if (sweepDistance < openingFreeRoamDistance && shouldDelayOpeningLock) {
 			state.preStepFreeRoamActive = true;
 			return { state, useFreeRoam: true };
 		}

@@ -139,6 +139,7 @@ export function shouldSkipPositioningForHitTokenHelper(args: {
 }) {
 	if (!args.token?.hit) return false;
 	if (!args.isNothingTokenType(args.token.type)) return false;
+	if (args.token.extra?.sinking === true || args.token.extra?.fall === true) return false;
 	return args.isDoubleNothingStep(Number(args.token.stepIndex));
 }
 

@@ -1,11 +1,15 @@
 import { isGameplayRoundEntry, oppositeLandedStep, isSinkingCoinOrStarOnLandedPad } from './roundLogicHelpers';
 
 export function createEmptyBridgeStep(previous: any, next: any, index: number) {
-	const landedStep = oppositeLandedStep(previous?.landedStep ?? previous?.landedPad ?? 'LEFT');
-	const shouldProxySlip = isSinkingCoinOrStarOnLandedPad(next);
+	const shouldProxyOuterApproach = isSinkingCoinOrStarOnLandedPad(next);
+	const shouldProxySlip =
+		shouldProxyOuterApproach && Math.max(0, Number(next?.lifeVests ?? 0)) <= 0;
+	const landedStep = shouldProxyOuterApproach
+		? String(next?.landedStep ?? next?.landedPad ?? 'LEFT').toUpperCase()
+		: oppositeLandedStep(previous?.landedStep ?? previous?.landedPad ?? 'LEFT');
 	const leftPad = { stepType: 'ICE', item: 'NOTHING', sinking: false };
 	const rightPad = { stepType: 'ICE', item: 'NOTHING', sinking: false };
-	if (shouldProxySlip) {
+	if (shouldProxyOuterApproach) {
 		if (landedStep === 'LEFT') leftPad.sinking = true;
 		else rightPad.sinking = true;
 	}
@@ -14,8 +18,9 @@ export function createEmptyBridgeStep(previous: any, next: any, index: number) {
 		landedStep,
 		steps: { LEFT: leftPad, RIGHT: rightPad },
 		bridgeStep: true,
-		targetLane: null,
-		skipTargeting: true,
+		proxySlip: shouldProxySlip,
+		targetLane: shouldProxyOuterApproach ? undefined : null,
+		skipTargeting: !shouldProxyOuterApproach,
 		accumulatedWinAmount: Number(previous?.accumulatedWinAmount ?? 0),
 		winAmount: 0,
 		lifeVests: Number(previous?.lifeVests ?? 0),

@@ -20,7 +20,7 @@
 	export let iceScroll = 0;
 	export let stepSpacing = 1;
 	export let iceRespawnGapFrac = 0;
-	export let lanePosition: (depth: number, offset: number) => { x: number; y: number };
+	export let lanePosition: (depth: number, offset: number) => { x: number; y: number; width: number };
 	export let floatTime = 0;
 	export let hasStartedFirstRound = false;
 	export let iceSpawnState: any;
@@ -34,12 +34,18 @@
 	export let pickupLineCrossings: any[] = [];
 	export let slotToOffset: Record<number, number> = {};
 	export let stepDebugGuides: () => any[] = () => [];
-	export let penguinPose: () => { x: number; y: number; size: number } = () => ({ x: 0, y: 0, size: 0 });
+	export let penguinPose: () => { x: number; y: number; size: number; depth: number } = () => ({
+		x: 0,
+		y: 0,
+		size: 0,
+		depth: 0
+	});
 	export let targetLineIndexForOffset: (offset: number) => number | null = () => null;
 	export let clampPenguinLane: (lane: number) => number = (lane) => lane;
-	export let pickupLanePosition: (depth: number, offset: number) => { x: number; y: number } = () => ({
+	export let pickupLanePosition: (depth: number, offset: number) => { x: number; y: number; width: number } = () => ({
 		x: 0,
-		y: 0
+		y: 0,
+		width: 0
 	});
 	export let depthForPickupPathY: (y: number) => number = () => 0;
 	export let isTargetableHitToken: (token: any) => boolean = () => false;
@@ -52,14 +58,28 @@
 	export let tokenSpineSize: (depth: number) => number = () => 0;
 	export let coinAssetKey: (token: any) => string = () => '';
 	export let ctrlRotation: () => number = () => 0;
-	export let penguinAnim: 'idle' | 'slide_in' | 'slide_idle' | 'win' | 'lose_L' | 'lose_R' = 'idle';
+	export let penguinAnim:
+		| 'idle'
+		| 'slide_in'
+		| 'slide_idle'
+		| 'slide_in_revive'
+		| 'win'
+		| 'lose_L'
+		| 'lose_R'
+		| 'lose_L_vest'
+		| 'lose_R_vest' = 'idle';
 	export let penguinSkin: 'base' | 'vest' = 'base';
 	export let hasLifering = false;
-	export let vestAnim: 'gain' | 'lose' | null = null;
+	export let reviveRingVisible = false;
+	export let vestAnim: 'gain' | null = null;
 	export let vestAnimKey = 0;
+	export let penguinActorKey = 0;
 	export let slipAnimationSpeedMult = 1;
+	export let invincibleLoop = false;
+	export let reviveAnimationSpeedMult = 1;
 	export let handlePenguinEvent: (name: string) => void = () => {};
 	export let slideTimeScale = 1;
+	export let sceneAnimationTimeScale = 1;
 	export let roundWinDisplay = 0;
 	export let amountWinPulse = 1;
 	export let accumulatedStrokeWidth = 12;
@@ -99,7 +119,7 @@
 			{@const iceSwayScale = 0.33}
 			{@const roundActive = animationStatus === 'running' || status === 'sliding'}
 			{@const bgAnim = 'idle'}
-			{@const bgTimeScale = roundActive ? 1 : 0}
+			{@const bgTimeScale = roundActive ? sceneAnimationTimeScale : 0}
 			<Container y={viewport.h * (scenePortrait ? -0.02 : -0.1)} sortableChildren>
 				<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY })}>
 					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
@@ -180,7 +200,12 @@
 								scale
 							})}
 						>
-							<SpineTrack trackIndex={0} animationName={piece.animName} loop timeScale={2.5} />
+							<SpineTrack
+								trackIndex={0}
+								animationName={piece.animName}
+								loop
+								timeScale={2.5 * sceneAnimationTimeScale}
+							/>
 						</SpineProvider>
 					{/if}
 				{/each}
@@ -193,12 +218,12 @@
 						height: slide.height
 					})}
 				>
-					<SpineTrack trackIndex={0} animationName="init" loop={false} timeScale={1} />
+					<SpineTrack trackIndex={0} animationName="init" loop={false} timeScale={sceneAnimationTimeScale} />
 					<SpineTrack
 						trackIndex={1}
 						animationName="idle"
 						loop
-						timeScale={status === 'sliding' ? slideTimeScale : 0}
+						timeScale={status === 'sliding' ? slideTimeScale * sceneAnimationTimeScale : 0}
 					/>
 				</SpineProvider>
 				<Container zIndex={200}>
@@ -211,6 +236,7 @@
 						{tokenSpineSize}
 						{coinAssetKey}
 						{itemSpawnOffset}
+						animationTimeScale={sceneAnimationTimeScale}
 						showSteps={false}
 						{stepSpacing}
 						{pickupTriggerAt}
@@ -240,18 +266,23 @@
 				</Container>
 				{@const pose = penguinPose()}
 				{@const tiltRot = ctrlRotation()}
-				<PenguinActor
-					{spineProps}
-					{pose}
-					{tiltRot}
-					{penguinAnim}
-					{penguinSkin}
-					{hasLifering}
-					{vestAnim}
-					{vestAnimKey}
-					{slipAnimationSpeedMult}
-					onPenguinEvent={handlePenguinEvent}
-				/>
+				{#key penguinActorKey}
+					<PenguinActor
+						{spineProps}
+						{pose}
+						{tiltRot}
+						{penguinAnim}
+						{penguinSkin}
+						{hasLifering}
+						{reviveRingVisible}
+						{vestAnim}
+						{vestAnimKey}
+						{invincibleLoop}
+						{reviveAnimationSpeedMult}
+						{slipAnimationSpeedMult}
+						onPenguinEvent={handlePenguinEvent}
+					/>
+				{/key}
 			</Container>
 			<AccumulatedAmountOverlay
 				{viewport}

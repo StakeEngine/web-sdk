@@ -73,6 +73,9 @@ export function slipTriggerRenderStepForTokenHelper(args: {
 	const tokenStep = Number(args.token?.stepIndex ?? 0);
 	const spawnDelay = Number(args.token?.extra?.spawnDelay ?? 0);
 	const baseTrigger = args.pickupTriggerAt(tokenStep, String(args.token?.type ?? ''), spawnDelay);
+	if (args.token?.extra?.proxySlip === true) {
+		return baseTrigger - args.stepSpacing * 0.08;
+	}
 	if (!args.tokenShouldSlipOnPreviousStep(args.token)) {
 		return baseTrigger + args.stepSpacing * args.slipTriggerDelaySteps;
 	}

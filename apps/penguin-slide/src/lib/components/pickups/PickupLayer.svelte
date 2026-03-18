@@ -40,6 +40,7 @@
   export let tokenSpineSize: (depth: number) => number = () => 64;
   export let coinAssetKey: (token: Token) => string = () => 'coin_bronze';
   export let itemSpawnOffset: number | (() => number) = 0;
+  export let animationTimeScale = 1;
   export let showSteps = false;
   export let stepSpacing = 0;
   export let pickupTriggerAt: (stepIndex: number, type?: string, spawnDelay?: number) => number = () => 0;
@@ -347,7 +348,12 @@
           width={entry.scaledSize}
           height={entry.scaledSize}
         >
-          <SpineTrack trackIndex={0} animationName={entry.animationName} loop={entry.animationName !== 'destroy'} />
+          <SpineTrack
+            trackIndex={0}
+            animationName={entry.animationName}
+            loop={entry.animationName !== 'destroy'}
+            timeScale={animationTimeScale}
+          />
         </SpineProvider>
       {/if}
 

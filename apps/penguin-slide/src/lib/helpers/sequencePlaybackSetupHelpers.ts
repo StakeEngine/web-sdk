@@ -25,6 +25,12 @@ export function computeSequenceScrollWindow(args: {
 	pickupTravelSpeed: number;
 	debugGameSpeedMult: number;
 }) {
+	const baseStepPerMs = computeBaseStepPerMs({
+		speedFactor: args.speedFactor,
+		pickupStepPaceMultiplier: args.pickupStepPaceMultiplier,
+		pickupTravelSpeed: args.pickupTravelSpeed,
+		debugGameSpeedMult: args.debugGameSpeedMult,
+	});
 	const computedMax = Math.max(6, ...args.tokens.map((token) => token.stepIndex));
 	const slipVisibleEnd = args.slipStepIndex != null ? args.slipStepIndex + 1 : null;
 	const endStepTarget =
@@ -36,11 +42,26 @@ export function computeSequenceScrollWindow(args: {
 	const maxStep = Math.max(2, endStepTarget * args.stepSpacing);
 	const startStep = args.renderStep;
 	const endStep = maxStep + 0.2;
-	const baseStepPerMs =
+	return { computedMax, maxStep, startStep, endStep, baseStepPerMs };
+}
+
+export function effectiveSpeedFactor(speedFactor: number) {
+	return speedFactor === 2 ? speedFactor * 1.2 : speedFactor;
+}
+
+export function computeBaseStepPerMs(args: {
+	speedFactor: number;
+	pickupStepPaceMultiplier: number;
+	pickupTravelSpeed: number;
+	debugGameSpeedMult: number;
+}) {
+	const adjustedSpeedFactor = effectiveSpeedFactor(args.speedFactor);
+	return (
 		0.117 *
-		args.speedFactor *
+		0.891 *
+		adjustedSpeedFactor *
 		args.pickupStepPaceMultiplier *
 		args.pickupTravelSpeed *
-		args.debugGameSpeedMult;
-	return { computedMax, maxStep, startStep, endStep, baseStepPerMs };
+		args.debugGameSpeedMult
+	);
 }
