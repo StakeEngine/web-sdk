@@ -22,6 +22,7 @@
 	export let iceRespawnGapFrac = 0;
 	export let lanePosition: (depth: number, offset: number) => { x: number; y: number; width: number };
 	export let floatTime = 0;
+	export let sceneFloatTime = 0;
 	export let hasStartedFirstRound = false;
 	export let iceSpawnState: any;
 	export let icePieces: any[] = [];
@@ -74,6 +75,7 @@
 	export let vestAnim: 'gain' | null = null;
 	export let vestAnimKey = 0;
 	export let penguinActorKey = 0;
+	export let roundAnimationTimeScale = 1;
 	export let slipAnimationSpeedMult = 1;
 	export let invincibleLoop = false;
 	export let reviveAnimationSpeedMult = 1;
@@ -185,7 +187,7 @@
 					{@const scale = piece.scale * (0.5 + depth * 1.5)}
 					{@const phaseOffset = (x / viewport.w - 0.5) * Math.PI}
 					{@const sway = Math.sin(
-						floatTime * waterTimeScale * iceSwayScale * piece.swayRate * Math.PI * 2 + phaseOffset + piece.swayPhase
+						sceneFloatTime * waterTimeScale * iceSwayScale * piece.swayRate * Math.PI * 2 + phaseOffset + piece.swayPhase
 					)}
 					{@const allowSpawn = piece.spawnIndex < iceVisibleStart || (iceScroll > 0 && fullLoops > 0)}
 					{@const visible = allowSpawn && y <= bottomLimit}
@@ -277,6 +279,7 @@
 						{reviveRingVisible}
 						{vestAnim}
 						{vestAnimKey}
+						{roundAnimationTimeScale}
 						{invincibleLoop}
 						{reviveAnimationSpeedMult}
 						{slipAnimationSpeedMult}

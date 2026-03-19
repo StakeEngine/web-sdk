@@ -23,6 +23,7 @@
 	export let reviveRingVisible = false;
 	export let vestAnim: 'gain' | null = null;
 	export let vestAnimKey = 0;
+	export let roundAnimationTimeScale = 1;
 	export let slipAnimationSpeedMult = 1;
 	export let invincibleLoop = false;
 	export let reviveAnimationSpeedMult = 1;
@@ -58,17 +59,17 @@
 	<PenguinVestSlots mode={vestSlotMode} />
 	{#key vestAnimKey}
 		{#if vestAnim === 'gain'}
-			<SpineTrack trackIndex={0} animationName="slide_vest_gain" loop={false} timeScale={1} />
+			<SpineTrack trackIndex={0} animationName="slide_vest_gain" loop={false} timeScale={1 * roundAnimationTimeScale} />
 		{/if}
 	{/key}
 	{#if penguinAnim === 'slide_in'}
-		<SpineTrack trackIndex={1} animationName="slide_in" loop={false} timeScale={0.65} />
+		<SpineTrack trackIndex={1} animationName="slide_in" loop={false} timeScale={0.65 * roundAnimationTimeScale} />
 	{:else if penguinAnim === 'slide_in_revive'}
 		<SpineTrack trackIndex={1} animationName="slide_in_revive" loop={false} timeScale={1.56 * reviveAnimationSpeedMult} />
 	{:else if penguinAnim === 'slide_idle'}
-		<SpineTrack trackIndex={1} animationName="slide_idle" loop timeScale={1} />
+		<SpineTrack trackIndex={1} animationName="slide_idle" loop timeScale={1 * roundAnimationTimeScale} />
 	{:else if penguinAnim === 'win'}
-		<SpineTrack trackIndex={1} animationName="win" loop={false} timeScale={1} />
+		<SpineTrack trackIndex={1} animationName="win" loop={false} timeScale={1 * roundAnimationTimeScale} />
 	{:else if penguinAnim === 'lose_L_vest'}
 		<SpineTrack trackIndex={1} animationName="lose_L_vest" loop={false} timeScale={slipAnimationSpeedMult} />
 	{:else if penguinAnim === 'lose_R_vest'}
@@ -78,10 +79,10 @@
 	{:else if penguinAnim === 'lose_R'}
 		<SpineTrack trackIndex={1} animationName="lose_R" loop={false} timeScale={slipAnimationSpeedMult} />
 	{:else}
-		<SpineTrack trackIndex={1} animationName="idle" loop timeScale={1} />
+		<SpineTrack trackIndex={1} animationName="idle" loop timeScale={1 * roundAnimationTimeScale} />
 	{/if}
 	{#if invincibleLoop}
-		<SpineTrack trackIndex={2} animationName="invincible" loop timeScale={1} />
+		<SpineTrack trackIndex={2} animationName="invincible" loop timeScale={1 * roundAnimationTimeScale} />
 	{/if}
 	<SpineBone boneName="CTRL" rotation={tiltRot} />
 </SpineProvider>

@@ -6,6 +6,7 @@ type WalletLike = {
 type AuthFlowLike = {
 	wallet: WalletLike;
 	mode?: string | null;
+	betId?: string | null;
 	betConfig: {
 		betLevels: number[];
 		betAmount: number;
@@ -71,11 +72,13 @@ type PlayFlowResult = {
 	errorMessage: string | null;
 	wallet: WalletLike;
 	payoutMultiplier?: number | null;
+	betId?: string | null;
 };
 
 export async function preparePlayRound(args: {
 	forceTestRound: boolean;
 	forcedTestRoundState: any[];
+	forcedTestRoundBetId: string;
 	hasRgsBaseUrl: boolean;
 	selectedMode: string;
 	stakeAmount: number;
@@ -83,6 +86,7 @@ export async function preparePlayRound(args: {
 	apiMultiplier: number;
 	search: string;
 	buildSimulatedLossEvents: (stakeAmount: number) => any[];
+	buildSimulatedLossBetId: (stakeAmount: number) => string;
 	runPlayFlow: (args: PlayFlowArgs) => Promise<PlayFlowResult>;
 }) {
 	if (args.forceTestRound) {
@@ -90,9 +94,10 @@ export async function preparePlayRound(args: {
 			kind: 'events' as const,
 			response: {
 				simulated: true,
-				round: { state: args.forcedTestRoundState }
+				round: { state: args.forcedTestRoundState, betId: args.forcedTestRoundBetId }
 			},
 			events: args.forcedTestRoundState,
+			betId: args.forcedTestRoundBetId,
 			wallet: null as WalletLike | null,
 			payoutMultiplier: null as number | null,
 			shouldTriggerEndRoundNow: true
@@ -100,10 +105,13 @@ export async function preparePlayRound(args: {
 	}
 
 	if (!args.hasRgsBaseUrl) {
+		const events = args.buildSimulatedLossEvents(args.stakeAmount);
+		const betId = args.buildSimulatedLossBetId(args.stakeAmount);
 		return {
 			kind: 'events' as const,
-			response: { simulated: true },
-			events: args.buildSimulatedLossEvents(args.stakeAmount),
+			response: { simulated: true, round: { state: events, betId } },
+			events,
+			betId,
 			wallet: null as WalletLike | null,
 			payoutMultiplier: null as number | null,
 			shouldTriggerEndRoundNow: true
@@ -140,6 +148,7 @@ export async function preparePlayRound(args: {
 		kind: 'events' as const,
 		response: playFlow.response,
 		events: playFlow.events,
+		betId: playFlow.betId ?? null,
 		wallet: playFlow.wallet,
 		payoutMultiplier: playFlow.payoutMultiplier ?? null,
 		shouldTriggerEndRoundNow: false

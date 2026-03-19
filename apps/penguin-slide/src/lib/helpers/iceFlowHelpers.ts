@@ -51,6 +51,7 @@ export function buildIcePieces(args: {
 	iceSpawnLeftCount: number;
 	iceSpawnRightCount: number;
 	innerWidth: number;
+	random?: () => number;
 }): IcePiece[] {
 	const {
 		viewport,
@@ -66,6 +67,7 @@ export function buildIcePieces(args: {
 		iceSpawnRightCount,
 		innerWidth
 	} = args;
+	const random = args.random ?? Math.random;
 	const pieces: IcePiece[] = [];
 	const isPortrait = renderSize.h > renderSize.w;
 	const portraitSpawnOffset = isPortrait ? 0.04 : 0;
@@ -91,15 +93,15 @@ export function buildIcePieces(args: {
 	const placeSide = (side: IceSide) => {
 		const slots = side === 'left' ? spawnSlots.left : spawnSlots.right;
 		for (let i = 0; i < countPerSide; i++) {
-			const key = keys[Math.floor(Math.random() * keys.length)];
+			const key = keys[Math.floor(random() * keys.length)];
 			const spawnX =
-				slots[Math.floor(Math.random() * Math.max(1, slots.length))] ??
+				slots[Math.floor(random() * Math.max(1, slots.length))] ??
 				(side === 'left' ? viewport.w * 0.2 : viewport.w * 0.8);
-			const jitterX = (Math.random() - 0.5) * viewport.w * 0.01;
+			const jitterX = (random() - 0.5) * viewport.w * 0.01;
 			let y = spawnY + spanY * yBands[i];
 			if (i >= iceVisibleStart) y += spanY;
-			const yAmp = viewport.h * (0.0012 + Math.random() * 0.0012);
-			const rAmp = 0.003 + Math.random() * 0.002;
+			const yAmp = viewport.h * (0.0012 + random() * 0.0012);
+			const rAmp = 0.003 + random() * 0.002;
 			pieces.push({
 				baseX: spawnX + jitterX,
 				baseY: y,
@@ -108,10 +110,10 @@ export function buildIcePieces(args: {
 				animName: iceAnim,
 				yAmp,
 				rAmp,
-				swayRate: 0.9 + Math.random() * 0.24,
-				swayPhase: Math.random() * Math.PI * 2,
-				seed: Math.random() * 1000,
-				id: `${key}-${side}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+				swayRate: 0.9 + random() * 0.24,
+				swayPhase: random() * Math.PI * 2,
+				seed: random() * 1000,
+				id: `${key}-${side}-${i}-${Math.floor(random() * 0xffffff).toString(36)}`,
 				spawnIndex: i,
 				side,
 				sideGuard: i < 2
@@ -150,8 +152,8 @@ export function buildIcePieces(args: {
 				animName: iceAnim,
 				yAmp,
 				rAmp,
-				swayRate: 0.9 + Math.random() * 0.24,
-				swayPhase: Math.random() * Math.PI * 2,
+				swayRate: 0.9 + random() * 0.24,
+				swayPhase: random() * Math.PI * 2,
 				seed: 100 + i * 17,
 				id: `${layout.key}-fixed-${i}`,
 				spawnIndex: sideIndex,

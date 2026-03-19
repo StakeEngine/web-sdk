@@ -114,6 +114,23 @@ export function extractPendingRoundState(response: any): any[] | null {
 	return null;
 }
 
+export function extractRoundBetId(response: any): string | null {
+	const candidates = [
+		response?.round?.betId,
+		response?.round?.betID,
+		response?.round?.bet?.id,
+		response?.betId,
+		response?.betID,
+		response?.bet?.id
+	];
+	for (const candidate of candidates) {
+		if (candidate == null) continue;
+		const text = String(candidate).trim();
+		if (text) return text;
+	}
+	return null;
+}
+
 export function extractRoundEvents(response: any): any[] {
 	const events = response?.round?.state ?? response?.round?.events ?? [];
 	return Array.isArray(events) ? events : [];

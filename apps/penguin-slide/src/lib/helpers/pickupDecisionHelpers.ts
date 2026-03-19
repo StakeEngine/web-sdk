@@ -172,12 +172,15 @@ export function isLaneAlignedForPickupHelper(args: {
 	);
 	const isNothing = args.isNothingTokenType(args.token.type);
 	const isGoal = args.token.type === 'goal';
-	const maxXDelta = isGoal
+	const earlyStepIndex = Number(args.token.stepIndex);
+	const earlyXScale = earlyStepIndex === 0 ? 1.35 : earlyStepIndex === 1 ? 1.15 : 1;
+	const earlyLaneAllowance = earlyStepIndex === 0 ? 0.1 : earlyStepIndex === 1 ? 0.04 : 0;
+	const maxXDelta = (isGoal
 		? Math.max(40, args.penguin.size * 0.38)
 		: isNothing
 			? Math.max(20, args.penguin.size * 0.28)
-			: Math.max(16, args.penguin.size * 0.22);
-	const maxLaneDelta = isGoal ? 0.42 : isNothing ? 0.34 : 0.22;
+			: Math.max(16, args.penguin.size * 0.22)) * earlyXScale;
+	const maxLaneDelta = (isGoal ? 0.42 : isNothing ? 0.34 : 0.22) + earlyLaneAllowance;
 	return xDelta <= maxXDelta && laneDelta <= maxLaneDelta;
 }
 

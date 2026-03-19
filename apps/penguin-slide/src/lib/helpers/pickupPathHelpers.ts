@@ -122,8 +122,11 @@ export function pickupBandStateHelper(args: {
 	const pose = args.tokenRender(args.token.stepIndex);
 	const depth = pose ? pose.depth : 0.2;
 	const yDelta = args.penguin.y - pos.y;
-	const activateHalfWindow = Math.max(12, args.penguin.size * 0.09);
-	const approachWindow = Math.max(34, args.penguin.size * 0.42);
+	const earlyStepIndex = Number(args.token.stepIndex);
+	const activateWindowScale = earlyStepIndex === 0 ? 1.35 : earlyStepIndex === 1 ? 1.15 : 1;
+	const approachWindowScale = earlyStepIndex === 0 ? 1.2 : earlyStepIndex === 1 ? 1.08 : 1;
+	const activateHalfWindow = Math.max(12, args.penguin.size * 0.09) * activateWindowScale;
+	const approachWindow = Math.max(34, args.penguin.size * 0.42) * approachWindowScale;
 	const inActivateBand = yDelta <= activateHalfWindow && yDelta >= -activateHalfWindow * 1.8;
 	const passedBand = yDelta < -activateHalfWindow * 1.8;
 	const approachingBand = yDelta > activateHalfWindow && yDelta <= approachWindow;

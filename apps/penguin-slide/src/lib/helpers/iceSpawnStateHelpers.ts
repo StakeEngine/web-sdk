@@ -6,8 +6,10 @@ type SpawnHistory = { lastCycle: number; x: number; slotKey: string };
 export function createIceSpawnStateManager(args: {
 	jitterFrac: number;
 	getViewportWidth: () => number;
+	random?: () => number;
 }) {
 	const { jitterFrac, getViewportWidth } = args;
+	const random = args.random ?? Math.random;
 	let dynamicSpawnSlots: SpawnSlot[] = [];
 	const spawnHistory = new Map<string, SpawnHistory>();
 
@@ -42,14 +44,14 @@ export function createIceSpawnStateManager(args: {
 					slotKey: `${slot.side}:${slot.slotIndex}`,
 					x: slot.x ?? fallback
 				}));
-				let chosen = candidates[Math.floor(Math.random() * candidates.length)] ?? candidates[0];
+				let chosen = candidates[Math.floor(random() * candidates.length)] ?? candidates[0];
 				if (candidates.length > 1 && chosen?.slotKey === state.slotKey) {
 					const reroll = candidates.filter((candidate) => candidate.slotKey !== state.slotKey);
-					chosen = reroll[Math.floor(Math.random() * reroll.length)] ?? chosen;
+					chosen = reroll[Math.floor(random() * reroll.length)] ?? chosen;
 				}
 				const slotX = chosen?.x ?? fallback;
 				state.slotKey = chosen?.slotKey ?? `${side}:0`;
-				const jitter = (Math.random() * 2 - 1) * getViewportWidth() * jitterFrac;
+				const jitter = (random() * 2 - 1) * getViewportWidth() * jitterFrac;
 				state.x = slotX + jitter;
 			} else {
 				state.x = fallback;

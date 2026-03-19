@@ -13,6 +13,7 @@ export type SpawnLaneConfig = {
 	SLOT_TO_OFFSET: Record<number, number>;
 	LEFT_LANE_SLOTS: readonly number[];
 	RIGHT_LANE_SLOTS: readonly number[];
+	random?: () => number;
 };
 
 export type SpawnLaneState = {
@@ -22,6 +23,7 @@ export type SpawnLaneState = {
 
 export function createSpawnLaneHelpers(config: SpawnLaneConfig, state: SpawnLaneState) {
 	type SpawnTarget = { slot: number; laneOffset: number; lockLaneOffset: number };
+	const random = config.random ?? Math.random;
 
 	function outerSlotForSide(side: 'left' | 'right') {
 		return side === 'left'
@@ -46,8 +48,8 @@ export function createSpawnLaneHelpers(config: SpawnLaneConfig, state: SpawnLane
 			: lane >= 0
 				? config.RIGHT_MISS_SPAWN_OFFSETS
 				: config.LEFT_MISS_SPAWN_OFFSETS;
-		const jitter = (Math.random() * 2 - 1) * (isHit ? config.SPAWN_OFFSET_JITTER : config.SPAWN_OFFSET_JITTER * 0.5);
-		const base = sideOffsets[Math.floor(Math.random() * sideOffsets.length)];
+		const jitter = (random() * 2 - 1) * (isHit ? config.SPAWN_OFFSET_JITTER : config.SPAWN_OFFSET_JITTER * 0.5);
+		const base = sideOffsets[Math.floor(random() * sideOffsets.length)];
 		const raw = base + jitter;
 		return lane >= 0
 			? Math.max(config.MIN_SPAWN_OFFSET, Math.min(1, raw))
@@ -72,13 +74,13 @@ export function createSpawnLaneHelpers(config: SpawnLaneConfig, state: SpawnLane
 
 		if (avoidPreviousPathHit) {
 			const lastSlot = state.lastPathHitSlotBySide[side];
-			if (typeof lastSlot === 'number' && candidates.length > 1 && Math.random() < 0.94) {
+			if (typeof lastSlot === 'number' && candidates.length > 1 && random() < 0.94) {
 				const nonRepeat = candidates.filter((slot) => slot !== lastSlot);
 				if (nonRepeat.length) candidates = nonRepeat;
 			}
 		}
 
-		const chosenSlot = pickFrom(candidates.length ? candidates : slots);
+		const chosenSlot = pickFrom(candidates.length ? candidates : slots, random);
 		if (side === 'left') step.left = chosenSlot;
 		else step.right = chosenSlot;
 		state.stepLaneSlots.set(stepIndex, step);
@@ -91,7 +93,7 @@ export function createSpawnLaneHelpers(config: SpawnLaneConfig, state: SpawnLane
 	function laneOffsetForSlot(slot: number, lane: number, isHit = false) {
 		const baseOffset = config.SLOT_TO_OFFSET[slot];
 		if (!Number.isFinite(baseOffset)) return pickSpawnLane(lane, isHit);
-		const jitter = (Math.random() * 2 - 1) * (isHit ? config.SPAWN_OFFSET_JITTER : config.SPAWN_OFFSET_JITTER * 0.5);
+		const jitter = (random() * 2 - 1) * (isHit ? config.SPAWN_OFFSET_JITTER : config.SPAWN_OFFSET_JITTER * 0.5);
 		const raw = baseOffset + jitter;
 		return lane >= 0
 			? Math.max(config.MIN_SPAWN_OFFSET, Math.min(1, raw))

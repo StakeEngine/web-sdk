@@ -71,7 +71,7 @@ export const PRE_STEP_SWEEP_INSET = 0.24;
 export const PRE_STEP_OPENING_FREE_ROAM_STEPS = 2.5;
 export const PRE_STEP_SINGLE_SWEEP_MIN_STEPS = 0.7;
 export const PRE_STEP_SINGLE_SWEEP_BASE_STEPS = 1.5;
-export const PRE_STEP_FIRST_LOCK_LEAD_STEPS = 0.62;
+export const PRE_STEP_FIRST_LOCK_LEAD_STEPS = 0.9;
 export const PRE_STEP_HANDOFF_STEPS = 0.34;
 
 export const accumulatedStrokeWidth = 12;

@@ -3,6 +3,7 @@ import {
 	endRoundWallet,
 	extractPendingRoundState,
 	extractPayoutMultiplier,
+	extractRoundBetId,
 	extractRoundEvents,
 	extractWalletSnapshot,
 	playWallet,
@@ -26,6 +27,7 @@ export async function runAuthenticateFlow(args: {
 		args.currentBetAmount
 	);
 	const pendingRoundEvents = extractPendingRoundState(response);
+	const betId = extractRoundBetId(response);
 	const mode = response?.round?.mode
 		? String(response.round.mode)
 		: args.modeFromQuery
@@ -33,7 +35,7 @@ export async function runAuthenticateFlow(args: {
 			: null;
 	const failed = !response || response?.error;
 	const shouldClearError = Boolean(response?.balance?.amount != null || response?.config);
-	return { response, wallet, betConfig, pendingRoundEvents, mode, failed, shouldClearError };
+	return { response, wallet, betConfig, pendingRoundEvents, betId, mode, failed, shouldClearError };
 }
 
 export async function runPlayFlow(args: {
@@ -51,12 +53,13 @@ export async function runPlayFlow(args: {
 	const wallet = extractWalletSnapshot(response, args.apiMultiplier);
 	const events = extractRoundEvents(response);
 	const payoutMultiplier = extractPayoutMultiplier(response);
+	const betId = extractRoundBetId(response);
 	const errorMessage = response?.error
 		? response?.message
 			? String(response.message)
 			: 'Play failed.'
 		: null;
-	return { response, wallet, events, payoutMultiplier, errorMessage };
+	return { response, wallet, events, payoutMultiplier, betId, errorMessage };
 }
 
 export async function runEndRoundFlow(args: { search: string; apiMultiplier: number }) {

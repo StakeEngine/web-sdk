@@ -49,6 +49,20 @@ export function effectiveSpeedFactor(speedFactor: number) {
 	return speedFactor === 2 ? speedFactor * 1.2 : speedFactor;
 }
 
+export function computeRoundSpeedScale(args: {
+	speedFactor: number;
+	pickupStepPaceMultiplier: number;
+	pickupTravelSpeed: number;
+	debugGameSpeedMult: number;
+}) {
+	const normalBaseStepPerMs = computeBaseStepPerMs({
+		...args,
+		speedFactor: 2
+	});
+	const currentBaseStepPerMs = computeBaseStepPerMs(args);
+	return currentBaseStepPerMs / Math.max(0.0001, normalBaseStepPerMs);
+}
+
 export function computeBaseStepPerMs(args: {
 	speedFactor: number;
 	pickupStepPaceMultiplier: number;

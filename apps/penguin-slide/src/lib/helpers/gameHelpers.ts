@@ -8,8 +8,8 @@ export function laneSide(lane: number): 'left' | 'right' {
 	return lane >= 0 ? 'right' : 'left';
 }
 
-export function pickFrom<T>(items: readonly T[]): T {
-	return items[Math.floor(Math.random() * items.length)] as T;
+export function pickFrom<T>(items: readonly T[], random: () => number = Math.random): T {
+	return items[Math.floor(random() * items.length)] as T;
 }
 
 export function laneItemValue(pad: any) {

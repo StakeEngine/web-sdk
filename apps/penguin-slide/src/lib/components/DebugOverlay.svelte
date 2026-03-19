@@ -25,7 +25,7 @@
 	};
 	type LineCrossing = { slot: number; offset: number; x: number; y: number; lane: number };
 
-	export let enabled = true;
+	export let enabled = false;
 	export let viewport: Viewport;
 	export let renderStep: number;
 	export let penguinTargetLane: number;

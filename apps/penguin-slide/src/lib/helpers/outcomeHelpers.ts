@@ -1,12 +1,12 @@
-export function randomGhostOutcome() {
+export function randomGhostOutcome(random: () => number = Math.random) {
 	const options = ['coin', 'star', 'lifering', 'banana'] as const;
-	const pick = options[Math.floor(Math.random() * options.length)];
+	const pick = options[Math.floor(random() * options.length)];
 	if (pick === 'coin') {
-		const coinValue = 1 + Math.floor(Math.random() * 5);
+		const coinValue = 1 + Math.floor(random() * 5);
 		return { type: 'coin', extra: { cosmetic: true, coinValue } };
 	}
 	if (pick === 'star') {
-		const multiplier = 2 + Math.floor(Math.random() * 4);
+		const multiplier = 2 + Math.floor(random() * 4);
 		return { type: 'star', extra: { cosmetic: true, multiplier } };
 	}
 	if (pick === 'lifering') {
@@ -15,7 +15,12 @@ export function randomGhostOutcome() {
 	return { type: 'banana', extra: { cosmetic: true } };
 }
 
-export function parseOutcome(item: string, padType?: string, sinking?: boolean) {
+export function parseOutcome(
+	item: string,
+	padType?: string,
+	sinking?: boolean,
+	random: () => number = Math.random
+) {
 	void sinking;
 	const normalized = String(item || '').trim().toUpperCase();
 	const pad = String(padType || '').trim().toUpperCase();
@@ -45,7 +50,7 @@ export function parseOutcome(item: string, padType?: string, sinking?: boolean) 
 		return { type: 'coin', extra: { coinValue } };
 	}
 	if (normalized === 'GHOST') {
-		return randomGhostOutcome();
+		return randomGhostOutcome(random);
 	}
 	if (normalized === 'SLIP' || normalized === 'SINK') {
 		return { type: 'banana', extra: { fall: true } };
