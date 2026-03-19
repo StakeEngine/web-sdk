@@ -151,10 +151,7 @@
 				{@const spawnY = icePath.topY + viewport.h * (0.25 + iceSpawnYDownFrac + (scenePortrait ? 0.04 : 0))}
 				{@const spawnOffset = viewport.h * 0.25}
 				{@const scrollOffset = iceScroll * 0.715}
-				{@const bottomLimit = icePath.bottomY + stepSpacing * 0.2}
-				{@const loopSpan = Math.max(1, bottomLimit - spawnY)}
-				{@const loopGap = viewport.h * iceRespawnGapFrac}
-				{@const loopDistance = loopSpan + loopGap}
+				{@const splashSafeBottom = icePath.bottomY - viewport.h * 0.1}
 				{@const slopeDepthA = 0.2}
 				{@const slopeDepthB = 0.8}
 				{@const leftA = lanePosition(slopeDepthA, -1)}
@@ -165,18 +162,11 @@
 				{@const rightLaneSlope =
 					(rightB.x - rightA.x) / Math.max(1, (rightB.y + spawnOffset) - (rightA.y + spawnOffset))}
 				{#each icePieces as piece (piece.id)}
-					{@const baseOffset = piece.baseY - spawnY}
-					{@const travel = baseOffset + scrollOffset}
-					{@const wrappedDistance = ((travel % loopDistance) + loopDistance) % loopDistance}
-					{@const inRespawnGap = wrappedDistance > loopSpan}
-					{@const wrapped = Math.min(loopSpan, wrappedDistance)}
-					{@const localOffset = wrapped}
-					{@const yRaw = spawnY + localOffset}
-					{@const cycle = Math.floor(travel / loopDistance)}
-					{@const fullLoops = Math.floor(travel / loopDistance)}
-					{@const spawnBaseX = hasStartedFirstRound
-						? iceSpawnState.getSpawnX(piece.id, cycle, piece.baseX, piece.side)
-						: piece.baseX}
+					{@const spawnTravelOffset = Number(piece.spawnTravelOffset ?? 0)}
+					{@const travel = piece.spawnTravelOffset != null ? scrollOffset - spawnTravelOffset : scrollOffset}
+					{@const localOffset = piece.spawnTravelOffset != null ? Math.max(0, travel) : scrollOffset}
+					{@const yRaw = piece.baseY + localOffset}
+					{@const spawnBaseX = piece.baseX}
 					{@const slope = spawnBaseX < viewport.w * 0.5 ? leftLaneSlope : rightLaneSlope}
 					{@const slopeOffset = slope * (yRaw - spawnY) * 1.6}
 					{@const rawX = spawnBaseX + slopeOffset}
@@ -191,10 +181,9 @@
 					{@const sway = Math.sin(
 						sceneFloatTime * waterTimeScale * iceSwayScale * piece.swayRate * Math.PI * 2 + phaseOffset + piece.swayPhase
 					)}
-					{@const allowSpawn = piece.spawnIndex < iceVisibleStart || (iceScroll > 0 && fullLoops > 0)}
-					{@const visible = allowSpawn && y <= bottomLimit}
-					{@const canRender = visible && (piece.sideGuard || !inRespawnGap)}
-					{#if canRender}
+					{@const allowSpawn = piece.spawnTravelOffset != null ? travel >= 0 : true}
+					{@const visible = allowSpawn && y <= splashSafeBottom}
+					{#if visible}
 						<SpineProvider
 							{...spineProps({
 								key: piece.key,

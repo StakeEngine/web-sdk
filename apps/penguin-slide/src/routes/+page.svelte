@@ -28,8 +28,7 @@
 		getIceSpawnXs as getIceSpawnXsHelper,
 		buildIcePieces as buildIcePiecesHelper
 	} from '../lib/helpers/iceFlowHelpers';
-	import type { IcePiece } from '../lib/helpers/iceFlowHelpers';
-	import { createIceSpawnStateManager } from '../lib/helpers/iceSpawnStateHelpers';
+	import type { IcePiece, IceSide } from '../lib/helpers/iceFlowHelpers';
 	import {
 		FORCE_TEST_ROUND,
 		FORCED_TEST_ROUND_BET_ID,
@@ -260,6 +259,12 @@
 	const nextGhostRandom = () => frontendRandomStreams.ghost();
 	const nextIceLayoutRandom = () => frontendRandomStreams.iceLayout();
 	const nextIceSpawnRandom = () => frontendRandomStreams.iceSpawn();
+	const DYNAMIC_ICE_START_STEPS = 0.8;
+	const DYNAMIC_ICE_BATCH_INTERVAL_STEPS = 0.8;
+	const DYNAMIC_ICE_SAME_SLOT_MIN_GAP_STEPS = 1.25;
+	const DYNAMIC_ICE_SLIP_BLOCK_STEPS = 1.5;
+	const DYNAMIC_ICE_TWO_PIECE_CHANCE = 0.35;
+	const DYNAMIC_ICE_KEYS = ['ice_1', 'ice_2', 'ice_3', 'ice_4', 'ice_5', 'ice_6', 'ice_7', 'ice_8'];
 
 	function reseedFrontendRandomness(seedInput: unknown, fallbackKey: string) {
 		const seedKey = seedInput ?? fallbackKey;
@@ -1144,6 +1149,11 @@ function consumeRespawnBlinkStep(token: Token) {
 	}
 }
 
+function stopRespawnBlinkOnWin() {
+	reviveBlinkStepsRemaining = 0;
+	invincibleLoop = false;
+}
+
 function hasPendingValuePickup() {
 	return tokens.some(
 		(token) =>
@@ -1154,22 +1164,25 @@ function hasPendingValuePickup() {
 	);
 }
 
-	let tokens = $state<Token[]>([]);
+let tokens = $state<Token[]>([]);
 	const removalTimers = new Map<number, ReturnType<typeof setTimeout>>();
 	let liferingVisualClearTimer: ReturnType<typeof setTimeout> | null = null;
 
-	const viewport = $state({ w: baseViewport.w, h: baseViewport.h });
+const viewport = $state({ w: baseViewport.w, h: baseViewport.h });
 let hasStartedFirstRound = $state(false);
-const iceSpawnState = createIceSpawnStateManager({
-	jitterFrac: ICE_SPAWN_X_JITTER_FRAC,
-	getViewportWidth: () => viewport.w,
-	random: nextIceSpawnRandom
-});
+let runStartRenderStep = $state(0);
+let fixedIcePieces = $state<IcePiece[]>([]);
+let dynamicIcePieces = $state<IcePiece[]>([]);
+let nextDynamicIceBatchProgressSteps = $state(DYNAMIC_ICE_START_STEPS);
+let dynamicIceBlockedSide = $state<IceSide | null>(null);
+let dynamicIceBlockedUntilProgressSteps = $state(0);
 let icePieces = $state<IcePiece[]>([]);
 	let floatTime = $state(0);
 	let sceneFloatTime = $state(0);
 	let iceScroll = $state(0);
 	let slideTimeScale = $state(PENGUIN_SLIDE_TIME_SCALE);
+let dynamicIceSerial = 0;
+const dynamicIceLastSpawnProgressBySlot = new Map<string, number>();
 
 	const getParam = (key: string) => getQueryParamFromSearch(window.location.search, key);
 	const getLanguageParam = () => getParam('language') ?? getParam('lang');
@@ -1240,12 +1253,53 @@ function getRgsBaseUrl(): string | null {
 		stageOffset.y = 0;
 	}
 
-function buildFloes() {
-	iceSpawnState.updateSpawnPositions(
-		getIceSpawnXsHelper(viewport, renderSize, ICE_SPAWN_LEFT_COUNT, ICE_SPAWN_RIGHT_COUNT)
-	);
+function currentIceSpawnSlots() {
+	return getIceSpawnXsHelper(viewport, renderSize, ICE_SPAWN_LEFT_COUNT, ICE_SPAWN_RIGHT_COUNT);
+}
+
+function currentIceSpawnY(topY: number) {
+	const portraitSpawnOffset = renderSize.h > renderSize.w ? 0.04 : 0;
+	return topY + viewport.h * (0.25 + ICE_SPAWN_Y_DOWN_FRAC + portraitSpawnOffset);
+}
+
+function currentIceTravelOffset() {
+	return iceScroll * 0.715;
+}
+
+function currentRoundProgressSteps() {
+	return Math.max(0, (renderStep - runStartRenderStep) / Math.max(1, stepSpacing));
+}
+
+function dynamicIceTravelDistancePerStep() {
+	return (stepSpacing * 1.15 * 0.715) / Math.max(0.01, PICKUP_TRAVEL_SPEED);
+}
+
+function currentDynamicIceMaxTravel() {
 	const { topY, bottomY } = pathMetrics();
-	icePieces = buildIcePiecesHelper({
+	const spawnY = currentIceSpawnY(topY);
+	const splashSafeBottom = bottomY - viewport.h * 0.1;
+	return Math.max(1, splashSafeBottom - spawnY);
+}
+
+function remapDynamicIcePiece(piece: IcePiece) {
+	const slots = currentIceSpawnSlots();
+	const slotXs = piece.side === 'left' ? slots.left : slots.right;
+	const slotIndex = Math.max(0, Math.min(slotXs.length - 1, Number(piece.slotIndex ?? 0)));
+	const { topY } = pathMetrics();
+	return {
+		...piece,
+		baseX: slotXs[slotIndex] ?? piece.baseX,
+		baseY: currentIceSpawnY(topY)
+	};
+}
+
+function refreshIcePieces() {
+	icePieces = [...fixedIcePieces, ...dynamicIcePieces.map(remapDynamicIcePiece)];
+}
+
+function rebuildFixedFloes() {
+	const { topY, bottomY } = pathMetrics();
+	fixedIcePieces = buildIcePiecesHelper({
 		viewport,
 		renderSize,
 		topY,
@@ -1260,6 +1314,113 @@ function buildFloes() {
 		innerWidth: window.innerWidth,
 		random: nextIceLayoutRandom
 	});
+	refreshIcePieces();
+}
+
+function chooseDynamicIceSlot(
+	side: IceSide,
+	progressSteps: number,
+	blockedKeys: Set<string>
+) {
+	const slotCount = side === 'left' ? ICE_SPAWN_LEFT_COUNT : ICE_SPAWN_RIGHT_COUNT;
+	const candidates = Array.from({ length: slotCount }, (_, slotIndex) => slotIndex).filter(
+		(slotIndex) => !blockedKeys.has(`${side}:${slotIndex}`)
+	);
+	if (!candidates.length) return null;
+	const cooled = candidates.filter((slotIndex) => {
+		const slotKey = `${side}:${slotIndex}`;
+		const lastProgress = dynamicIceLastSpawnProgressBySlot.get(slotKey);
+		return lastProgress == null || progressSteps - lastProgress >= DYNAMIC_ICE_SAME_SLOT_MIN_GAP_STEPS;
+	});
+	const available = cooled.length ? cooled : candidates;
+	return available[Math.floor(nextIceSpawnRandom() * available.length)] ?? null;
+}
+
+function dynamicIceBlockedSideAt(progressSteps: number) {
+	if (dynamicIceBlockedSide == null) return null;
+	return progressSteps < dynamicIceBlockedUntilProgressSteps ? dynamicIceBlockedSide : null;
+}
+
+function spawnDynamicIceBatch(progressSteps: number) {
+	const blockedSide = dynamicIceBlockedSideAt(progressSteps);
+	const batchCount = nextIceSpawnRandom() < DYNAMIC_ICE_TWO_PIECE_CHANCE ? 2 : 1;
+	const sideOrder: IceSide[] = nextIceSpawnRandom() < 0.5 ? ['left', 'right'] : ['right', 'left'];
+	const requestedSides =
+		batchCount === 2
+			? sideOrder
+			: [sideOrder[0]];
+	const sides = requestedSides.filter((side, index) => {
+		if (side === blockedSide) return false;
+		return batchCount === 1 || index === 0 || side !== requestedSides[index - 1];
+	});
+	if (!sides.length) {
+		const fallbackSide: IceSide = blockedSide === 'left' ? 'right' : 'left';
+		sides.push(fallbackSide);
+	}
+	const blockedKeys = new Set<string>();
+	const slots = currentIceSpawnSlots();
+	const spawnTravelOffset = progressSteps * dynamicIceTravelDistancePerStep();
+	const scale = window.innerWidth < 600 ? 0.72 : 0.88;
+	const nextPieces: IcePiece[] = [];
+	for (const side of sides) {
+		const slotIndex = chooseDynamicIceSlot(side, progressSteps, blockedKeys);
+		if (slotIndex == null) continue;
+		const slotKey = `${side}:${slotIndex}`;
+		blockedKeys.add(slotKey);
+		dynamicIceLastSpawnProgressBySlot.set(slotKey, progressSteps);
+		const sideSlots = side === 'left' ? slots.left : slots.right;
+		const baseX = sideSlots[slotIndex] ?? (side === 'left' ? viewport.w * 0.2 : viewport.w * 0.8);
+		const key = DYNAMIC_ICE_KEYS[Math.floor(nextIceSpawnRandom() * DYNAMIC_ICE_KEYS.length)] ?? 'ice_1';
+		nextPieces.push({
+			baseX,
+			baseY: currentIceSpawnY(pathMetrics().topY),
+			spawnTravelOffset,
+			slotIndex,
+			oneShot: true,
+			scale,
+			key,
+			animName: 'activate',
+			yAmp: viewport.h * 0.0018,
+			rAmp: 0.004,
+			swayRate: 0.9 + nextIceSpawnRandom() * 0.24,
+			swayPhase: nextIceSpawnRandom() * Math.PI * 2,
+			seed: nextIceSpawnRandom() * 1000,
+			id: `${key}-dynamic-${dynamicIceSerial++}`,
+			spawnIndex: slotIndex,
+			side,
+			sideGuard: false
+		});
+	}
+	if (!nextPieces.length) return;
+	dynamicIcePieces = [...dynamicIcePieces, ...nextPieces];
+	refreshIcePieces();
+}
+
+function pruneDynamicIcePieces() {
+	if (!dynamicIcePieces.length) return;
+	const currentTravel = currentIceTravelOffset();
+	const maxTravel = currentDynamicIceMaxTravel();
+	const nextPieces = dynamicIcePieces.filter((piece) => {
+		if (!Number.isFinite(Number(piece.spawnTravelOffset))) return true;
+		return currentTravel - Number(piece.spawnTravelOffset) <= maxTravel;
+	});
+	if (nextPieces.length === dynamicIcePieces.length) return;
+	dynamicIcePieces = nextPieces;
+	refreshIcePieces();
+}
+
+function updateDynamicIceFlow() {
+	if (animationStatus !== 'running') return;
+	const progressSteps = currentRoundProgressSteps();
+	if (progressSteps < DYNAMIC_ICE_START_STEPS) {
+		pruneDynamicIcePieces();
+		return;
+	}
+	while (progressSteps >= nextDynamicIceBatchProgressSteps) {
+		spawnDynamicIceBatch(nextDynamicIceBatchProgressSteps);
+		nextDynamicIceBatchProgressSteps += DYNAMIC_ICE_BATCH_INTERVAL_STEPS;
+	}
+	pruneDynamicIcePieces();
 }
 
 	function resetRun(startValue = 1) {
@@ -1283,6 +1444,7 @@ function buildFloes() {
 		wobbleBoost = 0;
 		const initialPickupLookahead = lookaheadSteps + PICKUP_LOOKAHEAD_EXTRA_STEPS;
 		const initialRenderStep = -initialPickupLookahead * stepSpacing;
+		runStartRenderStep = initialRenderStep;
 		renderStep = initialRenderStep;
 		targetStep = initialRenderStep;
 		lastPickupRenderStep = initialRenderStep;
@@ -1385,9 +1547,13 @@ function buildFloes() {
 		stepLaneSlots.clear();
 		lastPathHitSlotBySide.left = null;
 		lastPathHitSlotBySide.right = null;
-		// Reset per-piece respawn history so each run gets a fresh random ice sequence.
-		iceSpawnState.reset();
-		buildFloes();
+		dynamicIcePieces = [];
+		nextDynamicIceBatchProgressSteps = DYNAMIC_ICE_START_STEPS;
+		dynamicIceBlockedSide = null;
+		dynamicIceBlockedUntilProgressSteps = 0;
+		dynamicIceSerial = 0;
+		dynamicIceLastSpawnProgressBySlot.clear();
+		rebuildFixedFloes();
 		
 
 	}
@@ -1772,6 +1938,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 				scrollSteps += (stepSpeed / stepSpacing) * dtMs;
 				renderStep = Math.min(endStep, startStep + scrollSteps * stepSpacing);
 				iceScroll += (stepSpeed / Math.max(0.01, PICKUP_TRAVEL_SPEED)) * dtMs * 1.15;
+				updateDynamicIceFlow();
 				const currentStep = Math.max(0, Math.floor(renderStep / stepSpacing + 0.001));
 				consumePendingVestPops(currentStep);
 				updateWobbleRiskForStep(currentStep);
@@ -2067,6 +2234,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 								startWinAmountPulse();
 								status = 'goal';
 								penguinAnim = 'win';
+								stopRespawnBlinkOnWin();
 								laneFreeze = true;
 								penguinOffsetFrac = 0;
 								penguinSkidRotation = 0;
@@ -2322,6 +2490,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 		scrollSteps += (stepSpeed / stepSpacing) * dtMs;
 		renderStep = Math.min(endStep, startStep + scrollSteps * stepSpacing);
 		iceScroll += (stepSpeed / Math.max(0.01, PICKUP_TRAVEL_SPEED)) * dtMs * 1.15;
+		updateDynamicIceFlow();
 		const currentStep = Math.max(0, Math.floor(renderStep / stepSpacing + 0.001));
 		consumePendingVestPops(currentStep);
 		const runProgress = Math.min(1, (renderStep - startStep) / (endStep - startStep));
@@ -2608,6 +2777,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 							startWinAmountPulse();
 							status = 'goal';
 							penguinAnim = 'win';
+							stopRespawnBlinkOnWin();
 							laneFreeze = true;
 							penguinOffsetFrac = 0;
 							penguinSkidRotation = 0;
@@ -3621,6 +3791,9 @@ function clearLiferingState(stepIndex: number | null = null, animateLose = false
 		const currentLane = clampPenguinLane(penguinLane);
 		penguinOffsetFrac = Math.max(-0.04, Math.min(0.04, offsetFrac));
 		slipDirection = xBasedDirection === 0 ? (laneSign >= 0 ? 1 : -1) : xBasedDirection;
+		dynamicIceBlockedSide = slipDirection > 0 ? 'right' : 'left';
+		dynamicIceBlockedUntilProgressSteps =
+			currentRoundProgressSteps() + DYNAMIC_ICE_SLIP_BLOCK_STEPS;
 		liferingPickedStep = null;
 		slipTriggered = true;
 		slipOriginX = null;
@@ -4343,7 +4516,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 			}
 			viewport.w = baseViewport.w;
 			viewport.h = baseViewport.h;
-			buildFloes();
+			rebuildFixedFloes();
 			rebuildPickupLineCrossings();
 		};
 
@@ -4488,7 +4661,6 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{floatTime}
 				{sceneFloatTime}
 				{hasStartedFirstRound}
-				{iceSpawnState}
 				{icePieces}
 				iceVisibleStart={ICE_VISIBLE_START}
 				{spineProps}
