@@ -123,7 +123,7 @@
 			{@const bgAnim = 'idle'}
 			{@const bgTimeScale = roundActive ? sceneAnimationTimeScale : 0}
 			<Container y={viewport.h * (scenePortrait ? -0.02 : -0.1)} sortableChildren>
-				<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY })}>
+				<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY, zIndex: -10 })}>
 					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
 				</SpineProvider>
 				<SpineProvider
@@ -131,7 +131,8 @@
 						key: 'background_clouds',
 						x: cloudsX,
 						y: cloudsY,
-						anchor: { x: 0.5, y: 0.5 }
+						anchor: { x: 0.5, y: 0.5 },
+						zIndex: -30
 					})}
 				>
 					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
@@ -141,7 +142,8 @@
 						key: 'background_mountains',
 						x: viewport.w * 0.5,
 						y: mountainsY,
-						scaleX: mountainsScaleX
+						scaleX: mountainsScaleX,
+						zIndex: -20
 					})}
 				>
 					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />

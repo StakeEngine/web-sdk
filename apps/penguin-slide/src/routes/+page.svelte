@@ -3735,12 +3735,20 @@ function clearLiferingState(stepIndex: number | null = null, animateLose = false
 		const slipDepth = depthForPickupY(slipStartPose.y);
 		const baselineLane = dir > 0 ? 1 : -1;
 		const baselineX = lanePosition(slipDepth, baselineLane).x;
+		const outerEdgeLane = dir > 0 ? SLOT_TO_OFFSET[7] : SLOT_TO_OFFSET[0];
+		const innerLaneGap = Math.max(0, Math.abs(outerEdgeLane - clampPenguinLane(penguinLane)));
+		const edgeLaneSpan = Math.max(0.001, Math.abs(outerEdgeLane));
+		const innerLaneBoost =
+			innerLaneGap > 0.001
+				? viewport.w * Math.min(0.085, (innerLaneGap / edgeLaneSpan) * 0.065)
+				: 0;
 		const baseAnimationConfig = computeSlipAnimationConfig({
 			viewportWidth: viewport.w,
 			originX,
 			baselineX,
 			direction: dir > 0 ? 1 : -1,
-			durationMultiplier: SLIP_ANIMATION_DURATION_MULT / slipSpeedScale
+			durationMultiplier: SLIP_ANIMATION_DURATION_MULT / slipSpeedScale,
+			extraSideBoost: innerLaneBoost
 		});
 		const animationConfig = skipPrePhase
 			? {
