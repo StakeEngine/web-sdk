@@ -158,7 +158,10 @@ export function parsePadSequenceEvents(args: {
 			};
 		}
 		if (entry.terminal === true && applies) {
-			const terminalSuccess = entry.success === true || hasGoalPad;
+			// Terminal resolution must follow the applied/landed outcome, not merely the
+			// presence of a goal on the opposite pad. Otherwise an off-path goal can
+			// incorrectly convert a terminal sinking loss into a win summary.
+			const terminalSuccess = entry.success === true;
 			summaryEvent = {
 				result: terminalSuccess ? 'goal' : 'slip',
 				steps: stepIndex + 1,

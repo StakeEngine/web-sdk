@@ -1150,8 +1150,16 @@ function consumeRespawnBlinkStep(token: Token) {
 }
 
 function stopRespawnBlinkOnWin() {
+	cancelReviveRecovery();
+	cancelReviveFlash();
+	cancelVestLoseFallback();
 	reviveBlinkStepsRemaining = 0;
 	invincibleLoop = false;
+	reviveStartGhostStepIndex = null;
+	reviveStartGhostPassed = true;
+	vestLoseEventSeen = false;
+	vestLossMotionComplete = false;
+	clearReviveVestVisual();
 }
 
 function hasPendingValuePickup() {
@@ -1222,13 +1230,14 @@ function t(key: I18nKey, vars?: Record<string, string | number>) {
 	return template.replace(/\{(\w+)\}/g, (_match, name: string) => String(vars[name] ?? ''));
 }
 
-function getRgsBaseUrl(): string | null {
-	return getRgsBaseUrlFromSearch(window.location.search);
-}
+	function getRgsBaseUrl(): string | null {
+		return getRgsBaseUrlFromSearch(window.location.search);
+	}
 
 	function updateViewport() {
-		const vw = window.innerWidth;
-		const vh = window.innerHeight;
+		const viewportMetrics = window.visualViewport;
+		const vw = Math.max(1, Math.round(viewportMetrics?.width ?? window.innerWidth));
+		const vh = Math.max(1, Math.round(viewportMetrics?.height ?? window.innerHeight));
 		const isLandscape = vw > vh;
 		const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 		const desktopLandscapeRef = { w: 1200, h: 675 };
@@ -1559,11 +1568,14 @@ function updateDynamicIceFlow() {
 	}
 
 	function markRoundEnded() {
+		cancelReviveRecovery();
+		cancelReviveFlash();
+		cancelVestLoseFallback();
 		animationStatus = 'done';
 		lastRoundEndAt = performance.now();
 		invincibleLoop = false;
 		reviveBlinkStepsRemaining = 0;
-		reviveRingVisible = false;
+		clearReviveVestVisual();
 		reviveStartGhostStepIndex = null;
 		reviveStartGhostPassed = true;
 		stopSlideLoop();
@@ -4480,6 +4492,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 		let ro: ResizeObserver | null = null;
 		let rafId: number | null = null;
 		let floatId: number | null = null;
+		let layoutSyncRaf: number | null = null;
 		let cancelled = false;
 		let timeId: number | null = null;
 		const unlockAudioOnInteraction = () => ensureBackgroundMusic();
@@ -4488,8 +4501,10 @@ function stepDebugGuides(): StepDebugGuide[] {
 			if (!gameBodyEl) return;
 			const app = context.stateApp.pixiApplication;
 			if (!app || !app.renderer) return;
-			const w = Math.max(1, Math.round(gameBodyEl.clientWidth));
-			const h = Math.max(1, Math.round(gameBodyEl.clientHeight));
+			const measuredWidth = Math.round(gameBodyEl.clientWidth);
+			const measuredHeight = Math.round(gameBodyEl.clientHeight);
+			const w = Math.max(1, measuredWidth || Math.round(gameBox.w));
+			const h = Math.max(1, measuredHeight || Math.round(gameBox.h));
 			const dpr = Math.max(1, window.devicePixelRatio || 1);
 			try {
 				app.renderer.resolution = dpr;
@@ -4520,6 +4535,19 @@ function stepDebugGuides(): StepDebugGuide[] {
 			rebuildPickupLineCrossings();
 		};
 
+		const scheduleLayoutSync = () => {
+			if (layoutSyncRaf != null) cancelAnimationFrame(layoutSyncRaf);
+			layoutSyncRaf = requestAnimationFrame(() => {
+				layoutSyncRaf = null;
+				syncRendererSize();
+			});
+		};
+
+		const refreshStageLayout = () => {
+			updateViewport();
+			scheduleLayoutSync();
+		};
+
 		const waitForApp = () =>
 			new Promise<void>((resolve) => {
 				const tick = () => {
@@ -4529,14 +4557,15 @@ function stepDebugGuides(): StepDebugGuide[] {
 				tick();
 			});
 
-		updateViewport();
-		window.addEventListener('resize', updateViewport);
-		window.addEventListener('resize', syncRendererSize);
+		refreshStageLayout();
+		window.addEventListener('resize', refreshStageLayout);
 		window.addEventListener('pointerdown', unlockAudioOnInteraction);
 		window.addEventListener('keydown', unlockAudioOnInteraction);
 		window.addEventListener('touchstart', unlockAudioOnInteraction);
+		window.visualViewport?.addEventListener('resize', refreshStageLayout);
+		window.visualViewport?.addEventListener('scroll', refreshStageLayout);
 		if (gameBodyEl) {
-			ro = new ResizeObserver(() => syncRendererSize());
+			ro = new ResizeObserver(() => scheduleLayoutSync());
 			ro.observe(gameBodyEl);
 		}
 		hasLifering = false;
@@ -4550,10 +4579,9 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 			await waitForApp();
 			if (cancelled) return;
-			syncRendererSize();
-			
-			requestAnimationFrame(syncRendererSize);
-			setTimeout(syncRendererSize, 50);
+			scheduleLayoutSync();
+			requestAnimationFrame(scheduleLayoutSync);
+			setTimeout(scheduleLayoutSync, 50);
 			setTimeout(() => {
 				if (!cancelled) bootLoading = false;
 			}, 120);
@@ -4583,24 +4611,26 @@ function stepDebugGuides(): StepDebugGuide[] {
 		};
 		window.addEventListener('keydown', onKeyDown);
 
-			return () => {
-				cancelled = true;
+		return () => {
+			cancelled = true;
 			if (rafId) cancelAnimationFrame(rafId);
 			if (floatId) cancelAnimationFrame(floatId);
+			if (layoutSyncRaf) cancelAnimationFrame(layoutSyncRaf);
 			if (timeId) clearInterval(timeId);
 			if (ro) ro.disconnect();
 			driftActive = false;
-			window.removeEventListener('resize', updateViewport);
-				window.removeEventListener('resize', syncRendererSize);
-				window.removeEventListener('pointerdown', unlockAudioOnInteraction);
-				window.removeEventListener('keydown', unlockAudioOnInteraction);
-				window.removeEventListener('touchstart', unlockAudioOnInteraction);
-				window.removeEventListener('keydown', onKeyDown);
-				stopSlideLoop();
-				stopLoop('music_loop');
-				audioEngine.dispose();
-				soundEnabled = false;
-			};
+			window.removeEventListener('resize', refreshStageLayout);
+			window.removeEventListener('pointerdown', unlockAudioOnInteraction);
+			window.removeEventListener('keydown', unlockAudioOnInteraction);
+			window.removeEventListener('touchstart', unlockAudioOnInteraction);
+			window.visualViewport?.removeEventListener('resize', refreshStageLayout);
+			window.visualViewport?.removeEventListener('scroll', refreshStageLayout);
+			window.removeEventListener('keydown', onKeyDown);
+			stopSlideLoop();
+			stopLoop('music_loop');
+			audioEngine.dispose();
+			soundEnabled = false;
+		};
 		});
 	onDestroy(() => {
 		stopAutoplay();
