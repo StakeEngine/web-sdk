@@ -1,0 +1,130 @@
+penguin.png
+size:2048,2048
+filter:MipMapLinearLinear,MipMapLinearLinear
+scale:0.56
+arm L
+bounds:1843,1620,142,104
+rotate:90
+arm R
+bounds:286,88,148,102
+body
+bounds:2,1546,343,269
+drop shadow
+bounds:286,1137,407,113
+offsets:1,1,409,114
+rotate:90
+head
+bounds:406,1480,282,259
+rotate:90
+leg L
+bounds:854,238,108,64
+leg L 2
+bounds:436,92,98,111
+rotate:90
+leg L shadow
+bounds:406,808,82,49
+offsets:1,0,83,49
+rotate:90
+leg R
+bounds:2,9,108,65
+leg R 2
+bounds:1843,1508,99,110
+leg R shadow
+bounds:667,514,82,47
+offsets:1,0,84,49
+rotate:90
+life belt
+bounds:2,1817,505,229
+offsets:2,0,507,229
+scarf
+bounds:286,808,327,118
+rotate:90
+scarf 2
+bounds:1706,485,87,111
+scarf 2 shadow
+bounds:1949,1633,97,129
+offsets:0,0,98,129
+scarf shadow
+bounds:286,486,320,95
+offsets:0,0,321,95
+rotate:90
+splash/splash_01
+bounds:2,1252,282,292
+splash/splash_02
+bounds:2,958,282,292
+splash/splash_03
+bounds:2,664,282,292
+splash/splash_04
+bounds:2,370,282,292
+splash/splash_05
+bounds:2,76,282,292
+splash/splash_06
+bounds:509,1764,282,292
+rotate:90
+splash/splash_07
+bounds:803,1764,282,292
+rotate:90
+splash/splash_08
+bounds:1097,1764,282,292
+rotate:90
+splash/splash_09
+bounds:1391,1764,282,292
+rotate:90
+splash/splash_10
+bounds:1685,1764,282,292
+rotate:90
+splash/splash_11
+bounds:286,192,282,292
+splash/splash_12
+bounds:383,514,282,292
+splash/splash_13
+bounds:570,220,282,292
+splash/splash_14
+bounds:667,1480,282,292
+rotate:90
+splash/splash_15
+bounds:961,1480,282,292
+rotate:90
+splash/splash_16
+bounds:1255,1480,282,292
+rotate:90
+splash/splash_17
+bounds:1549,1480,282,292
+rotate:90
+splash/splash_18
+bounds:401,1186,282,292
+splash/splash_19
+bounds:685,1186,282,292
+splash/splash_20
+bounds:969,1186,282,292
+splash/splash_21
+bounds:1253,1186,282,292
+splash/splash_22
+bounds:1537,1186,282,292
+splash/splash_23
+bounds:406,892,282,292
+splash/splash_24
+bounds:690,892,282,292
+splash/splash_25
+bounds:974,892,282,292
+splash/splash_26
+bounds:1258,892,282,292
+splash/splash_27
+bounds:1542,892,282,292
+splash/splash_28
+bounds:667,598,282,292
+splash/splash_29
+bounds:951,598,282,292
+splash/splash_30
+bounds:1235,598,282,292
+splash/splash_31
+bounds:1519,598,282,292
+splash/splash_32
+bounds:854,304,282,292
+splash/splash_33
+bounds:1138,304,282,292
+splash/splash_34
+bounds:1422,304,282,292
+tail
+bounds:1979,1969,77,63
+rotate:90

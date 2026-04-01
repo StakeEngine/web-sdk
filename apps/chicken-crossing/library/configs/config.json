@@ -1,0 +1,43 @@
+{
+    "workingName": "chicken_crossing",
+    "frontendConfig": {
+        "file": "fe_config.json",
+        "sha256": "8b06e00b23456776faf4a1ee6ec76de12d0fd820faa390a1a4aad8a9fd5b56aa"
+    },
+    "gameID": "chicken_crossing",
+    "rtp": 99.0,
+    "betDenomination": 1000,
+    "minDenomination": 10,
+    "providerNumber": 0,
+    "standardForceFile": {
+        "file": "force.json",
+        "sha256": "47e5986403b94794f52eb2f6e9e585e017a6bacc8f89a6cc591369e9264083c6"
+    },
+    "bookShelfConfig": [
+        {
+            "name": "base",
+            "tables": [
+                {
+                    "file": "lookUpTable_base_0.csv",
+                    "sha256": "6024fbeb6648aa7da449efe65e7f10f658a773ae523b191443b3fb75d79f3cbe"
+                }
+            ],
+            "cost": 1.0,
+            "rtp": 0.99,
+            "std": 6.27,
+            "bookLength": 100,
+            "feature": true,
+            "autoEndRoundDisabled": false,
+            "buyBonus": false,
+            "maxWin": 32.0,
+            "booksFile": {
+                "file": "books_base.jsonl.zst",
+                "sha256": "40a54a173e4fe323685512efe8021cf4fd70383f4f64604d871dd9c44c86806a"
+            },
+            "forceFile": {
+                "file": "force_record_base.json",
+                "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+        }
+    ]
+}

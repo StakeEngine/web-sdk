@@ -1,0 +1,30 @@
+{
+    "crossingStart": {
+        "type": "crossingStart",
+        "totalLanes": 5,
+        "laneWinProbability": 0.5,
+        "laneMultiplier": 2.0,
+        "startingMultiplier": 100
+    },
+    "laneResult": {
+        "type": "laneResult",
+        "laneIndex": 1,
+        "success": true,
+        "multiplier": 200
+    },
+    "crossingSummary": {
+        "type": "crossingSummary",
+        "lanesCleared": 1,
+        "finalMultiplier": 0
+    },
+    "winInfo": {
+        "type": "winInfo",
+        "totalWin": 0,
+        "lanesCleared": 1,
+        "totalLanes": 5
+    },
+    "finalWin": {
+        "type": "finalWin",
+        "amount": 0
+    }
+}

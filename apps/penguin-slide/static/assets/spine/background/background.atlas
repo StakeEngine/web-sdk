@@ -1,0 +1,46 @@
+background.png
+size:2048,2048
+filter:MipMapLinearLinear,MipMapLinearLinear
+cloud 1
+bounds:966,468,428,146
+offsets:3,1,432,147
+cloud 10
+bounds:966,617,636,210
+offsets:1,1,637,212
+cloud 11
+bounds:1926,1435,231,82
+offsets:1,1,233,83
+rotate:90
+cloud 2
+bounds:3,3,227,64
+offsets:2,0,230,64
+cloud 3
+bounds:1397,552,200,62
+offsets:1,1,203,63
+cloud 4
+bounds:966,374,334,91
+offsets:1,1,336,93
+cloud 5
+bounds:711,246,146,41
+offsets:1,1,148,43
+cloud 6
+bounds:1605,698,184,57
+offsets:1,1,186,59
+cloud 7
+bounds:711,290,247,72
+offsets:2,1,250,74
+cloud 8
+bounds:1605,758,261,69
+offsets:1,1,264,70
+cloud 9
+bounds:1926,1669,369,86
+offsets:0,1,370,87
+rotate:90
+mountains
+bounds:3,211,705,151
+mountains2
+bounds:3,70,607,138
+sea
+bounds:3,830,1920,1208
+sky
+bounds:3,365,960,462

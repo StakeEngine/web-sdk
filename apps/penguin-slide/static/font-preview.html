@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Penguin Slide Font Preview</title>
+  <style>
+    @font-face {
+      font-family: 'Gigalypse';
+      src: url('fonts/Gigalypse Font/gigalypsetrial-regular.otf') format('opentype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --font-poppins: 'Poppins', 'Helvetica Neue', system-ui, sans-serif;
+      --font-gigalypse: 'Gigalypse', 'Poppins', sans-serif;
+    }
+    body {
+      margin: 0;
+      font-family: var(--font-poppins);
+      background: #0b1220;
+      color: #f0f9ff;
+      display: grid;
+      gap: 12px;
+      padding: 32px;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 14px;
+      background: rgba(12, 18, 32, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    h1, h2 {
+      margin: 0 0 12px;
+    }
+    .gig {
+      font-family: var(--font-gigalypse);
+      font-size: clamp(32px, 4vw, 48px);
+      letter-spacing: 0.04em;
+    }
+    .pops {
+      font-family: var(--font-poppins);
+      font-size: clamp(20px, 3vw, 32px);
+      letter-spacing: 0.06em;
+    }
+    .sample {
+      font-size: clamp(28px, 3.5vw, 42px);
+      text-transform: uppercase;
+      margin: 8px 0;
+    }
+    .gig-highlight {
+      font-family: 'Gigalypse', 'Poppins', sans-serif;
+      font-weight: 800;
+      font-style: normal;
+      font-size: 40px;
+      line-height: 100%;
+      letter-spacing: 0;
+      text-align: center;
+      text-transform: uppercase;
+      width: 1176px;
+      height: 40px;
+      opacity: 1;
+      background: linear-gradient(180deg, #FBCF00 0%, #E3AC00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 16px auto 0;
+      text-shadow:
+        1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000,
+        0.5px 0.5px #000, -0.5px -0.5px #000, 0.5px -0.5px #000, -0.5px 0.5px #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="gig">Gigalypse</h1>
+    <div class="sample">$12,345.67</div>
+    <div class="sample">WINNER</div>
+    <div class="sample">TOTAL COST</div>
+    <div class="gig-highlight">$250</div>
+  </div>
+  <div class="card">
+    <h2 class="pops">Poppins</h2>
+    <p class="pops">Autoplay • Info • Settings</p>
+    <p class="pops">Balance: $5,000.00</p>
+    <p class="pops">Volatility</p>
+  </div>
+  <div class="card">
+    <h2 class="gig">In-game Bitmap</h2>
+    <p class="gig sample">x12</p>
+    <p class="gig sample">$3,000</p>
+  </div>
+</body>
+</html>
