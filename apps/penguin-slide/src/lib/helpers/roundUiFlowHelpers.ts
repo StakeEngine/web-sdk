@@ -75,6 +75,10 @@ type PlayFlowResult = {
 	betId?: string | null;
 };
 
+function cloneRoundEvents<T>(events: T): T {
+	return JSON.parse(JSON.stringify(events));
+}
+
 export async function preparePlayRound(args: {
 	forceTestRound: boolean;
 	forcedTestRoundState: any[];
@@ -90,13 +94,14 @@ export async function preparePlayRound(args: {
 	runPlayFlow: (args: PlayFlowArgs) => Promise<PlayFlowResult>;
 }) {
 	if (args.forceTestRound) {
+		const events = cloneRoundEvents(args.forcedTestRoundState);
 		return {
 			kind: 'events' as const,
 			response: {
 				simulated: true,
-				round: { state: args.forcedTestRoundState, betId: args.forcedTestRoundBetId }
+				round: { state: events, betId: args.forcedTestRoundBetId }
 			},
-			events: args.forcedTestRoundState,
+			events,
 			betId: args.forcedTestRoundBetId,
 			wallet: null as WalletLike | null,
 			payoutMultiplier: null as number | null,
@@ -105,7 +110,7 @@ export async function preparePlayRound(args: {
 	}
 
 	if (!args.hasRgsBaseUrl) {
-		const events = args.buildSimulatedLossEvents(args.stakeAmount);
+		const events = cloneRoundEvents(args.buildSimulatedLossEvents(args.stakeAmount));
 		const betId = args.buildSimulatedLossBetId(args.stakeAmount);
 		return {
 			kind: 'events' as const,

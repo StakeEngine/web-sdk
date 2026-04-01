@@ -4,10 +4,34 @@ export function getQueryParamFromSearch(search: string, key: string) {
 	return new URLSearchParams(search).get(key);
 }
 
+export function isReplayModeSearch(search: string) {
+	const raw = getQueryParamFromSearch(search, 'replay');
+	return raw === 'true' || raw === '1';
+}
+
 export function getRgsBaseUrlFromSearch(search: string): string | null {
 	const raw = getQueryParamFromSearch(search, 'rgs_url');
 	if (!raw) return null;
-	return raw.startsWith('http') ? raw : `https://${raw}`;
+	const normalized = raw.startsWith('http') ? raw : `https://${raw}`;
+	return normalized.replace(/\/+$/, '');
+}
+
+export function getReplayRequestParams(search: string) {
+	const params = {
+		game: getQueryParamFromSearch(search, 'game'),
+		version: getQueryParamFromSearch(search, 'version'),
+		mode: getQueryParamFromSearch(search, 'mode'),
+		event: getQueryParamFromSearch(search, 'event'),
+		rgsUrl: getRgsBaseUrlFromSearch(search)
+	};
+	const missing = Object.entries(params)
+		.filter(([, value]) => value == null || String(value).trim() === '')
+		.map(([key]) => key);
+	return {
+		...params,
+		missing,
+		valid: missing.length === 0
+	};
 }
 
 export async function postRgsJson(
@@ -24,6 +48,55 @@ export async function postRgsJson(
 		body: JSON.stringify(body)
 	});
 	return await res.json();
+}
+
+export async function getRgsJson(
+	search: string,
+	endpoint: string,
+	fetchImpl: FetchLike = fetch
+): Promise<any> {
+	const base = getRgsBaseUrlFromSearch(search);
+	if (!base) return null;
+	const res = await fetchImpl(`${base}${endpoint}`, {
+		method: 'GET'
+	});
+	const text = await res.text();
+	let payload: any = null;
+	try {
+		payload = text ? JSON.parse(text) : null;
+	} catch {
+		payload = text;
+	}
+	if (!res.ok) {
+		return {
+			error: true,
+			status: res.status,
+			message:
+				typeof payload === 'object' && payload?.message
+					? String(payload.message)
+					: `Request failed (${res.status}).`,
+			payload
+		};
+	}
+	return payload;
+}
+
+export async function fetchReplayRound(search: string, fetchImpl: FetchLike = fetch) {
+	const replayParams = getReplayRequestParams(search);
+	if (!replayParams.valid) {
+		return {
+			error: true,
+			message: `Missing replay query params: ${replayParams.missing.join(', ')}.`
+		};
+	}
+	const { game, version, mode, event } = replayParams;
+	return await getRgsJson(
+		search,
+		`/bet/replay/${encodeURIComponent(String(game))}/${encodeURIComponent(
+			String(version)
+		)}/${encodeURIComponent(String(mode))}/${encodeURIComponent(String(event))}`,
+		fetchImpl
+	);
 }
 
 export async function authenticateWallet(
@@ -139,4 +212,32 @@ export function extractRoundEvents(response: any): any[] {
 export function extractPayoutMultiplier(response: any): number | null {
 	const raw = response?.round?.payoutMultiplier;
 	return typeof raw === 'number' ? raw / 100 : null;
+}
+
+export function extractReplayState(response: any): any[] {
+	const candidates = [
+		response?.state,
+		response?.events,
+		response?.round?.state,
+		response?.round?.events,
+		response?.data?.state,
+		response?.data?.events,
+		response?.state?.events
+	];
+	for (const candidate of candidates) {
+		if (Array.isArray(candidate)) return candidate;
+	}
+	return [];
+}
+
+export function extractReplayPayoutMultiplier(response: any): number | null {
+	const raw =
+		response?.payoutMultiplier ?? response?.round?.payoutMultiplier ?? response?.data?.payoutMultiplier;
+	return typeof raw === 'number' ? raw : null;
+}
+
+export function extractReplayCostMultiplier(response: any): number | null {
+	const raw =
+		response?.costMultiplier ?? response?.round?.costMultiplier ?? response?.data?.costMultiplier;
+	return typeof raw === 'number' ? raw : null;
 }

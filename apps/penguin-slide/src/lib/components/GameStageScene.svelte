@@ -19,14 +19,10 @@
 	export let iceSpawnYDownFrac = 0;
 	export let iceScroll = 0;
 	export let stepSpacing = 1;
-	export let iceRespawnGapFrac = 0;
 	export let lanePosition: (depth: number, offset: number) => { x: number; y: number; width: number };
 	export let floatTime = 0;
 	export let sceneFloatTime = 0;
-	export let hasStartedFirstRound = false;
-	export let iceSpawnState: any;
 	export let icePieces: any[] = [];
-	export let iceVisibleStart = 0;
 	export let spineProps: (props: Record<string, unknown>) => any;
 	export let renderStep = 0;
 	export let penguinTargetLane = 0;

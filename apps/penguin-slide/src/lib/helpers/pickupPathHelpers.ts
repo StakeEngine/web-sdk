@@ -130,5 +130,5 @@ export function pickupBandStateHelper(args: {
 	const inActivateBand = yDelta <= activateHalfWindow && yDelta >= -activateHalfWindow * 1.8;
 	const passedBand = yDelta < -activateHalfWindow * 1.8;
 	const approachingBand = yDelta > activateHalfWindow && yDelta <= approachWindow;
-	return { pos, depth, spawnLane, yDelta, inActivateBand, passedBand, approachingBand };
+	return { pos, depth, spawnLane, bandLane, yDelta, inActivateBand, passedBand, approachingBand };
 }

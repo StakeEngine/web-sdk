@@ -110,12 +110,14 @@
 	} from '../lib/helpers/i18nCatalogHelpers';
 	import {
 		getQueryParamFromSearch,
-		getRgsBaseUrlFromSearch
+		getRgsBaseUrlFromSearch,
+		isReplayModeSearch
 	} from '../lib/services/penguinSlideApiService';
 	import {
 		runAuthenticateFlow,
 		runPlayFlow,
-		runEndRoundFlow
+		runEndRoundFlow,
+		runReplayFlow
 	} from '../lib/services/roundFlowService';
 	import type { SupportedLanguage } from '../lib/helpers/i18nCatalogHelpers';
 	import { normalizeCurrency, formatCurrencyAmountForCurrency } from '../lib/utils/currency';
@@ -223,8 +225,7 @@
 		ICE_SPAWN_X_JITTER_FRAC,
 		ICE_SPAWN_LEFT_COUNT,
 		ICE_SPAWN_RIGHT_COUNT,
-		ICE_VISIBLE_START,
-		ICE_RESPAWN_GAP_FRAC
+		ICE_VISIBLE_START
 	} from '../lib/constants/penguinSlideConstants';
 
 	// @ts-ignore - types provided at runtime by workspace deps
@@ -232,6 +233,7 @@
 	import GameStageScene from '../lib/components/GameStageScene.svelte';
 	import BootLoader from '../lib/components/BootLoader.svelte';
 	import GameHud from '../lib/components/GameHud.svelte';
+	import ReplayHud from '../lib/components/ReplayHud.svelte';
 	import PendingRoundModal from '../lib/components/PendingRoundModal.svelte';
 	const assetPath = (path: string) => {
 		const normalized = path.startsWith('/') ? path.slice(1) : path;
@@ -323,6 +325,15 @@ let response: any = $state(null);
 let endRoundResponse: any = $state(null);
 let balance = $state(0);
 let currentCurrency = $state<SupportedCurrency>('USD');
+	let replayMode = $state(false);
+	let replayLoading = $state(false);
+	let replayReady = $state(false);
+	let replayHasPlayed = $state(false);
+	let replayEvents = $state<any[] | null>(null);
+	let replayBetId = $state<string | null>(null);
+	let replayEventId = $state('');
+	let replayCostMultiplier = $state(1);
+	let replayPayoutMultiplier = $state(0);
 	
 	let autoplay = $state(false);
 	let autoplayOpen = $state(false);
@@ -356,7 +367,6 @@ let driftActive = $state(false);
 	let roundWinDisplay = $state(0);
 	let lastDisplayStep = $state(0);
 	let hasLifering = $state(false);
-	let liferingVisualActive = $state(false);
 	let errorMessage = $state('');
 	let stepStates = $state<Array<{ step: number; value: number; hasLifering: boolean; bananaCount: number }>>([]);
 	let endRoundTriggered = $state(false);
@@ -445,6 +455,21 @@ let speedFactor = $state(2);
 
 	function stakeAmount() {
 		return betAmount;
+	}
+
+	function currentReplayCostAmount() {
+		return Math.max(0, stakeAmount() * replayCostMultiplier);
+	}
+
+	function currentReplayPayoutAmount() {
+		return Math.max(0, stakeAmount() * replayPayoutMultiplier);
+	}
+
+	function currentReplayWinAmount() {
+		if (animationStatus === 'done' || animationStatus === 'running') {
+			return Math.max(0, roundWinDisplay);
+		}
+		return currentReplayPayoutAmount();
 	}
 
 let renderStep = $state(0);
@@ -581,7 +606,6 @@ function currentRoundPresentationActive() {
 		bananaLossFloat != null ||
 		vestAnim != null ||
 		vestReviveActive ||
-		liferingVisualActive ||
 		amountWinPulse !== 1
 	);
 }
@@ -927,7 +951,7 @@ function bananaLossAmount(
 		setAutoplay: (value) => {
 			autoplay = value;
 		},
-		isRoundBusy: () => animationStatus === 'running' || pendingRound || menuOpen,
+		isRoundBusy: () => animationStatus === 'running' || pendingRound,
 		isSliding: () => status === 'sliding',
 		getLastRoundEndAt: () => lastRoundEndAt,
 		getAutoplayCooldownMs: () => autoplayCooldownMs,
@@ -1435,6 +1459,7 @@ function updateDynamicIceFlow() {
 	function resetRun(startValue = 1) {
 		for (const timer of removalTimers.values()) clearTimeout(timer);
 		removalTimers.clear();
+		animationActive = false;
 		runStartValue = startValue;
 		tokens = [];
 		steps = 0;
@@ -1500,7 +1525,6 @@ function updateDynamicIceFlow() {
 		vestLossMotionToken += 1;
 		cancelLiferingVisualClear();
 		hasLifering = false;
-		liferingVisualActive = false;
 		liferingOverrideStep = null;
 		liferingGainStep = null;
 		liferingForcedOff = false;
@@ -1519,11 +1543,12 @@ function updateDynamicIceFlow() {
 		stopRunEarly = false;
 		freezeMovement = false;
 		laneFreeze = false;
-		penguinAnim = 'idle';
+		penguinAnim = 'slide_in';
 		penguinSkin = 'base';
 		autoScrollActive = false;
 		setPenguinLane(0, 'reset');
 		setPenguinTargetLane(0);
+		laneVelocity = 0;
 		laneTravelPlanTokenId = null;
 		laneTravelPlanOriginSlot = 0;
 		laneTravelPlanTargetSlot = 0;
@@ -1646,11 +1671,6 @@ function updateDynamicIceFlow() {
 
 	function setTargetStep(nextRenderStep: number) {
 		targetStep = Math.max(targetStep, nextRenderStep);
-		if (!animationActive) {
-			animationActive = true;
-			animationStatus = 'running';
-			requestAnimationFrame(tickAnimation);
-		}
 	}
 
 	function tickAnimation() {
@@ -2094,6 +2114,12 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 						laneAlignedForPickup &&
 						tokenMatchesLandedStep(token) &&
 						(meetsPenguinBand || triggerReached);
+					const forceActivateLockedHit =
+						!isNothingToken &&
+						token.hit &&
+						tokenMatchesLandedStep(token) &&
+						lockedTargetTokenId === token.id &&
+						triggerReached;
 					const forceCollectProtectedSinkingHit = shouldForceCollectProtectedSinkingHit({
 						token,
 						hasVestProtection,
@@ -2106,6 +2132,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 						? autoCollectNothing || Boolean(band?.passedBand)
 						: (meetsPenguinBand && laneAlignedForPickup) ||
 							forceActivateOnTargetLane ||
+							forceActivateLockedHit ||
 							forceCollectProtectedSinkingHit ||
 							forceResolveStaleHit ||
 							forceActivateTerminalBanana;
@@ -2117,7 +2144,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 					) {
 						const stepIndex = Number(token.stepIndex);
 						const depth = band?.depth ?? 0.2;
-						const spawnLane = band?.spawnLane ?? Number(token.extra?.spawnLane ?? token.lane);
+						const spawnLane = band?.bandLane ?? band?.spawnLane ?? Number(token.extra?.spawnLane ?? token.lane);
 						const pos = band?.pos ?? pickupPosition(token.stepIndex, token.lane, spawnLane);
 						const sinkingSlip = token.extra?.sinking === true || token.extra?.fall === true;
 							const shouldSlipBeforePickup =
@@ -2644,6 +2671,12 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 							laneAlignedForPickup &&
 							tokenMatchesLandedStep(token) &&
 							(meetsPenguinBand || triggerReached);
+						const forceActivateLockedHit =
+							!isNothingToken &&
+							token.hit &&
+							tokenMatchesLandedStep(token) &&
+							lockedTargetTokenId === token.id &&
+							triggerReached;
 						const forceCollectProtectedSinkingHit = shouldForceCollectProtectedSinkingHit({
 							token,
 							hasVestProtection,
@@ -2656,6 +2689,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 							? autoCollectNothing || Boolean(band?.passedBand)
 							: (meetsPenguinBand && laneAlignedForPickup) ||
 								forceActivateOnTargetLane ||
+								forceActivateLockedHit ||
 								forceCollectProtectedSinkingHit ||
 								forceResolveStaleHit ||
 								forceActivateTerminalBanana;
@@ -2667,7 +2701,7 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 						) {
 						const stepIndex = Number(token.stepIndex);
 						const depth = band?.depth ?? 0.2;
-						const spawnLane = band?.spawnLane ?? Number(token.extra?.spawnLane ?? token.lane);
+						const spawnLane = band?.bandLane ?? band?.spawnLane ?? Number(token.extra?.spawnLane ?? token.lane);
 						const pos = band?.pos ?? pickupPosition(token.stepIndex, token.lane, spawnLane);
 						const sinkingSlip = token.extra?.sinking === true || token.extra?.fall === true;
 							const shouldSlipBeforePickup =
@@ -2784,10 +2818,10 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 							);
 						}
 					}
-						if (token.type === 'goal') {
-							playOneShot('penguin_finish');
-							startWinAmountPulse();
-							status = 'goal';
+					if (token.type === 'goal') {
+						playOneShot('penguin_finish');
+						startWinAmountPulse();
+						status = 'goal';
 							penguinAnim = 'win';
 							stopRespawnBlinkOnWin();
 							laneFreeze = true;
@@ -2979,6 +3013,7 @@ function setMode(mode: string, label?: string, maxWin?: string) {
 		}
 
 async function authenticate() {
+		if (replayMode) return;
 		errorMessage = '';
 		currentLanguage = normalizeLanguage(getLanguageParam());
 		currentCurrency = normalizeCurrency(getParam('currency'));
@@ -3041,6 +3076,7 @@ async function authenticate() {
 	}
 
 	async function play() {
+		if (replayMode) return;
 		if (animationStatus === 'running') return;
 		errorMessage = '';
 		hasStartedFirstRound = true;
@@ -3084,6 +3120,7 @@ async function authenticate() {
 	}
 
 	async function endRound() {
+		if (replayMode) return;
 		const endFlow = await runEndRoundFlow({
 			search: window.location.search,
 			apiMultiplier: API_MULTIPLIER
@@ -3091,6 +3128,65 @@ async function authenticate() {
 		endRoundResponse = endFlow.response;
 		if (endFlow.wallet.balance != null) balance = endFlow.wallet.balance;
 		if (endFlow.wallet.currency) currentCurrency = normalizeCurrency(endFlow.wallet.currency);
+	}
+
+	function configureReplayStakeFromQuery() {
+		const amountRaw = getParam('amount');
+		const parsedAmount = amountRaw != null ? Number(amountRaw) : Number.NaN;
+		if (Number.isFinite(parsedAmount) && parsedAmount >= 0) {
+			const normalizedReplayBetAmount = parsedAmount / API_MULTIPLIER;
+			betAmount = normalizedReplayBetAmount;
+			betLevels = [normalizedReplayBetAmount];
+			betIndex = 0;
+		}
+		const modeFromQuery = getParam('mode');
+		if (modeFromQuery) setMode(String(modeFromQuery));
+		replayEventId = getParam('event') ?? '';
+	}
+
+	async function loadReplayRound() {
+		replayLoading = true;
+		replayReady = false;
+		replayHasPlayed = false;
+		replayEvents = null;
+		replayBetId = null;
+		replayCostMultiplier = 1;
+		replayPayoutMultiplier = 0;
+		errorMessage = '';
+		autoplay = false;
+		autoplayOpen = false;
+		autoplayRemaining = 0;
+		configureReplayStakeFromQuery();
+		const replayFlow = await runReplayFlow({ search: window.location.search });
+		replayLoading = false;
+		response = replayFlow.response;
+		if (replayFlow.errorMessage) {
+			errorMessage = replayFlow.errorMessage;
+			return;
+		}
+		replayEvents = replayFlow.events;
+		replayCostMultiplier =
+			replayFlow.costMultiplier != null ? replayFlow.costMultiplier : TOTAL_COST_MULTIPLIER;
+		replayPayoutMultiplier = replayFlow.payoutMultiplier ?? 0;
+		replayBetId = getParam('event') ?? null;
+		replayReady = replayFlow.events.length > 0;
+	}
+
+	function startReplayRound() {
+		if (!replayMode || replayLoading || !replayReady || !replayEvents?.length) return;
+		if (animationStatus === 'running') return;
+		errorMessage = '';
+		hasStartedFirstRound = true;
+		startRoundAudio();
+		startSlideLoop();
+		hasLifering = false;
+		replayHasPlayed = true;
+		reseedFrontendRandomness(
+			replayBetId ?? { source: 'replay-round', event: replayEventId, events: replayEvents },
+			'replay-round'
+		);
+		const normalizedEvents = normalizeRoundEvents(replayEvents);
+		processBookEvents(normalizedEvents);
 	}
 
  
@@ -3245,11 +3341,13 @@ const SLOT_OFFSETS = Object.keys(SLOT_TO_OFFSET)
 
 	function startAutoScroll() {
 		autoScrollActive = true;
-		if (penguinAnim !== 'slide_idle') penguinAnim = 'slide_idle';
+		if (penguinAnim !== 'slide_in' && penguinAnim !== 'slide_idle') {
+			penguinAnim = 'slide_idle';
+		}
 	}
 
 	function slideInAutoScrollReady() {
-		return performance.now() - slideInStart >= 700;
+		return performance.now() - slideInStart >= scaleRoundMs(260);
 	}
 
 	function soundMasterVolume() {
@@ -3382,16 +3480,22 @@ function maybePlayTurnSound(nextTargetLane: number) {
 			startAutoScroll();
 			return;
 		}
-		if (name === 'stop') {
+	if (name === 'stop') {
 			if (status === 'slip' && slipTriggered) {
 				freezeForLoseStopEvent();
+				return;
+			}
+			if (penguinAnim === 'slide_in') {
+				penguinAnim = 'slide_idle';
 				return;
 			}
 			autoScrollActive = false;
 			return;
 		}
 	if (name === 'vest_gain') {
-		if (revivePauseActive || penguinAnim === 'slide_in_revive') {
+		const reviveOnlyVestGainEvent =
+			vestAnim !== 'gain' && (revivePauseActive || penguinAnim === 'slide_in_revive');
+		if (reviveOnlyVestGainEvent) {
 			return;
 		}
 		vestAnim = null;
@@ -3413,7 +3517,6 @@ function triggerVestGain(stepIndex: number | null = null) {
 	if (normalizedStep != null && normalizedStep === lastVestGainStep) return false;
 	if (normalizedStep == null && now - lastVestAnimAtMs < 120) return false;
 	cancelLiferingVisualClear();
-	liferingVisualActive = true;
 	pendingVestLossStep = null;
 	lastVestGainStep = normalizedStep;
 		lastVestAnimAtMs = now;
@@ -3440,7 +3543,6 @@ function triggerVestGain(stepIndex: number | null = null) {
 	function clearReviveVestVisual() {
 		reviveRingVisible = false;
 		vestReviveActive = false;
-		liferingVisualActive = false;
 		penguinSkin = 'base';
 	}
 
@@ -3731,7 +3833,6 @@ function clearLiferingState(stepIndex: number | null = null, animateLose = false
 	cancelLiferingVisualClear();
 	const finalizeVisualClear = () => {
 		pendingVestLossStep = null;
-		liferingVisualActive = false;
 		const playLoseAnim = animateLose && hadLifering;
 			if (!playLoseAnim) {
 				reviveRingVisible = false;
@@ -3752,7 +3853,6 @@ function clearLiferingState(stepIndex: number | null = null, animateLose = false
 			}
 	};
 	if (visualDelayMs > 0 && hadLifering) {
-		liferingVisualActive = true;
 		pendingVestLossStep = normalizedStep;
 		liferingVisualClearTimer = setTimeout(() => {
 			liferingVisualClearTimer = null;
@@ -4449,7 +4549,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 	$effect(() => {
 		if (vestAnim) return;
-		penguinSkin = hasLifering || liferingVisualActive || vestReviveActive ? 'vest' : 'base';
+		penguinSkin = hasLifering || vestReviveActive ? 'vest' : 'base';
 	});
 
 	$effect(() => {
@@ -4572,8 +4672,12 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 		(async () => {
 			currentLanguage = normalizeLanguage(getLanguageParam());
+			replayMode = isReplayModeSearch(window.location.search);
+			currentCurrency = normalizeCurrency(getParam('currency'));
 			await loadI18nCatalog();
-			if (getRgsBaseUrl() && getParam('sessionID')) {
+			if (replayMode) {
+				await loadReplayRound();
+			} else if (getRgsBaseUrl() && getParam('sessionID')) {
 				await authenticate();
 			}
 
@@ -4606,6 +4710,10 @@ function stepDebugGuides(): StepDebugGuide[] {
 			if (event.code !== 'Space') return;
 			if ((event.target as HTMLElement | null)?.tagName === 'INPUT') return;
 			event.preventDefault();
+			if (replayMode) {
+				startReplayRound();
+				return;
+			}
 			if (pendingRound) return;
 			handleBetClick();
 		};
@@ -4640,6 +4748,10 @@ function stepDebugGuides(): StepDebugGuide[] {
 	});
 
 	$effect(() => {
+		if (replayMode) {
+			stopAutoplay();
+			return;
+		}
 		if (autoplay) startAutoplay();
 		else stopAutoplay();
 	});
@@ -4686,13 +4798,10 @@ function stepDebugGuides(): StepDebugGuide[] {
 				iceSpawnYDownFrac={ICE_SPAWN_Y_DOWN_FRAC}
 				{iceScroll}
 				{stepSpacing}
-				iceRespawnGapFrac={ICE_RESPAWN_GAP_FRAC}
 				{lanePosition}
 				{floatTime}
 				{sceneFloatTime}
-				{hasStartedFirstRound}
 				{icePieces}
-				iceVisibleStart={ICE_VISIBLE_START}
 				{spineProps}
 				{renderStep}
 				{penguinTargetLane}
@@ -4738,53 +4847,73 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{formatCurrencyAmount}
 			/>
 
-		<GameHud
-			{t}
-			{formatCurrencyAmount}
-			{timeLabel}
-			{balance}
-			{menuOpen}
-			{volatilityHelpOpen}
-			{selectedMode}
-			{animationStatus}
-			{status}
-			{maxWinLabel}
-			{hudVolume}
-			{musicMuted}
-			{speedFactor}
-			{menuInfoOpen}
-			{autoplay}
-			{autoplayOpen}
-			{autoplayRemaining}
-			{autoplayOptions}
-			{autoplayDraftCount}
-			{isMobileLandscapeUi}
-			{pendingRound}
-			{betIndex}
-			{betLevels}
-			{betAmount}
-			totalCostMultiplier={TOTAL_COST_MULTIPLIER}
-			{toggleMenuOpen}
-			{toggleVolatilityHelp}
-			{setMode}
-			{setHudVolume}
-			{toggleHudMute}
-			{setSpeed}
-			{setMenuInfoOpen}
-			{decreaseBet}
-			{handleBetClick}
-			{increaseBet}
-			{toggleAutoplayOpen}
-			{setAutoplayDraft}
-			{handleStartAutoplay}
-			{cycleSpeed}
-		/>
+		{#if replayMode}
+			<ReplayHud
+				{t}
+				{formatCurrencyAmount}
+				{timeLabel}
+				{selectedMode}
+				{replayEventId}
+				{replayReady}
+				replayRunning={animationStatus === 'running'}
+				{replayHasPlayed}
+				replayError={errorMessage}
+				replayBetAmount={stakeAmount()}
+				replayCostAmount={currentReplayCostAmount()}
+				replayPayoutAmount={currentReplayPayoutAmount()}
+				replayWinAmount={currentReplayWinAmount()}
+				onReplayStart={startReplayRound}
+				onReplayRetry={loadReplayRound}
+			/>
+		{:else}
+			<GameHud
+				{t}
+				{formatCurrencyAmount}
+				{timeLabel}
+				{balance}
+				{menuOpen}
+				{volatilityHelpOpen}
+				{selectedMode}
+				{animationStatus}
+				{status}
+				{maxWinLabel}
+				{hudVolume}
+				{musicMuted}
+				{speedFactor}
+				{menuInfoOpen}
+				{autoplay}
+				{autoplayOpen}
+				{autoplayRemaining}
+				{autoplayOptions}
+				{autoplayDraftCount}
+				{isMobileLandscapeUi}
+				{pendingRound}
+				{betIndex}
+				{betLevels}
+				{betAmount}
+				totalCostMultiplier={TOTAL_COST_MULTIPLIER}
+				{toggleMenuOpen}
+				{toggleVolatilityHelp}
+				{setMode}
+				{setHudVolume}
+				{toggleHudMute}
+				{setSpeed}
+				{setMenuInfoOpen}
+				{decreaseBet}
+				{handleBetClick}
+				{increaseBet}
+				{toggleAutoplayOpen}
+				{setAutoplayDraft}
+				{handleStartAutoplay}
+				{cycleSpeed}
+			/>
 
-		{#if errorMessage}
-			<p class="error hud-error">{errorMessage}</p>
+			{#if errorMessage}
+				<p class="error hud-error">{errorMessage}</p>
+			{/if}
+
+			<PendingRoundModal visible={pendingRound} {t} {resolvePendingRound} />
 		{/if}
-
-	<PendingRoundModal visible={pendingRound} {t} {resolvePendingRound} />
 
 		</div>
 	</div>

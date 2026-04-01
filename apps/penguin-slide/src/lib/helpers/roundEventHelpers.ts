@@ -1,3 +1,7 @@
+function cloneRoundEvent<T>(event: T): T {
+	return event && typeof event === 'object' ? JSON.parse(JSON.stringify(event)) : event;
+}
+
 export function normalizeRoundEvents(events: any[]) {
 	if (!Array.isArray(events)) return [];
 	const normalized: any[] = [];
@@ -42,13 +46,14 @@ export function normalizeRoundEvents(events: any[]) {
 	let lastGameplayEvent: any = null;
 
 	for (const event of events) {
-		const hasStepPads = Boolean(event?.steps || event?.pads);
+		const sourceEvent = cloneRoundEvent(event);
+		const hasStepPads = Boolean(sourceEvent?.steps || sourceEvent?.pads);
 		if (!hasStepPads) {
-			if (event?.type === 'vestPopped') {
-				const raw = Number(event?.index ?? event?.stepIndex);
+			if (sourceEvent?.type === 'vestPopped') {
+				const raw = Number(sourceEvent?.index ?? sourceEvent?.stepIndex);
 				if (Number.isFinite(raw) && oldToNewStepIndex.has(raw)) {
 					const mapped = oldToNewStepIndex.get(raw) as number;
-					normalized.push({ ...event, index: mapped, stepIndex: mapped });
+					normalized.push({ ...sourceEvent, index: mapped, stepIndex: mapped });
 					for (let i = 0; i < VEST_POP_EXTRA_STEPS; i += 1) {
 						normalized.push(createVestPopGapStep(nextStepIndex, lastGameplayEvent));
 						nextStepIndex += 1;
@@ -57,7 +62,7 @@ export function normalizeRoundEvents(events: any[]) {
 				}
 				if (nextStepIndex > 0) {
 					const fallback = nextStepIndex - 1;
-					normalized.push({ ...event, index: fallback, stepIndex: fallback });
+					normalized.push({ ...sourceEvent, index: fallback, stepIndex: fallback });
 					for (let i = 0; i < VEST_POP_EXTRA_STEPS; i += 1) {
 						normalized.push(createVestPopGapStep(nextStepIndex, lastGameplayEvent));
 						nextStepIndex += 1;
@@ -65,13 +70,13 @@ export function normalizeRoundEvents(events: any[]) {
 					continue;
 				}
 			}
-			normalized.push(event);
+			normalized.push(sourceEvent);
 			continue;
 		}
 
 		// Step splitting transformation disabled by request.
-		const splitSteps = [event];
-		const rawIndex = Number(event?.index ?? event?.stepIndex);
+		const splitSteps = [sourceEvent];
+		const rawIndex = Number(sourceEvent?.index ?? sourceEvent?.stepIndex);
 		if (Number.isFinite(rawIndex) && !oldToNewStepIndex.has(rawIndex)) {
 			oldToNewStepIndex.set(rawIndex, nextStepIndex);
 		}

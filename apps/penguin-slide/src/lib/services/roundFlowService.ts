@@ -1,11 +1,15 @@
 import {
 	authenticateWallet,
 	endRoundWallet,
+	extractReplayCostMultiplier,
+	extractReplayPayoutMultiplier,
+	extractReplayState,
 	extractPendingRoundState,
 	extractPayoutMultiplier,
 	extractRoundBetId,
 	extractRoundEvents,
 	extractWalletSnapshot,
+	fetchReplayRound,
 	playWallet,
 	resolveBetConfigFromAuth
 } from './penguinSlideApiService';
@@ -66,4 +70,37 @@ export async function runEndRoundFlow(args: { search: string; apiMultiplier: num
 	const response = await endRoundWallet(args.search);
 	const wallet = extractWalletSnapshot(response, args.apiMultiplier);
 	return { response, wallet };
+}
+
+export async function runReplayFlow(args: { search: string }) {
+	const response = await fetchReplayRound(args.search);
+	if (!response || response?.error) {
+		return {
+			response,
+			events: [] as any[],
+			payoutMultiplier: null as number | null,
+			costMultiplier: null as number | null,
+			errorMessage:
+				response?.message != null
+					? String(response.message)
+					: 'Replay failed to load. Check replay query params and RGS response.'
+		};
+	}
+	const events = extractReplayState(response);
+	if (!events.length) {
+		return {
+			response,
+			events,
+			payoutMultiplier: extractReplayPayoutMultiplier(response),
+			costMultiplier: extractReplayCostMultiplier(response),
+			errorMessage: 'Replay returned no round state.'
+		};
+	}
+	return {
+		response,
+		events,
+		payoutMultiplier: extractReplayPayoutMultiplier(response),
+		costMultiplier: extractReplayCostMultiplier(response),
+		errorMessage: null as string | null
+	};
 }

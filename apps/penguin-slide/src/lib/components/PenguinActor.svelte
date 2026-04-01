@@ -63,7 +63,7 @@
 		{/if}
 	{/key}
 	{#if penguinAnim === 'slide_in'}
-		<SpineTrack trackIndex={1} animationName="slide_in" loop={false} timeScale={0.65 * roundAnimationTimeScale} />
+		<SpineTrack trackIndex={1} animationName="slide_in" loop={false} timeScale={1.05 * roundAnimationTimeScale} />
 	{:else if penguinAnim === 'slide_in_revive'}
 		<SpineTrack trackIndex={1} animationName="slide_in_revive" loop={false} timeScale={1.56 * reviveAnimationSpeedMult} />
 	{:else if penguinAnim === 'slide_idle'}

@@ -56,8 +56,11 @@
   const MIN_COIN_GLYPH_HEIGHT = 6.0;
   const MIN_STAR_GLYPH_HEIGHT = 5.0;
 
-  const resolveLane = (token: Token) =>
-    Number.isFinite(token.spawnLane ?? token.lane) ? Number(token.spawnLane ?? token.lane) : token.lane;
+  const resolveLane = (token: Token) => {
+    const lockLane = Number(token.extra?.lockLane);
+    if (Number.isFinite(lockLane)) return lockLane;
+    return Number.isFinite(token.spawnLane ?? token.lane) ? Number(token.spawnLane ?? token.lane) : token.lane;
+  };
 
   const normalizeTokenType = (token: Token) => String(token.type ?? '').trim().toLowerCase();
   const isCoinType = (type: string) => type === 'coin' || type.startsWith('coin_') || type.startsWith('+');

@@ -54,6 +54,18 @@
 		if (length >= 14) return 0.58;
 		return Math.max(0.58, 1 - (length - 5) * 0.046);
 	}
+
+	function autoplayCountClass(count: number) {
+		const length = String(Math.max(0, count)).length;
+		return length >= 4 ? 'bet-autospins-count-xlong' : length >= 3 ? 'bet-autospins-count-long' : '';
+	}
+
+	function autoplayCountScale(count: number) {
+		const length = String(Math.max(0, count)).length;
+		if (length <= 2) return 1;
+		if (length === 3) return 0.8;
+		return 0.66;
+	}
 </script>
 
 <div class="hud-top" class:menu-open={menuOpen}>
@@ -227,7 +239,11 @@
 			>
 				{#if autoplay && autoplayRemaining > 0}
 					<div class="bet-autospin-card">
-						<span class="bet-autospins-count">{autoplayRemaining}</span>
+						<span
+							class={`bet-autospins-count ${autoplayCountClass(autoplayRemaining)}`.trim()}
+							style={`transform: scale(${autoplayCountScale(autoplayRemaining)});`}
+							>{autoplayRemaining}</span
+						>
 					</div>
 				{:else}
 					<span
@@ -264,7 +280,11 @@
 		>
 			{#if autoplay && autoplayRemaining > 0}
 				<div class="bet-autospin-card">
-					<span class="bet-autospins-count">{autoplayRemaining}</span>
+					<span
+						class={`bet-autospins-count ${autoplayCountClass(autoplayRemaining)}`.trim()}
+						style={`transform: scale(${autoplayCountScale(autoplayRemaining)});`}
+						>{autoplayRemaining}</span
+					>
 				</div>
 			{:else}
 				<span

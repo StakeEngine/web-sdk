@@ -1,5 +1,9 @@
 import { isGameplayRoundEntry, oppositeLandedStep, isSinkingCoinOrStarOnLandedPad } from './roundLogicHelpers';
 
+function cloneRoundEntry<T>(entry: T): T {
+	return entry && typeof entry === 'object' ? JSON.parse(JSON.stringify(entry)) : entry;
+}
+
 export function createEmptyBridgeStep(previous: any, next: any, index: number) {
 	const shouldProxyOuterApproach = isSinkingCoinOrStarOnLandedPad(next);
 	const shouldProxySlip =
@@ -31,7 +35,6 @@ export function createEmptyBridgeStep(previous: any, next: any, index: number) {
 }
 
 export function transformRoundWithEmptyBridgeSteps(stateEvents: any[]) {
-	const cloneRoundEntry = (entry: any) => (entry && typeof entry === 'object' ? { ...entry } : entry);
 	const gameplay = stateEvents.filter(isGameplayRoundEntry);
 	const extras = stateEvents.filter((entry) => !isGameplayRoundEntry(entry));
 	const transformed: any[] = [];
