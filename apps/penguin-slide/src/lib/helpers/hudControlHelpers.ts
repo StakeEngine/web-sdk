@@ -43,11 +43,11 @@ export function createHudControlHandlers(args: {
 	isRoundBusy: () => boolean;
 	isRoundRunning: () => boolean;
 	getAutoplay: () => boolean;
+	getAutoplayOpen: () => boolean;
 	setAutoplay: (value: boolean) => void;
 	setAutoplayRemaining: (value: number) => void;
 	setAutoplayTotal: (value: number) => void;
 	setAutoplayOpen: (value: boolean) => void;
-	toggleAutoplayOpen: () => void;
 	getAutoplayDraftCount: () => number;
 	setAutoplayDraftCount: (value: number) => void;
 	startRoundAudio: () => void;
@@ -79,6 +79,13 @@ export function createHudControlHandlers(args: {
 		args.setAutoplayOpen(false);
 	};
 
+	const closeOtherMenus = (except: 'menu' | 'volatility-help' | 'info' | 'autoplay' | null = null) => {
+		if (except !== 'menu') args.setMenuOpen(false);
+		if (except !== 'volatility-help') args.setVolatilityHelpOpen(false);
+		if (except !== 'info') args.setMenuInfoOpenValue(false);
+		if (except !== 'autoplay') args.setAutoplayOpen(false);
+	};
+
 	const handleBetClick = () => {
 		args.startRoundAudio();
 		args.playOneShot('start_button');
@@ -105,17 +112,42 @@ export function createHudControlHandlers(args: {
 
 	const toggleMenuOpen = () => {
 		const nextOpen = !args.getMenuOpen();
-		args.setMenuOpen(nextOpen);
-		if (!nextOpen) args.setVolatilityHelpOpen(false);
+		if (nextOpen) {
+			closeOtherMenus('menu');
+			args.setMenuOpen(true);
+			return;
+		}
+		args.setMenuOpen(false);
+		args.setVolatilityHelpOpen(false);
 	};
 
 	const toggleVolatilityHelp = (event?: MouseEvent) => {
 		event?.stopPropagation();
-		args.setVolatilityHelpOpen(!args.getVolatilityHelpOpen());
+		const nextOpen = !args.getVolatilityHelpOpen();
+		if (nextOpen) {
+			closeOtherMenus('volatility-help');
+			args.setMenuOpen(true);
+			args.setVolatilityHelpOpen(true);
+			return;
+		}
+		args.setVolatilityHelpOpen(false);
 	};
 
 	const setMenuInfoOpen = (value: boolean) => {
+		if (value) {
+			closeOtherMenus('info');
+		}
 		args.setMenuInfoOpenValue(value);
+	};
+
+	const toggleAutoplayOpen = () => {
+		const nextOpen = !args.getAutoplayOpen();
+		if (nextOpen) {
+			closeOtherMenus('autoplay');
+			args.setAutoplayOpen(true);
+			return;
+		}
+		args.setAutoplayOpen(false);
 	};
 
 	const setAutoplayDraft = (count: number) => {
@@ -164,7 +196,7 @@ export function createHudControlHandlers(args: {
 		toggleMenuOpen,
 		toggleVolatilityHelp,
 		setMenuInfoOpen,
-		toggleAutoplayOpen: args.toggleAutoplayOpen,
+		toggleAutoplayOpen,
 		setAutoplayDraft,
 		handleStartAutoplay,
 		increaseBet,

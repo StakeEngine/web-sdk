@@ -978,6 +978,7 @@ function bananaLossAmount(
 		isRoundBusy: () => animationStatus === 'running' || status === 'sliding' || pendingRound,
 		isRoundRunning: () => animationStatus === 'running',
 		getAutoplay: () => autoplay,
+		getAutoplayOpen: () => autoplayOpen,
 		setAutoplay: (value) => {
 			autoplay = value;
 		},
@@ -989,9 +990,6 @@ function bananaLossAmount(
 		},
 		setAutoplayOpen: (value) => {
 			autoplayOpen = value;
-		},
-		toggleAutoplayOpen: () => {
-			autoplayOpen = !autoplayOpen;
 		},
 		getAutoplayDraftCount: () => autoplayDraftCount,
 		setAutoplayDraftCount: (value) => {
