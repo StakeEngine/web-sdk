@@ -1,4 +1,5 @@
 type Size = { w: number; h: number };
+type Point = { x: number; y: number };
 
 export function coinAssetKeyForToken(token: any, defaultBaseStake: number) {
 	const coinValue = token?.extra?.coinValue ?? token?.extra?.value ?? 0;
@@ -44,7 +45,20 @@ export function tokenSpineSizeForDepth(
 	return base * depthScale * descentScaleBoost * mobileFactor * 2.6 * portraitBoost * pickupScaleBoost * mobilePortraitScale;
 }
 
-export function accumulatedAmountYForViewport(viewport: Size, renderSize: Size) {
+export function accumulatedAmountYForViewport(viewport: Size, renderSize: Size, rootScale = 1, rootOffset: Point = { x: 0, y: 0 }) {
+	const isPortrait = renderSize.h > renderSize.w;
+	const isMobilePortrait = isPortrait && renderSize.w <= 500;
+	const isMobileLandscape = !isPortrait && renderSize.h <= 500;
+	if (isMobilePortrait) {
+		return viewport.h * 0.152;
+	}
+	if (isPortrait) {
+		return viewport.h * 0.132;
+	}
+	if (isMobileLandscape) {
+		const targetScreenY = renderSize.h <= 380 ? renderSize.h * 0.27 : renderSize.h * 0.24;
+		return Math.max(0, (targetScreenY - rootOffset.y) / Math.max(rootScale, 0.0001));
+	}
 	const desktopAccumulatedOffset =
 		renderSize.w >= 1024 && renderSize.h >= 600 && renderSize.w > renderSize.h
 			? viewport.h * 0.022

@@ -1,5 +1,30 @@
 type FetchLike = typeof fetch;
 
+function extractPayloadErrorCode(payload: any): string | null {
+	const candidates = [
+		payload?.code,
+		payload?.errorCode,
+		typeof payload?.error === 'string' ? payload.error : null,
+		payload?.error?.code,
+		payload?.details?.code,
+		payload?.data?.code
+	];
+	for (const candidate of candidates) {
+		if (candidate == null) continue;
+		const text = String(candidate).trim();
+		if (text) return text;
+	}
+	return null;
+}
+
+function buildNetworkError() {
+	return {
+		error: true,
+		code: 'ERR_NET',
+		message: 'Network request failed.'
+	};
+}
+
 export function getQueryParamFromSearch(search: string, key: string) {
 	return new URLSearchParams(search).get(key);
 }
@@ -42,12 +67,48 @@ export async function postRgsJson(
 ): Promise<any> {
 	const base = getRgsBaseUrlFromSearch(search);
 	if (!base) return null;
-	const res = await fetchImpl(`${base}${endpoint}`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
-	return await res.json();
+	try {
+		const res = await fetchImpl(`${base}${endpoint}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
+		});
+		const text = await res.text();
+		let payload: any = null;
+		try {
+			payload = text ? JSON.parse(text) : null;
+		} catch {
+			payload = text;
+		}
+		if (!res.ok) {
+			const code = extractPayloadErrorCode(payload);
+			if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+				return {
+					...payload,
+					error: true,
+					status: res.status,
+					code: code ?? payload.code ?? null,
+					message:
+						payload?.message != null
+							? String(payload.message)
+							: `Request failed (${res.status}).`
+				};
+			}
+			return {
+				error: true,
+				status: res.status,
+				code,
+				message:
+					typeof payload === 'object' && payload?.message
+						? String(payload.message)
+						: `Request failed (${res.status}).`,
+				payload
+			};
+		}
+		return payload;
+	} catch {
+		return buildNetworkError();
+	}
 }
 
 export async function getRgsJson(
@@ -57,28 +118,46 @@ export async function getRgsJson(
 ): Promise<any> {
 	const base = getRgsBaseUrlFromSearch(search);
 	if (!base) return null;
-	const res = await fetchImpl(`${base}${endpoint}`, {
-		method: 'GET'
-	});
-	const text = await res.text();
-	let payload: any = null;
 	try {
-		payload = text ? JSON.parse(text) : null;
+		const res = await fetchImpl(`${base}${endpoint}`, {
+			method: 'GET'
+		});
+		const text = await res.text();
+		let payload: any = null;
+		try {
+			payload = text ? JSON.parse(text) : null;
+		} catch {
+			payload = text;
+		}
+		if (!res.ok) {
+			const code = extractPayloadErrorCode(payload);
+			if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+				return {
+					...payload,
+					error: true,
+					status: res.status,
+					code: code ?? payload.code ?? null,
+					message:
+						payload?.message != null
+							? String(payload.message)
+							: `Request failed (${res.status}).`
+				};
+			}
+			return {
+				error: true,
+				status: res.status,
+				code,
+				message:
+					typeof payload === 'object' && payload?.message
+						? String(payload.message)
+						: `Request failed (${res.status}).`,
+				payload
+			};
+		}
+		return payload;
 	} catch {
-		payload = text;
+		return buildNetworkError();
 	}
-	if (!res.ok) {
-		return {
-			error: true,
-			status: res.status,
-			message:
-				typeof payload === 'object' && payload?.message
-					? String(payload.message)
-					: `Request failed (${res.status}).`,
-			payload
-		};
-	}
-	return payload;
 }
 
 export async function fetchReplayRound(search: string, fetchImpl: FetchLike = fetch) {

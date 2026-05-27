@@ -83,7 +83,10 @@
 	export let accumulatedStrokeWidth = 12;
 	export let accumulatedAmountY: () => number = () => 0;
 	export let bananaLossFloat: { amount: number; start: number } | null = null;
+	export let fontReady = false;
 	export let formatCurrencyAmount: (amount: number) => string = (amount) => String(amount);
+	export let lowPowerMobile = false;
+	export let isMobileLandscape = false;
 </script>
 
 <App>
@@ -105,20 +108,22 @@
 			{@const mountainsWidth = mountainsAssetWidth || viewport.w}
 			{@const mountainsHeight = mountainsAssetHeight || mountainsWidth * mountainsAspect}
 			{@const scenePortrait = renderSize.h > renderSize.w}
+			{@const anyMobileLandscape = (lowPowerMobile || isMobileLandscape) && !scenePortrait}
 			{@const mountainsScaleX = scenePortrait ? 0.5 : 1}
-			{@const mountainsYOffset = viewport.h * (scenePortrait ? 0.599 : 0.5176)}
+			{@const mountainsOverlapNudge = anyMobileLandscape ? viewport.h * 0.022 : lowPowerMobile ? viewport.h * 0.01 : 0}
+			{@const mountainsYOffset = viewport.h * (scenePortrait ? 0.599 : 0.5176) + mountainsOverlapNudge}
 			{@const mountainsY = icePath.topY - mountainsHeight * 0.2 + mountainsYOffset}
 			{@const cloudsNativeHeight = cloudsAssetHeight}
 			{@const cloudsX = viewport.w * 0.5 + cloudsAssetWidth * 0.5}
 			{@const cloudsY = cloudsNativeHeight * (scenePortrait ? 0.875 : 0.9485)}
 			{@const slide = slideMetrics()}
-			{@const slideVisualOffsetY = scenePortrait ? -70 : 0}
-			{@const waterTimeScale = 1.4}
-			{@const iceSwayScale = 0.33}
+			{@const slideVisualOffsetY = scenePortrait ? -74 : 0}
+			{@const waterTimeScale = lowPowerMobile ? 0 : 1.4}
+			{@const iceSwayScale = lowPowerMobile ? 0 : 0.33}
 			{@const roundActive = animationStatus === 'running' || status === 'sliding'}
 			{@const bgAnim = 'idle'}
-			{@const bgTimeScale = roundActive ? sceneAnimationTimeScale : 0}
-			<Container y={viewport.h * (scenePortrait ? -0.02 : -0.1)} sortableChildren>
+			{@const bgTimeScale = lowPowerMobile ? 0 : roundActive ? sceneAnimationTimeScale : 0}
+			<Container y={viewport.h * (scenePortrait ? -0.02 : anyMobileLandscape ? -0.045 : -0.1)} sortableChildren>
 				<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY, zIndex: -10 })}>
 					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
 				</SpineProvider>
@@ -282,6 +287,7 @@
 				amountY={accumulatedAmountY()}
 				{bananaLossFloat}
 				{floatTime}
+				{fontReady}
 				{formatCurrencyAmount}
 			/>
 		</Container>

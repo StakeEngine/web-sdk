@@ -99,6 +99,15 @@
     return GLOBAL_PICKUP_SIZE_MULTIPLIER;
   };
 
+  const visualYOffset = (token: Token) => {
+    const type = normalizeTokenType(token);
+    if (type === 'lifering' || type === 'life_ring' || type === 'life_vest' || type === 'lifebelt') {
+      const baseOffset = getSpawnOffset();
+      return Math.max(12, baseOffset * 0.05);
+    }
+    return 0;
+  };
+
   const toFiniteNumber = (value: unknown, fallback = 0) => {
     const numberValue = Number(value);
     return Number.isFinite(numberValue) ? numberValue : fallback;
@@ -304,10 +313,10 @@
     void showSteps;
     void stepSpacing;
     void pickupTriggerAt;
-    return tokens
-      .map((token) => {
+    const visibleEntries: RenderEntry[] = [];
+    for (const token of tokens) {
       const pose = tokenRender(token.stepIndex);
-      if (!pose) return null;
+      if (!pose) continue;
       const liveDepth = Math.max(0, Math.min(1, pose.depth ?? 0));
       const lane = token.activate
         ? toFiniteNumber(token.extra?.activatedLane, resolveLane(token))
@@ -316,14 +325,14 @@
         ? Math.max(0, Math.min(1, toFiniteNumber(token.extra?.activatedDepth, liveDepth)))
         : liveDepth;
       const lanePos = lanePosition(depth, lane);
-      const offsetY = lanePos.y + getSpawnOffset();
+      const offsetY = lanePos.y + getSpawnOffset() + visualYOffset(token);
       const assetKey = resolveAssetKey(token);
       const tokenType = normalizeTokenType(token);
       const size = tokenSpineSize(depth);
       const animationName = getAnimationName(token);
       const sizeMultiplier = visualSizeMultiplier(token);
       const scaledSize = size * PICKUP_VISUAL_SCALE * sizeMultiplier;
-      return {
+      const entry = {
         token,
         pose,
         assetKey,
@@ -335,8 +344,9 @@
         animationName,
         glyphs: buildGlyphs(token, assetKey, size, animationName, sizeMultiplier)
       };
-      })
-      .filter((entry): entry is RenderEntry => entry !== null && entry.assetKey !== 'empty');
+      if (entry.assetKey !== 'empty') visibleEntries.push(entry);
+    }
+    return visibleEntries;
   })();
 </script>
 

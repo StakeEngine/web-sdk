@@ -1,0 +1,52 @@
+{
+    "providerName": "sample_provider",
+    "gameName": "forest_gang",
+    "gameID": "0_0_forest_gang",
+    "rtp": 0.961,
+    "numReels": 5,
+    "numRows": [
+        4,
+        4,
+        4,
+        4,
+        4
+    ],
+    "betModes": {
+        "base": {
+            "cost": 1,
+            "feature": true,
+            "buyBonus": false,
+            "rtp": 0.960293,
+            "max_win": 20000
+        },
+        "bonus": {
+            "cost": 100,
+            "feature": false,
+            "buyBonus": true,
+            "rtp": 0.961118,
+            "max_win": 20000
+        },
+        "super": {
+            "cost": 400,
+            "feature": false,
+            "buyBonus": true,
+            "rtp": 0.961118,
+            "max_win": 20000
+        }
+    },
+    "symbols": [
+        "FOX",
+        "WOLF",
+        "BEAR",
+        "RABBIT",
+        "SQUIRREL",
+        "A",
+        "K",
+        "Q",
+        "J",
+        "T",
+        "WILD",
+        "SCATTER"
+    ],
+    "paddingReels": {}
+}

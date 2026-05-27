@@ -2,7 +2,7 @@
   "name": "twist-turbo",
   "version": "0.0.0",
   "private": true,
-	"license": "MIT",
+  "license": "MIT",
   "scripts": {
     "lint": "turbo run lint",
     "format": "turbo run format",
@@ -15,7 +15,12 @@
     "publish-packages": "turbo run build lint test && changeset version && changeset publish",
     "e2e": "turbo run e2e",
     "e2e-smoke": "turbo run e2e-smoke",
-    "e2e-mobile": "turbo run e2e-mobile"
+    "e2e-mobile": "turbo run e2e-mobile",
+    "mock-rgs": "node ./mock-rgs/server.mjs",
+    "forest-gang:sim": "node ./scripts/forest-gang-sim.mjs",
+    "forest-gang:testmath": "node ./scripts/test-forest-gang-regression.mjs",
+    "forest-gang:genmath": "node ./scripts/generate-forest-gang-math-artifacts.mjs",
+    "forest-gang:validatemath": "node ./scripts/validate-forest-gang-artifacts.mjs"
   },
   "dependencies": {
     "eslint": "9.21.0",

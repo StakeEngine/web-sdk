@@ -9,17 +9,21 @@
 	export let amountY: number;
 	export let bananaLossFloat: { amount: number; start: number } | null;
 	export let floatTime: number;
+	export let fontReady = false;
 	export let formatCurrencyAmount: (amount: number) => string;
+
+	const centerX = Math.round(viewport.w * 0.51);
+	$: accumulatedFontFamily = fontReady ? 'Gigalypse, Poppins, sans-serif' : 'Poppins, sans-serif';
 </script>
 
 <Text
 	text={formatCurrencyAmount(roundWinDisplay)}
-	x={viewport.w * 0.5}
+	x={centerX}
 	y={amountY}
 	anchor={{ x: 0.5, y: 0.5 }}
 	style={{
 		fill: 0x000000,
-		fontFamily: 'Gigalypse',
+		fontFamily: accumulatedFontFamily,
 		fontSize: Math.round(52 * amountWinPulse),
 		fontWeight: '800',
 		lineHeight: Math.round(52 * amountWinPulse),
@@ -32,17 +36,18 @@
 			join: 'round',
 			miterLimit: 2
 		},
-		align: 'center'
+		align: 'center',
+		trim: true
 	}}
 />
 <Text
 	text={formatCurrencyAmount(roundWinDisplay)}
-	x={viewport.w * 0.5}
+	x={centerX}
 	y={amountY}
 	anchor={{ x: 0.5, y: 0.5 }}
 	style={{
 		fill: 0xFBCF00,
-		fontFamily: 'Gigalypse',
+		fontFamily: accumulatedFontFamily,
 		fontSize: Math.round(52 * amountWinPulse),
 		fontWeight: '800',
 		lineHeight: Math.round(52 * amountWinPulse),
@@ -55,7 +60,8 @@
 			join: 'round',
 			miterLimit: 2
 		},
-		align: 'center'
+		align: 'center',
+		trim: true
 	}}
 />
 {#if bananaLossFloat}
@@ -63,17 +69,18 @@
 	{@const bananaLossEase = bananaLossT * bananaLossT * (3 - 2 * bananaLossT)}
 	<Text
 		text={formatCurrencyAmount(-bananaLossFloat.amount)}
-		x={viewport.w * 0.5}
+		x={centerX}
 		y={amountY + viewport.h * 0.035 + bananaLossEase * Math.max(34, viewport.h * 0.06)}
 		anchor={{ x: 0.5, y: 0.5 }}
 		style={{
 			fill: 0xffffff,
-			fontFamily: 'Gigalypse',
+			fontFamily: accumulatedFontFamily,
 			fontSize: 42,
 			fontWeight: '800',
 			lineHeight: 42,
 			stroke: { color: 0x000000, alpha: 0.95, width: 5, alignment: 0.5, join: 'round', miterLimit: 2 },
-			align: 'center'
+			align: 'center',
+			trim: true
 		}}
 		alpha={Math.max(0, 1 - bananaLossT * 0.85)}
 	/>

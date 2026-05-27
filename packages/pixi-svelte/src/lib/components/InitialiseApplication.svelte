@@ -29,10 +29,15 @@
 			preference: 'webgpu',
 			powerPreference: 'high-performance',
 			resolution: devicePixelRatio.current,
-			resizeTo: window,
+			resizeTo: wrap,
 		});
 
+		context.stateApp.pixiApplication.stage.sortableChildren = true;
+
 		wrap.appendChild(context.stateApp.pixiApplication.canvas);
+		context.stateApp.pixiApplication.canvas.style.display = 'block';
+		context.stateApp.pixiApplication.canvas.style.width = '100%';
+		context.stateApp.pixiApplication.canvas.style.height = '100%';
 
 		// to prevent that you can't scroll the page with touch on the canvas. https://github.com/pixijs/pixijs/issues/4824
 		context.stateApp.pixiApplication.renderer.events.autoPreventDefault = false;
@@ -55,7 +60,7 @@
 	});
 </script>
 
-<div bind:this={wrap}>
+<div bind:this={wrap} style="width: 100%; height: 100%; overflow: hidden;">
 	{#if initialised}
 		{@render props.children()}
 	{/if}

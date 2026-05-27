@@ -8,11 +8,7 @@
 	const props: Props = $props();
 	const context = getContextApp();
 
-	let parentContext = createContextParent(
-		context.stateApp.pixiApplication?.stage ?? new PIXI.Container(),
-	);
+	const parentContext = createContextParent(context.stateApp.pixiApplication!.stage);
 </script>
 
-{#if parentContext.parent}
-	{@render props.children()}
-{/if}
+{@render props.children()}

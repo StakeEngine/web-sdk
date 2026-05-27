@@ -97,6 +97,7 @@ export function pickupPositionHelper(args: {
 	stepIndex: number;
 	lane: number;
 	spawnLane?: number;
+	type?: string;
 	tokenRender: (stepIndex: number) => { depth: number } | null;
 	pickupLanePosition: (depth: number, offset: number) => { x: number; y: number };
 	itemSpawnOffset: () => number;
@@ -105,19 +106,40 @@ export function pickupPositionHelper(args: {
 	if (!pose) return null;
 	const effectiveLane = typeof args.spawnLane === 'number' ? args.spawnLane : args.lane;
 	const pos = args.pickupLanePosition(pose.depth, effectiveLane);
-	return { x: pos.x, y: pos.y + args.itemSpawnOffset() };
+	const baseOffset = args.itemSpawnOffset();
+	const normalizedType = String(args.type ?? '')
+		.trim()
+		.toLowerCase();
+	const liferingYOffset =
+		normalizedType === 'lifering' ||
+		normalizedType === 'life_ring' ||
+		normalizedType === 'life_vest' ||
+		normalizedType === 'lifebelt'
+			? Math.max(24, baseOffset * 0.15)
+			: 0;
+	return { x: pos.x, y: pos.y + baseOffset + liferingYOffset };
 }
 
 export function pickupBandStateHelper(args: {
 	token: { stepIndex: number; lane: number; extra?: Record<string, unknown> };
 	penguin: { y: number; size: number };
-	pickupPosition: (stepIndex: number, lane: number, spawnLane?: number) => { x: number; y: number } | null;
+	pickupPosition: (
+		stepIndex: number,
+		lane: number,
+		spawnLane?: number,
+		type?: string,
+	) => { x: number; y: number } | null;
 	tokenRender: (stepIndex: number) => { depth: number } | null;
 }) {
 	const lockLane = Number(args.token.extra?.lockLane);
 	const spawnLane = Number(args.token.extra?.spawnLane ?? args.token.lane);
 	const bandLane = Number.isFinite(lockLane) ? lockLane : spawnLane;
-	const pos = args.pickupPosition(args.token.stepIndex, args.token.lane, bandLane);
+	const pos = args.pickupPosition(
+		args.token.stepIndex,
+		args.token.lane,
+		bandLane,
+		String((args.token as { type?: string }).type ?? ''),
+	);
 	if (!pos) return null;
 	const pose = args.tokenRender(args.token.stepIndex);
 	const depth = pose ? pose.depth : 0.2;

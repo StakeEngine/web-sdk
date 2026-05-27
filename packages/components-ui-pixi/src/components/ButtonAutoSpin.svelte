@@ -19,7 +19,10 @@
 		return false;
 	});
 
-	const stopAutoSpin = () => (stateBet.autoSpinsCounter = 0);
+	const stopAutoSpin = () => {
+		stateBet.autoSpinsCounter = 0;
+		context.eventEmitter.broadcast({ type: 'stopButtonClick' });
+	};
 	const openModal = () => (stateModal.modal = { name: 'autoSpin' });
 	const onpress = () => {
 		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });

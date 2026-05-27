@@ -33,6 +33,7 @@ export function normalizeRoundEvents(events: any[]) {
 				}
 			},
 			bridgeStep: true,
+			respawnGapStep: true,
 			targetLane: null,
 			skipTargeting: true,
 			accumulatedWinAmount: Number(previous?.accumulatedWinAmount ?? 0),

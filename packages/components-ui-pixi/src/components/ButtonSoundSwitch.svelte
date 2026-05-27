@@ -25,4 +25,4 @@
 	);
 </script>
 
-<UiButton {...props} {sizes} {onpress} {icon} variant="light" />
+<UiButton {...props} {sizes} {onpress} {icon} variant="dark" />

@@ -84,6 +84,9 @@ export function buildPadStepTokens({
 					: undefined;
 		const normalized = item.trim().toUpperCase();
 		const { type, extra } = parseOutcome(item, padType, padData.sinking === true);
+		const respawnGapSpawnBlocked =
+			entry.respawnGapStep === true && (type === 'goal' || type === 'lifering');
+		if (respawnGapSpawnBlocked) continue;
 		const itemNumber = normalized.startsWith('+')
 			? Number(normalized.slice(1))
 			: normalized.startsWith('X')

@@ -163,6 +163,7 @@
 		resolveAuthenticateOutcome,
 		preparePlayRound
 	} from '../lib/helpers/roundUiFlowHelpers';
+	import { resolveErrorPresentation } from '../lib/helpers/errorPresentationHelpers';
 	import {
 		buildSoundSrc,
 		SOUND_GAIN,
@@ -232,9 +233,11 @@
 	import { createApp, setContextApp } from 'pixi-svelte';
 	import GameStageScene from '../lib/components/GameStageScene.svelte';
 	import BootLoader from '../lib/components/BootLoader.svelte';
+	import EntrySplash from '../lib/components/EntrySplash.svelte';
 	import GameHud from '../lib/components/GameHud.svelte';
 	import ReplayHud from '../lib/components/ReplayHud.svelte';
 	import PendingRoundModal from '../lib/components/PendingRoundModal.svelte';
+	import GameErrorModal from '../lib/components/GameErrorModal.svelte';
 	const assetPath = (path: string) => {
 		const normalized = path.startsWith('/') ? path.slice(1) : path;
 		return `./${normalized}`;
@@ -312,11 +315,17 @@ const context = createApp({
 	const API_MULTIPLIER = 1_000_000;
 	const TOTAL_COST_MULTIPLIER = 5;
 	const baseViewport = { w: 1920, h: 1080 };
+	const CANVAS_LAYOUT_DEBUG = false;
+	const LOW_POWER_MOBILE_MAX_DPR = 1.25;
+	const LOW_POWER_ICE_PIECES_PER_SIDE = 2;
+	const LOW_POWER_ICE_SPAWN_COUNT = 2;
 	let stageScale = $state(1);
 	let stageOffset = $state({ x: 0, y: 0 });
 	let gameBox = $state({ w: baseViewport.w, h: baseViewport.h });
 	let renderSize = $state({ w: baseViewport.w, h: baseViewport.h });
 	let isMobileLandscapeUi = $state(false);
+	let isMobilePortraitUi = $state(false);
+	let lowPowerMobile = $state(false);
 	let rootScale = $state(1);
 	let rootOffset = $state({ x: 0, y: 0 });
 	const SKY_TARGET_RATIO = 0.1;
@@ -324,7 +333,11 @@ const context = createApp({
 let response: any = $state(null);
 let endRoundResponse: any = $state(null);
 let balance = $state(0);
-let currentCurrency = $state<SupportedCurrency>('USD');
+let fatalError = $state<{ titleKey: string; descKey: string } | null>(null);
+let currentCurrency = $state<SupportedCurrency>(
+	typeof window !== 'undefined' ? normalizeCurrency(getQueryParamFromSearch(window.location.search, 'currency')) : 'USD'
+);
+let gigalypseFontReady = $state(false);
 	let replayMode = $state(false);
 	let replayLoading = $state(false);
 	let replayReady = $state(false);
@@ -369,6 +382,8 @@ let driftActive = $state(false);
 	let hasLifering = $state(false);
 	let errorMessage = $state('');
 	let stepStates = $state<Array<{ step: number; value: number; hasLifering: boolean; bananaCount: number }>>([]);
+	let stepStateCursor = 0;
+	let stepStateCursorStep = Number.NEGATIVE_INFINITY;
 	let endRoundTriggered = $state(false);
 	
 	let pickupCount = $state(0);
@@ -430,8 +445,11 @@ let speedFactor = $state(2);
 	let musicMuted = $state(false);
 	let hudVolume = $state(58);
 	let bootLoading = $state(true);
+	let entrySplashVisible = $state(true);
 	let audioUnlocked = false;
 	const stakeLoaderSrc = assetPath('/stake-engine-loader.gif');
+	const splashLandscapeSrc = assetPath('/assets/splash/penguin_1280x675.png');
+	const splashPortraitSrc = assetPath('/assets/splash/penguin_1080x1920.png');
 	const SOUND_SRC: Record<SoundKey, string> = buildSoundSrc(assetPath);
 	let soundEnabled = false;
 	const audioEngine = createAudioEngine<SoundKey>({
@@ -445,7 +463,7 @@ let speedFactor = $state(2);
 			audioUnlocked = value;
 		},
 		onAudioUnlocked: () => {
-			if (!musicMuted && hudVolume > 0) {
+			if (!bootLoading && !entrySplashVisible && !musicMuted && hudVolume > 0) {
 				startBackgroundMusic();
 			}
 		}
@@ -1214,29 +1232,60 @@ let icePieces = $state<IcePiece[]>([]);
 let dynamicIceSerial = 0;
 const dynamicIceLastSpawnProgressBySlot = new Map<string, number>();
 
-	const getParam = (key: string) => getQueryParamFromSearch(window.location.search, key);
-	const getLanguageParam = () => getParam('language') ?? getParam('lang');
+const getParam = (key: string) => getQueryParamFromSearch(window.location.search, key);
+const getLanguageParam = () => getParam('language') ?? getParam('lang');
 type I18nKey = string;
 const LANGUAGE_SET = createLanguageSet(SUPPORTED_LANGUAGES);
 const I18N_PATH = assetPath('/i18n/penguin-slide.i18n.json');
+const SOCIAL_EN_US_FALLBACK: Record<string, string> = {
+	volatility_high_desc: 'High: High challenge, high reward - up to 10 000x max win.',
+	how_to_play_text:
+		'Tap PLAY to start. Guide the penguin through pickups and avoid hazards. Collect to secure your current value.',
+	autoplay_text: 'Choose spins and speed from Autoplay, then start. Tap PLAY during autoplay to stop immediately.',
+	decrease_bet: 'Decrease play amount',
+	increase_bet: 'Increase play amount',
+	bet: 'Play',
+	total_cost: 'TOTAL PLAY AMOUNT',
+	bet_size: 'BASE PLAY AMOUNT',
+	insufficient_funds_title: 'INSUFFICIENT BALANCE',
+	insufficient_funds_desc: 'You do not have enough balance. Please get more coins and try again.',
+	payout_label: 'RESULT'
+};
 let I18N_EN = $state<Record<string, string>>({ ...BUILTIN_I18N_EN });
 let I18N = $state<Record<string, Record<string, string>>>(
 	Object.fromEntries(
 		Object.entries(BUILTIN_I18N).map(([lang, messages]) => [lang, { ...messages }])
 	) as Record<string, Record<string, string>>
 );
+let SOCIAL_I18N_EN = $state<Record<string, string>>({ ...SOCIAL_EN_US_FALLBACK });
 let currentLanguage = $state<SupportedLanguage>('en');
+let socialEnUsMode = $state(false);
+
+function updateSocialEnUsMode() {
+	const normalizedLanguageTag = String(getLanguageParam() ?? '')
+		.trim()
+		.toLowerCase()
+		.replace(/_/g, '-');
+	const socialQueryEnabled = String(getParam('social') ?? '').trim().toLowerCase() === 'true';
+	const socialCurrencyEnabled = currentCurrency === 'XGC' || currentCurrency === 'XSC';
+	const englishUi = currentLanguage === 'en' || normalizedLanguageTag === 'en-us' || normalizedLanguageTag === 'en';
+	socialEnUsMode = englishUi && (socialQueryEnabled || socialCurrencyEnabled);
+}
 
 async function loadI18nCatalog() {
 	const catalog = await loadI18nCatalogHelper(I18N_PATH, LANGUAGE_SET);
 	if (!catalog) return;
 	I18N_EN = { ...BUILTIN_I18N_EN, ...(catalog.en ?? {}) };
+	SOCIAL_I18N_EN = {
+		...SOCIAL_EN_US_FALLBACK,
+		...(catalog.messages?.sweeps_en ?? {})
+	};
 	I18N = Object.fromEntries(
 		Object.entries(BUILTIN_I18N).map(([lang, messages]) => [
 			lang,
 			{
 				...messages,
-				...(catalog.messages?.[lang] ?? {})
+				...(lang === 'en' ? I18N_EN : catalog.messages?.[lang] ?? {})
 			}
 		])
 	) as Record<string, Record<string, string>>;
@@ -1247,9 +1296,38 @@ function normalizeLanguage(raw: string | null | undefined): SupportedLanguage {
 }
 
 function t(key: I18nKey, vars?: Record<string, string | number>) {
-	const template = I18N[currentLanguage]?.[key] ?? I18N_EN[key] ?? key;
+	const template =
+		(socialEnUsMode ? SOCIAL_I18N_EN[key] : undefined) ??
+		I18N[currentLanguage]?.[key] ??
+		I18N_EN[key] ??
+		key;
 	if (!vars) return template;
 	return template.replace(/\{(\w+)\}/g, (_match, name: string) => String(vars[name] ?? ''));
+}
+
+function dismissFatalError() {
+	const shouldReload =
+		fatalError?.titleKey === 'general_error_title' &&
+		(fatalError?.descKey === 'general_error_desc' || fatalError?.descKey === 'no_internet_desc');
+	fatalError = null;
+	errorMessage = '';
+	if (shouldReload) {
+		window.location.reload();
+	}
+}
+
+function cancelAutoplayOnError() {
+	stopAutoplay();
+	autoplay = false;
+	autoplayOpen = false;
+	autoplayRemaining = 0;
+	autoplayTotal = 0;
+}
+
+function showFatalError(responseLike: any) {
+	cancelAutoplayOnError();
+	fatalError = resolveErrorPresentation(responseLike);
+	errorMessage = '';
 }
 
 	function getRgsBaseUrl(): string | null {
@@ -1258,30 +1336,121 @@ function t(key: I18nKey, vars?: Record<string, string | number>) {
 
 	function updateViewport() {
 		const viewportMetrics = window.visualViewport;
-		const vw = Math.max(1, Math.round(viewportMetrics?.width ?? window.innerWidth));
-		const vh = Math.max(1, Math.round(viewportMetrics?.height ?? window.innerHeight));
-		const isLandscape = vw > vh;
-		const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-		const desktopLandscapeRef = { w: 1200, h: 675 };
-		isMobileLandscapeUi = window.matchMedia(
+		const docEl = document.documentElement;
+		const vw = Math.max(
+			1,
+			Math.round(viewportMetrics?.width ?? 0) ||
+				Math.round(docEl.clientWidth || 0) ||
+				Math.round(window.innerWidth || 0)
+		);
+		const vh = Math.max(
+			1,
+			Math.round(viewportMetrics?.height ?? 0) ||
+				Math.round(docEl.clientHeight || 0) ||
+				Math.round(window.innerHeight || 0)
+		);
+		docEl.style.setProperty('--app-vw', `${vw}px`);
+		docEl.style.setProperty('--app-vh', `${vh}px`);
+		docEl.style.setProperty('--game-body-w', `${vw}px`);
+		docEl.style.setProperty('--game-body-h', `${vh}px`);
+		docEl.style.setProperty('--game-body-left', '0px');
+		docEl.style.setProperty('--game-body-top', '0px');
+		docEl.style.setProperty('--game-body-right-inset', '0px');
+		docEl.style.setProperty('--game-body-bottom-inset', '0px');
+		const mobileLandscapeMatch = window.matchMedia(
 			'(orientation: landscape) and (max-width: 1366px) and (max-height: 900px) and (hover: none) and (pointer: coarse)'
 		).matches;
-		if (isLandscape && !isCoarsePointer) {
-			const fitScale = Math.min(vw / desktopLandscapeRef.w, vh / desktopLandscapeRef.h);
-			if (fitScale < 1) {
-				gameBox.w = desktopLandscapeRef.w;
-				gameBox.h = desktopLandscapeRef.h;
-				stageScale = fitScale;
-				stageOffset.x = Math.round((vw - desktopLandscapeRef.w * fitScale) * 0.5);
-				stageOffset.y = Math.round((vh - desktopLandscapeRef.h * fitScale) * 0.5);
-				return;
-			}
-		}
+		lowPowerMobile = window.matchMedia(
+			'(max-width: 1024px) and (hover: none) and (pointer: coarse)'
+		).matches;
+		isMobileLandscapeUi = mobileLandscapeMatch;
+		isMobilePortraitUi = window.matchMedia(
+			'(orientation: portrait) and (max-width: 700px) and (hover: none) and (pointer: coarse)'
+		).matches;
 		gameBox.w = vw;
 		gameBox.h = vh;
 		stageScale = 1;
 		stageOffset.x = 0;
 		stageOffset.y = 0;
+		logCanvasLayout('updateViewport');
+	}
+
+	function logCanvasLayout(label: string) {
+		if (!CANVAS_LAYOUT_DEBUG || typeof window === 'undefined') return;
+		const app = context.stateApp.pixiApplication;
+		const viewportMetrics = window.visualViewport;
+		const docEl = document.documentElement;
+		const canvas = app?.canvas as HTMLCanvasElement | undefined;
+		const renderer = app?.renderer as any;
+		const gameRect = gameBodyEl?.getBoundingClientRect();
+		const canvasRect = canvas?.getBoundingClientRect();
+		console.info('[penguin-slide][canvas]', label, {
+			window: {
+				innerWidth: window.innerWidth,
+				innerHeight: window.innerHeight,
+				devicePixelRatio: window.devicePixelRatio,
+				screenWidth: window.screen?.width,
+				screenHeight: window.screen?.height,
+				orientationType: (window.screen.orientation as ScreenOrientation | undefined)?.type ?? 'unknown'
+			},
+			visualViewport: viewportMetrics
+				? {
+						width: viewportMetrics.width,
+						height: viewportMetrics.height,
+						offsetLeft: viewportMetrics.offsetLeft,
+						offsetTop: viewportMetrics.offsetTop,
+						pageLeft: viewportMetrics.pageLeft,
+						pageTop: viewportMetrics.pageTop,
+						scale: viewportMetrics.scale
+					}
+				: null,
+			document: {
+				clientWidth: docEl.clientWidth,
+				clientHeight: docEl.clientHeight,
+				appVw: getComputedStyle(docEl).getPropertyValue('--app-vw').trim(),
+				appVh: getComputedStyle(docEl).getPropertyValue('--app-vh').trim()
+			},
+			gameBox: { ...gameBox },
+			renderSize: { ...renderSize },
+			viewport: { ...viewport },
+			stage: {
+				rootScale,
+				rootOffset: { ...rootOffset },
+				stageScale,
+				stageOffset: { ...stageOffset }
+			},
+			gameBody: gameBodyEl
+				? {
+						clientWidth: gameBodyEl.clientWidth,
+						clientHeight: gameBodyEl.clientHeight,
+						offsetWidth: gameBodyEl.offsetWidth,
+						offsetHeight: gameBodyEl.offsetHeight,
+						rect: gameRect ? { width: gameRect.width, height: gameRect.height, left: gameRect.left, top: gameRect.top } : null
+					}
+				: null,
+			canvas: canvas
+				? {
+						width: canvas.width,
+						height: canvas.height,
+						clientWidth: canvas.clientWidth,
+						clientHeight: canvas.clientHeight,
+						styleWidth: canvas.style.width,
+						styleHeight: canvas.style.height,
+						rect: canvasRect
+							? { width: canvasRect.width, height: canvasRect.height, left: canvasRect.left, top: canvasRect.top }
+							: null
+					}
+				: null,
+			renderer: renderer
+				? {
+						width: renderer.width,
+						height: renderer.height,
+						resolution: renderer.resolution,
+						screenWidth: renderer.screen?.width,
+						screenHeight: renderer.screen?.height
+					}
+				: null
+		});
 	}
 
 function currentIceSpawnSlots() {
@@ -1330,6 +1499,9 @@ function refreshIcePieces() {
 
 function rebuildFixedFloes() {
 	const { topY, bottomY } = pathMetrics();
+	const icePiecesPerSide = lowPowerMobile ? LOW_POWER_ICE_PIECES_PER_SIDE : ICE_PIECES_PER_SIDE;
+	const iceSpawnLeftCount = lowPowerMobile ? LOW_POWER_ICE_SPAWN_COUNT : ICE_SPAWN_LEFT_COUNT;
+	const iceSpawnRightCount = lowPowerMobile ? LOW_POWER_ICE_SPAWN_COUNT : ICE_SPAWN_RIGHT_COUNT;
 	fixedIcePieces = buildIcePiecesHelper({
 		viewport,
 		renderSize,
@@ -1337,11 +1509,11 @@ function rebuildFixedFloes() {
 		bottomY,
 		hasStartedFirstRound,
 		animationStatus,
-		icePiecesPerSide: ICE_PIECES_PER_SIDE,
+		icePiecesPerSide,
 		iceVisibleStart: ICE_VISIBLE_START,
 		iceSpawnYDownFrac: ICE_SPAWN_Y_DOWN_FRAC,
-		iceSpawnLeftCount: ICE_SPAWN_LEFT_COUNT,
-		iceSpawnRightCount: ICE_SPAWN_RIGHT_COUNT,
+		iceSpawnLeftCount,
+		iceSpawnRightCount,
 		innerWidth: window.innerWidth,
 		random: nextIceLayoutRandom
 	});
@@ -1353,7 +1525,13 @@ function chooseDynamicIceSlot(
 	progressSteps: number,
 	blockedKeys: Set<string>
 ) {
-	const slotCount = side === 'left' ? ICE_SPAWN_LEFT_COUNT : ICE_SPAWN_RIGHT_COUNT;
+	const slotCount = side === 'left'
+		? lowPowerMobile
+			? LOW_POWER_ICE_SPAWN_COUNT
+			: ICE_SPAWN_LEFT_COUNT
+		: lowPowerMobile
+			? LOW_POWER_ICE_SPAWN_COUNT
+			: ICE_SPAWN_RIGHT_COUNT;
 	const candidates = Array.from({ length: slotCount }, (_, slotIndex) => slotIndex).filter(
 		(slotIndex) => !blockedKeys.has(`${side}:${slotIndex}`)
 	);
@@ -1374,7 +1552,7 @@ function dynamicIceBlockedSideAt(progressSteps: number) {
 
 function spawnDynamicIceBatch(progressSteps: number) {
 	const blockedSide = dynamicIceBlockedSideAt(progressSteps);
-	const batchCount = nextIceSpawnRandom() < DYNAMIC_ICE_TWO_PIECE_CHANCE ? 2 : 1;
+	const batchCount = lowPowerMobile ? 1 : nextIceSpawnRandom() < DYNAMIC_ICE_TWO_PIECE_CHANCE ? 2 : 1;
 	const sideOrder: IceSide[] = nextIceSpawnRandom() < 0.5 ? ['left', 'right'] : ['right', 'left'];
 	const requestedSides =
 		batchCount === 2
@@ -1391,7 +1569,7 @@ function spawnDynamicIceBatch(progressSteps: number) {
 	const blockedKeys = new Set<string>();
 	const slots = currentIceSpawnSlots();
 	const spawnTravelOffset = progressSteps * dynamicIceTravelDistancePerStep();
-	const scale = window.innerWidth < 600 ? 0.72 : 0.88;
+	const scale = lowPowerMobile ? 0.66 : window.innerWidth < 600 ? 0.72 : 0.88;
 	const nextPieces: IcePiece[] = [];
 	for (const side of sides) {
 		const slotIndex = chooseDynamicIceSlot(side, progressSteps, blockedKeys);
@@ -1534,6 +1712,8 @@ function updateDynamicIceFlow() {
 		vestGainAnimStartedAtMs = 0;
 		pendingVestPopSteps = [];
 		pendingVestPopCursor = 0;
+		stepStateCursor = 0;
+		stepStateCursorStep = Number.NEGATIVE_INFINITY;
 		reviveStartGhostStepIndex = null;
 		reviveStartGhostPassed = true;
 		reviveRecoveryTimer = null;
@@ -1906,6 +2086,8 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 		});
 		let summaryEvent = parsed.summaryEvent;
 		stepStates = parsed.timeline;
+		stepStateCursor = 0;
+		stepStateCursorStep = Number.NEGATIVE_INFINITY;
 		setPendingVestPopSteps(parsed.vestPopSteps);
 
 		animationActive = false;
@@ -2466,6 +2648,8 @@ function resetTargetingForRespawn(resumeLane: number, respawnPendingHit?: { t: T
 		});
 		let summaryEvent = parsed.summaryEvent;
 		stepStates = parsed.timeline;
+		stepStateCursor = 0;
+		stepStateCursorStep = Number.NEGATIVE_INFINITY;
 		setPendingVestPopSteps(parsed.vestPopSteps);
 
 		animationActive = false;
@@ -3005,7 +3189,7 @@ function processBookEvents(bookEvents: any[]) {
 
 function setMode(mode: string, label?: string, maxWin?: string) {
 			void label;
-			if (animationStatus === 'running') return;
+			if (animationStatus === 'running' || autoplay) return;
 			selectedMode = mode;
 			maxWinLabel = maxWinLabelForMode(mode, maxWin);
 		}
@@ -3013,7 +3197,9 @@ function setMode(mode: string, label?: string, maxWin?: string) {
 async function authenticate() {
 		if (replayMode) return;
 		errorMessage = '';
+		fatalError = null;
 		currentLanguage = normalizeLanguage(getLanguageParam());
+		updateSocialEnUsMode();
 		currentCurrency = normalizeCurrency(getParam('currency'));
 		const authFlow = await runAuthenticateFlow({
 			search: window.location.search,
@@ -3041,7 +3227,8 @@ async function authenticate() {
 		}
 		pendingRoundBetId = null;
 		if (authOutcome.action === 'clear_error' || authOutcome.action === 'failed') {
-			errorMessage = authOutcome.errorMessage;
+			if (authOutcome.action === 'failed') showFatalError(authFlow.response);
+			else errorMessage = authOutcome.errorMessage;
 			return;
 		}
 	}
@@ -3057,7 +3244,7 @@ async function authenticate() {
 		const pendingBetId = pendingRoundBetId;
 		pendingRoundBetId = null;
 		if (view) {
-			startRoundAudio();
+			await startRoundAudio();
 			reseedFrontendRandomness(
 				pendingBetId ?? { source: 'pending-round', events },
 				'pending-round'
@@ -3077,8 +3264,10 @@ async function authenticate() {
 		if (replayMode) return;
 		if (animationStatus === 'running') return;
 		errorMessage = '';
+		fatalError = null;
+		autoplayOpen = false;
 		hasStartedFirstRound = true;
-		startRoundAudio();
+		await startRoundAudio();
 		startSlideLoop();
 
 		hasLifering = false;
@@ -3102,7 +3291,7 @@ async function authenticate() {
 		if (preparedPlay.wallet?.currency) currentCurrency = normalizeCurrency(preparedPlay.wallet.currency);
 		if (preparedPlay.kind === 'error') {
 			stopSlideLoop();
-			errorMessage = preparedPlay.errorMessage;
+			showFatalError(preparedPlay.response);
 			return;
 		}
 		endRoundTriggered = preparedPlay.shouldTriggerEndRoundNow;
@@ -3151,6 +3340,7 @@ async function authenticate() {
 		replayCostMultiplier = 1;
 		replayPayoutMultiplier = 0;
 		errorMessage = '';
+		fatalError = null;
 		autoplay = false;
 		autoplayOpen = false;
 		autoplayRemaining = 0;
@@ -3170,12 +3360,12 @@ async function authenticate() {
 		replayReady = replayFlow.events.length > 0;
 	}
 
-	function startReplayRound() {
+	async function startReplayRound() {
 		if (!replayMode || replayLoading || !replayReady || !replayEvents?.length) return;
 		if (animationStatus === 'running') return;
 		errorMessage = '';
 		hasStartedFirstRound = true;
-		startRoundAudio();
+		await startRoundAudio();
 		startSlideLoop();
 		hasLifering = false;
 		replayHasPlayed = true;
@@ -3350,11 +3540,12 @@ const SLOT_OFFSETS = Object.keys(SLOT_TO_OFFSET)
 
 	function soundMasterVolume() {
 		if (!soundEnabled) return 0;
+		if (musicMuted) return 0;
 		return Math.max(0, Math.min(1, hudVolume / 100));
 	}
 
 	function loopVolume(key: SoundKey) {
-		if (key === 'music_loop' && musicMuted) return 0;
+		void key;
 		return soundMasterVolume() * SOUND_GAIN[key];
 	}
 
@@ -3375,34 +3566,59 @@ const SLOT_OFFSETS = Object.keys(SLOT_TO_OFFSET)
 		audioEngine.playOneShot(key);
 	}
 
+	function pauseAllAudio() {
+		stopSlideLoop();
+		stopLoop('music_loop');
+		void audioEngine.suspend();
+	}
+
 	function startBackgroundMusic() {
+		if (bootLoading) {
+			stopLoop('music_loop');
+			return;
+		}
 		playLoop('music_loop');
 	}
 
-	function ensureBackgroundMusic() {
-		ensureAudioUnlocked();
+	async function ensureBackgroundMusic() {
+		await ensureAudioUnlocked();
+		if (bootLoading) {
+			stopLoop('music_loop');
+			return;
+		}
 		if (!musicMuted && hudVolume > 0) {
 			startBackgroundMusic();
 		}
 	}
 
-	function startRoundAudio() {
-		ensureBackgroundMusic();
+	async function startRoundAudio() {
+		await ensureBackgroundMusic();
 	}
 
 	function ensureAudioUnlocked() {
-		audioEngine.ensureUnlocked();
+		return audioEngine.ensureUnlocked();
+	}
+
+	async function enterGameFromSplash() {
+		if (bootLoading) return;
+		const unlockPromise = ensureBackgroundMusic();
+		entrySplashVisible = false;
+		await unlockPromise;
 	}
 
 	async function ensureGigalypseFont() {
 		const fontUrl = gigalypseFontUrl;
 		try {
 			if (document.fonts.check('1em Gigalypse')) {
+				await document.fonts.load('52px Gigalypse');
+				gigalypseFontReady = true;
 				return;
 			}
 			const font = new FontFace('Gigalypse', `url(${fontUrl})`);
 			await font.load();
 			document.fonts.add(font);
+			await document.fonts.load('52px Gigalypse');
+			gigalypseFontReady = true;
 		} catch (error) {
 			void error;
 			// keep fallback font stack if loading fails
@@ -4341,11 +4557,12 @@ function rebuildPickupLineCrossings() {
 	});
 }
 
-function pickupPosition(stepIndex: number, lane: number, spawnLane?: number) {
+function pickupPosition(stepIndex: number, lane: number, spawnLane?: number, type?: string) {
 	return pickupPositionHelper({
 		stepIndex,
 		lane,
 		spawnLane,
+		type,
 		tokenRender,
 		pickupLanePosition,
 		itemSpawnOffset
@@ -4464,7 +4681,7 @@ function tokenSpineSize(depth: number) {
 }
 
 function accumulatedAmountY() {
-	return accumulatedAmountYForViewport(viewport, renderSize);
+	return accumulatedAmountYForViewport(viewport, renderSize, rootScale, rootOffset);
 }
 
 type StepDebugGuide = {
@@ -4558,15 +4775,21 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 	function stepStateAt(stepIndex: number) {
 		if (!stepStates.length) return null;
-		let latest = stepStates[0];
-		for (const entry of stepStates) {
-			if (entry.step <= stepIndex) {
-				latest = entry;
-			} else {
-				break;
-			}
+		if (stepIndex < stepStateCursorStep) {
+			stepStateCursor = 0;
 		}
-		return latest;
+		while (
+			stepStateCursor + 1 < stepStates.length &&
+			stepStates[stepStateCursor + 1].step <= stepIndex
+		) {
+			stepStateCursor += 1;
+		}
+		while (stepStateCursor > 0 && stepStates[stepStateCursor].step > stepIndex) {
+			stepStateCursor -= 1;
+		}
+		stepStateCursorStep = stepIndex;
+		const latest = stepStates[stepStateCursor];
+		return latest && latest.step <= stepIndex ? latest : null;
 	}
 
 	function updateWobbleRiskForStep(stepIndex: number) {
@@ -4586,14 +4809,44 @@ function stepDebugGuides(): StepDebugGuide[] {
 		soundEnabled = true;
 		void ensureGigalypseFont();
 		updateAudioMix();
-		ensureBackgroundMusic();
 		let ro: ResizeObserver | null = null;
 		let rafId: number | null = null;
 		let floatId: number | null = null;
+		let floatIdleTimer: number | null = null;
 		let layoutSyncRaf: number | null = null;
+		let recoveryTimers: number[] = [];
 		let cancelled = false;
 		let timeId: number | null = null;
-		const unlockAudioOnInteraction = () => ensureBackgroundMusic();
+		const unlockAudioOnInteraction = () => {
+			void ensureBackgroundMusic();
+		};
+		const preventContextMenu = (event: Event) => event.preventDefault();
+		const preventSelection = (event: Event) => event.preventDefault();
+		const preventZoomGesture = (event: Event) => event.preventDefault();
+		const preventPinchTouchMove = (event: TouchEvent) => {
+			if (event.touches.length > 1) event.preventDefault();
+		};
+		const onPageShow = () => {
+			scheduleRecoverySyncs('pageshow');
+			if (!bootLoading && !entrySplashVisible && audioUnlocked && !musicMuted && hudVolume > 0) {
+				startBackgroundMusic();
+				if (animationStatus === 'running') startSlideLoop();
+			}
+		};
+		const onVisibilityChange = () => {
+			if (document.visibilityState === 'hidden') {
+				pauseAllAudio();
+				return;
+			}
+			scheduleRecoverySyncs('visibilitychange');
+			if (!bootLoading && !entrySplashVisible && audioUnlocked && !musicMuted && hudVolume > 0) {
+				startBackgroundMusic();
+				if (animationStatus === 'running') startSlideLoop();
+			}
+		};
+		const onPageHide = () => pauseAllAudio();
+		const onVisualViewportResize = () => scheduleRecoverySyncs('visualViewport:resize');
+		const onVisualViewportScroll = () => scheduleRecoverySyncs('visualViewport:scroll');
 
 		const syncRendererSize = () => {
 			if (!gameBodyEl) return;
@@ -4603,34 +4856,60 @@ function stepDebugGuides(): StepDebugGuide[] {
 			const measuredHeight = Math.round(gameBodyEl.clientHeight);
 			const w = Math.max(1, measuredWidth || Math.round(gameBox.w));
 			const h = Math.max(1, measuredHeight || Math.round(gameBox.h));
-			const dpr = Math.max(1, window.devicePixelRatio || 1);
+			const gameRect = gameBodyEl.getBoundingClientRect();
+			document.documentElement.style.setProperty('--game-body-w', `${Math.round(gameRect.width)}px`);
+			document.documentElement.style.setProperty('--game-body-h', `${Math.round(gameRect.height)}px`);
+			document.documentElement.style.setProperty('--game-body-left', `${Math.round(gameRect.left)}px`);
+			document.documentElement.style.setProperty('--game-body-top', `${Math.round(gameRect.top)}px`);
+			document.documentElement.style.setProperty(
+				'--game-body-right-inset',
+				`${Math.max(0, Math.round(window.innerWidth - gameRect.right))}px`
+			);
+			document.documentElement.style.setProperty(
+				'--game-body-bottom-inset',
+				`${Math.max(0, Math.round(window.innerHeight - gameRect.bottom))}px`
+			);
+			const nativeDpr = Math.max(1, window.devicePixelRatio || 1);
+			const dpr = lowPowerMobile
+				? Math.min(nativeDpr, LOW_POWER_MOBILE_MAX_DPR)
+				: nativeDpr;
 			try {
 				app.renderer.resolution = dpr;
 			} catch {}
 			app.renderer.resize(w, h);
-			app.canvas.style.width = '100%';
-			app.canvas.style.height = '100%';
+			app.canvas.style.display = 'block';
+			app.canvas.style.width = `${w}px`;
+			app.canvas.style.height = `${h}px`;
 			try {
 				app.stage.sortableChildren = true;
 			} catch {}
 			renderSize.w = w;
 			renderSize.h = h;
 			const coverScale = Math.max(renderSize.w / baseViewport.w, renderSize.h / baseViewport.h);
+			const containScale = Math.min(renderSize.w / baseViewport.w, renderSize.h / baseViewport.h);
 			const isPortrait = renderSize.h > renderSize.w;
-			const isMobileLandscape = !isPortrait && renderSize.h <= 500;
-			const portraitScaleFactor = isPortrait ? 0.6 : 1;
-			rootScale = coverScale * portraitScaleFactor;
-			rootOffset.x = (renderSize.w - baseViewport.w * rootScale) * 0.5;
-			rootOffset.y = isPortrait
-				? renderSize.h * SKY_TARGET_RATIO
-				: (renderSize.h - baseViewport.h * rootScale) * 0.5;
+			const isMobileLandscape =
+				(!isPortrait &&
+					(isMobileLandscapeUi ||
+						(renderSize.h <= 900 &&
+							window.matchMedia('(hover: none) and (pointer: coarse)').matches)));
+			const portraitScaleFactor = isPortrait ? 0.56 : 1;
 			if (isMobileLandscape) {
-				rootOffset.y -= renderSize.h * -0.14;
+				rootScale = Math.max(containScale * 1.007, coverScale * 0.997);
+				rootOffset.x = (renderSize.w - baseViewport.w * rootScale) * 0.5;
+				rootOffset.y = (renderSize.h - baseViewport.h * rootScale) * 0.5 + renderSize.h * 0.01;
+			} else {
+				rootScale = coverScale * portraitScaleFactor;
+				rootOffset.x = (renderSize.w - baseViewport.w * rootScale) * 0.5;
+				rootOffset.y = isPortrait
+					? renderSize.h * SKY_TARGET_RATIO
+					: (renderSize.h - baseViewport.h * rootScale) * 0.5;
 			}
 			viewport.w = baseViewport.w;
 			viewport.h = baseViewport.h;
 			rebuildFixedFloes();
 			rebuildPickupLineCrossings();
+			logCanvasLayout('syncRendererSize');
 		};
 
 		const scheduleLayoutSync = () => {
@@ -4639,6 +4918,30 @@ function stepDebugGuides(): StepDebugGuide[] {
 				layoutSyncRaf = null;
 				syncRendererSize();
 			});
+		};
+
+		const scheduleRecoverySyncs = (reason: string) => {
+			recoveryTimers.forEach((id) => clearTimeout(id));
+			recoveryTimers = [];
+			requestAnimationFrame(() => {
+				logCanvasLayout(`${reason}:raf-1`);
+				updateViewport();
+				scheduleLayoutSync();
+				requestAnimationFrame(() => {
+					logCanvasLayout(`${reason}:raf-2`);
+					updateViewport();
+					scheduleLayoutSync();
+				});
+			});
+			for (const delay of [120, 320, 700]) {
+				recoveryTimers.push(
+					window.setTimeout(() => {
+						logCanvasLayout(`${reason}:timeout-${delay}`);
+						updateViewport();
+						scheduleLayoutSync();
+					}, delay)
+				);
+			}
 		};
 
 		const refreshStageLayout = () => {
@@ -4656,12 +4959,23 @@ function stepDebugGuides(): StepDebugGuide[] {
 			});
 
 		refreshStageLayout();
+		scheduleRecoverySyncs('mount');
 		window.addEventListener('resize', refreshStageLayout);
+		window.addEventListener('orientationchange', refreshStageLayout);
+		window.addEventListener('pageshow', onPageShow);
+		window.addEventListener('pagehide', onPageHide);
+		document.addEventListener('visibilitychange', onVisibilityChange);
 		window.addEventListener('pointerdown', unlockAudioOnInteraction);
 		window.addEventListener('keydown', unlockAudioOnInteraction);
 		window.addEventListener('touchstart', unlockAudioOnInteraction);
-		window.visualViewport?.addEventListener('resize', refreshStageLayout);
-		window.visualViewport?.addEventListener('scroll', refreshStageLayout);
+		document.addEventListener('contextmenu', preventContextMenu);
+		document.addEventListener('selectstart', preventSelection);
+		document.addEventListener('gesturestart', preventZoomGesture, { passive: false });
+		document.addEventListener('gesturechange', preventZoomGesture, { passive: false });
+		document.addEventListener('gestureend', preventZoomGesture, { passive: false });
+		document.addEventListener('touchmove', preventPinchTouchMove, { passive: false });
+		window.visualViewport?.addEventListener('resize', onVisualViewportResize);
+		window.visualViewport?.addEventListener('scroll', onVisualViewportScroll);
 		if (gameBodyEl) {
 			ro = new ResizeObserver(() => scheduleLayoutSync());
 			ro.observe(gameBodyEl);
@@ -4670,6 +4984,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 		(async () => {
 			currentLanguage = normalizeLanguage(getLanguageParam());
+			updateSocialEnUsMode();
 			replayMode = isReplayModeSearch(window.location.search);
 			currentCurrency = normalizeCurrency(getParam('currency'));
 			await loadI18nCatalog();
@@ -4684,6 +4999,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 			scheduleLayoutSync();
 			requestAnimationFrame(scheduleLayoutSync);
 			setTimeout(scheduleLayoutSync, 50);
+			scheduleRecoverySyncs('app-ready');
 			setTimeout(() => {
 				if (!cancelled) bootLoading = false;
 			}, 120);
@@ -4696,14 +5012,36 @@ function stepDebugGuides(): StepDebugGuide[] {
 		updateTime();
 		timeId = window.setInterval(updateTime, 30_000);
 		let lastFloatNow = performance.now();
-		const floatTick = (now: number) => {
-			const dtSec = Math.max(0, Math.min(0.05, (now - lastFloatNow) / 1000));
-			lastFloatNow = now;
-			floatTime += dtSec * currentRoundAnimationTimeScale();
-			sceneFloatTime += dtSec * currentSceneAnimationTimeScale();
+		const shouldRunFullSpeedFloatLoop = () =>
+			document.visibilityState === 'visible' &&
+			!bootLoading &&
+			!entrySplashVisible &&
+			currentRoundPresentationActive();
+		const scheduleNextFloatTick = (idleDelayMs = 0) => {
+			if (cancelled) return;
+			if (idleDelayMs > 0) {
+				if (floatIdleTimer) clearTimeout(floatIdleTimer);
+				floatIdleTimer = window.setTimeout(() => {
+					floatIdleTimer = null;
+					floatId = requestAnimationFrame(floatTick);
+				}, idleDelayMs);
+				return;
+			}
 			floatId = requestAnimationFrame(floatTick);
 		};
-		floatId = requestAnimationFrame(floatTick);
+		const floatTick = (now: number) => {
+			const active = shouldRunFullSpeedFloatLoop();
+			const dtSec = Math.max(0, Math.min(0.05, (now - lastFloatNow) / 1000));
+			lastFloatNow = now;
+			if (active) {
+				floatTime += dtSec * currentRoundAnimationTimeScale();
+				if (!lowPowerMobile) {
+					sceneFloatTime += dtSec * currentSceneAnimationTimeScale();
+				}
+			}
+			scheduleNextFloatTick(active ? 0 : lowPowerMobile ? 240 : 120);
+		};
+		scheduleNextFloatTick();
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.code !== 'Space') return;
 			if ((event.target as HTMLElement | null)?.tagName === 'INPUT') return;
@@ -4721,19 +5059,30 @@ function stepDebugGuides(): StepDebugGuide[] {
 			cancelled = true;
 			if (rafId) cancelAnimationFrame(rafId);
 			if (floatId) cancelAnimationFrame(floatId);
+			if (floatIdleTimer) clearTimeout(floatIdleTimer);
 			if (layoutSyncRaf) cancelAnimationFrame(layoutSyncRaf);
 			if (timeId) clearInterval(timeId);
+			recoveryTimers.forEach((id) => clearTimeout(id));
 			if (ro) ro.disconnect();
 			driftActive = false;
 			window.removeEventListener('resize', refreshStageLayout);
+			window.removeEventListener('orientationchange', refreshStageLayout);
+			window.removeEventListener('pageshow', onPageShow);
+			window.removeEventListener('pagehide', onPageHide);
+			document.removeEventListener('visibilitychange', onVisibilityChange);
 			window.removeEventListener('pointerdown', unlockAudioOnInteraction);
 			window.removeEventListener('keydown', unlockAudioOnInteraction);
 			window.removeEventListener('touchstart', unlockAudioOnInteraction);
-			window.visualViewport?.removeEventListener('resize', refreshStageLayout);
-			window.visualViewport?.removeEventListener('scroll', refreshStageLayout);
+			document.removeEventListener('contextmenu', preventContextMenu);
+			document.removeEventListener('selectstart', preventSelection);
+			document.removeEventListener('gesturestart', preventZoomGesture);
+			document.removeEventListener('gesturechange', preventZoomGesture);
+			document.removeEventListener('gestureend', preventZoomGesture);
+			document.removeEventListener('touchmove', preventPinchTouchMove);
+			window.visualViewport?.removeEventListener('resize', onVisualViewportResize);
+			window.visualViewport?.removeEventListener('scroll', onVisualViewportScroll);
 			window.removeEventListener('keydown', onKeyDown);
-			stopSlideLoop();
-			stopLoop('music_loop');
+			pauseAllAudio();
 			audioEngine.dispose();
 			soundEnabled = false;
 		};
@@ -4754,10 +5103,15 @@ function stepDebugGuides(): StepDebugGuide[] {
 		else stopAutoplay();
 	});
 	$effect(() => {
+		bootLoading;
+		entrySplashVisible;
 		hudVolume;
 		musicMuted;
 		updateAudioMix();
-		if (audioUnlocked && !musicMuted && hudVolume > 0) startBackgroundMusic();
+		if (bootLoading || entrySplashVisible) {
+			stopLoop('music_loop');
+		}
+		else if (audioUnlocked && !musicMuted && hudVolume > 0) startBackgroundMusic();
 	});
 
 
@@ -4776,6 +5130,13 @@ function stepDebugGuides(): StepDebugGuide[] {
 
 <div class="page">
 	<BootLoader visible={bootLoading} src={stakeLoaderSrc} alt="Loading game" />
+	<EntrySplash
+		visible={!bootLoading && entrySplashVisible}
+		landscapeSrc={splashLandscapeSrc}
+		portraitSrc={splashPortraitSrc}
+		alt="Enter Penguin Slide"
+		onEnter={enterGameFromSplash}
+	/>
 	<div
 		class="game-body"
 		bind:this={gameBodyEl}
@@ -4800,6 +5161,8 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{floatTime}
 				{sceneFloatTime}
 				{icePieces}
+				{lowPowerMobile}
+				isMobileLandscape={isMobileLandscapeUi}
 				{spineProps}
 				{renderStep}
 				{penguinTargetLane}
@@ -4841,6 +5204,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{amountWinPulse}
 				{accumulatedStrokeWidth}
 				{accumulatedAmountY}
+				fontReady={gigalypseFontReady}
 				{bananaLossFloat}
 				{formatCurrencyAmount}
 			/>
@@ -4849,6 +5213,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 			<ReplayHud
 				{t}
 				{formatCurrencyAmount}
+				mobileUi={isMobileLandscapeUi || isMobilePortraitUi}
 				{timeLabel}
 				{selectedMode}
 				{replayEventId}
@@ -4885,10 +5250,13 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{autoplayOptions}
 				{autoplayDraftCount}
 				{isMobileLandscapeUi}
+				{isMobilePortraitUi}
 				{pendingRound}
 				{betIndex}
 				{betLevels}
 				{betAmount}
+				{currentLanguage}
+				{currentCurrency}
 				totalCostMultiplier={TOTAL_COST_MULTIPLIER}
 				{toggleMenuOpen}
 				{toggleVolatilityHelp}
@@ -4909,6 +5277,14 @@ function stepDebugGuides(): StepDebugGuide[] {
 			{#if errorMessage}
 				<p class="error hud-error">{errorMessage}</p>
 			{/if}
+
+			<GameErrorModal
+				visible={fatalError != null}
+				{t}
+				titleKey={fatalError?.titleKey ?? 'general_error_title'}
+				descKey={fatalError?.descKey ?? 'general_error_desc'}
+				on:close={dismissFatalError}
+			/>
 
 			<PendingRoundModal visible={pendingRound} {t} {resolvePendingRound} />
 		{/if}

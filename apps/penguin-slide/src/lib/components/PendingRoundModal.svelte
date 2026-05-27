@@ -6,12 +6,25 @@
 
 {#if visible}
 	<div class="round-overlay">
-		<div class="round-card">
-			<h3>{t('resume_last_round')}</h3>
-			<p>{t('resume_last_round_desc')}</p>
-			<div class="round-actions">
-				<button class="ghost" onclick={() => resolvePendingRound(false)}>{t('discard')}</button>
-				<button class="primary" onclick={() => resolvePendingRound(true)}>{t('view')}</button>
+		<div class="round-card pending-round-card">
+			<button
+				class="pending-round-close"
+				type="button"
+				aria-label={t('close')}
+				onclick={() => resolvePendingRound(false)}
+			>
+				×
+			</button>
+			<div class="round-kicker pending-round-kicker">{t('message_uc')}</div>
+			<h3>{t('round_in_progress_title')}</h3>
+			<p>{t('round_in_progress_desc')}</p>
+			<div class="round-actions pending-round-actions">
+				<button class="pending-round-cancel" type="button" onclick={() => resolvePendingRound(false)}>
+					{t('cancel')}
+				</button>
+				<button class="pending-round-replay" type="button" onclick={() => resolvePendingRound(true)}>
+					{t('replay')}
+				</button>
 			</div>
 		</div>
 	</div>

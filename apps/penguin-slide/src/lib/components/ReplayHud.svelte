@@ -14,9 +14,46 @@
 	export let replayWinAmount = 0;
 	export let onReplayStart: () => void = () => {};
 	export let onReplayRetry: () => void = () => {};
+	export let mobileUi = false;
+	let replayBetText = '';
+	let replayCostText = '';
+	let replayPayoutText = '';
+	let replayWinText = '';
+
+	$: replayBetText = formatCurrencyAmount(safeAmount(replayBetAmount));
+	$: replayCostText = formatCurrencyAmount(safeAmount(replayCostAmount));
+	$: replayPayoutText = formatCurrencyAmount(safeAmount(replayPayoutAmount));
+	$: replayWinText = formatCurrencyAmount(safeAmount(replayWinAmount));
 
 	function safeAmount(value: number) {
 		return Number.isFinite(value) ? value : 0;
+	}
+
+	function replayValueStyle(text: string) {
+		if (!mobileUi) return '';
+		const visibleLength = String(text ?? '').replace(/\s+/g, '').length;
+		let scale = 1;
+		let letterSpacing = 0;
+		if (visibleLength >= 18) {
+			scale = 0.56;
+			letterSpacing = -0.065;
+		} else if (visibleLength >= 16) {
+			scale = 0.66;
+			letterSpacing = -0.05;
+		} else if (visibleLength >= 14) {
+			scale = 0.76;
+			letterSpacing = -0.032;
+		} else if (visibleLength >= 13) {
+			scale = 0.8;
+			letterSpacing = -0.026;
+		} else if (visibleLength >= 12) {
+			scale = 0.83;
+			letterSpacing = -0.02;
+		} else if (visibleLength >= 11) {
+			scale = 0.9;
+			letterSpacing = -0.01;
+		}
+		return `--replay-value-scale:${scale};--replay-value-letter-spacing:${letterSpacing}em;`;
 	}
 </script>
 
@@ -42,20 +79,20 @@
 	<div class="replay-panel">
 		<div class="replay-stats">
 			<div class="replay-stat">
-				<span>BET SIZE</span>
-				<strong>{formatCurrencyAmount(safeAmount(replayBetAmount))}</strong>
+				<span>{t('bet_size')}</span>
+				<strong style={replayValueStyle(replayBetText)}>{replayBetText}</strong>
 			</div>
 			<div class="replay-stat">
 				<span>{t('total_cost')}</span>
-				<strong>{formatCurrencyAmount(safeAmount(replayCostAmount))}</strong>
+				<strong style={replayValueStyle(replayCostText)}>{replayCostText}</strong>
 			</div>
 			<div class="replay-stat">
-				<span>PAYOUT</span>
-				<strong>{formatCurrencyAmount(safeAmount(replayPayoutAmount))}</strong>
+				<span>{t('payout_label')}</span>
+				<strong style={replayValueStyle(replayPayoutText)}>{replayPayoutText}</strong>
 			</div>
 			<div class="replay-stat">
 				<span>WIN</span>
-				<strong>{formatCurrencyAmount(safeAmount(replayWinAmount))}</strong>
+				<strong style={replayValueStyle(replayWinText)}>{replayWinText}</strong>
 			</div>
 		</div>
 
@@ -168,10 +205,13 @@
 	}
 
 	.replay-stat strong {
-		font-size: clamp(15px, 1.8vw, 17px);
+		--replay-value-base-size: 17px;
+		font-size: calc(var(--replay-value-base-size) * var(--replay-value-scale, 1));
 		line-height: 1.1;
+		letter-spacing: var(--replay-value-letter-spacing, 0);
 		color: #fff;
-		word-break: break-word;
+		white-space: nowrap;
+		min-width: 0;
 	}
 
 	.replay-primary {
@@ -259,7 +299,7 @@
 		}
 
 		.replay-stat strong {
-			font-size: clamp(14px, 4.1vw, 16px);
+			--replay-value-base-size: 16px;
 		}
 
 		.replay-primary {

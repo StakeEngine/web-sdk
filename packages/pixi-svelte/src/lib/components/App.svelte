@@ -17,9 +17,11 @@
 </script>
 
 <InitialiseApplication>
-	<InitialiseParent>
-		<AssetsLoader>
-			{@render props.children()}
-		</AssetsLoader>
-	</InitialiseParent>
+	{#if context.stateApp.pixiApplication}
+		<InitialiseParent>
+			<AssetsLoader>
+				{@render props.children()}
+			</AssetsLoader>
+		</InitialiseParent>
+	{/if}
 </InitialiseApplication>

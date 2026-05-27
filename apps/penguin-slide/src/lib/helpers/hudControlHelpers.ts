@@ -50,14 +50,14 @@ export function createHudControlHandlers(args: {
 	setAutoplayOpen: (value: boolean) => void;
 	getAutoplayDraftCount: () => number;
 	setAutoplayDraftCount: (value: number) => void;
-	startRoundAudio: () => void;
+	startRoundAudio: () => void | Promise<void>;
 	playOneShot: (key: SoundKey) => void;
 	play: () => void;
 	getHudVolume: () => number;
 	setHudVolumeValue: (value: number) => void;
 	getMusicMuted: () => boolean;
 	setMusicMuted: (value: boolean) => void;
-	ensureAudioUnlocked: () => void;
+	ensureAudioUnlocked: () => void | Promise<boolean>;
 	startBackgroundMusic: () => void;
 	getMenuOpen: () => boolean;
 	setMenuOpen: (value: boolean) => void;
@@ -86,9 +86,10 @@ export function createHudControlHandlers(args: {
 		if (except !== 'autoplay') args.setAutoplayOpen(false);
 	};
 
-	const handleBetClick = () => {
-		args.startRoundAudio();
+	const handleBetClick = async () => {
+		await args.startRoundAudio();
 		args.playOneShot('start_button');
+		args.setAutoplayOpen(false);
 		if (args.getAutoplay()) {
 			args.setAutoplay(false);
 			args.setAutoplayRemaining(0);
@@ -135,7 +136,8 @@ export function createHudControlHandlers(args: {
 
 	const setMenuInfoOpen = (value: boolean) => {
 		if (value) {
-			closeOtherMenus('info');
+			args.setVolatilityHelpOpen(false);
+			args.setAutoplayOpen(false);
 		}
 		args.setMenuInfoOpenValue(value);
 	};
@@ -154,15 +156,15 @@ export function createHudControlHandlers(args: {
 		args.setAutoplayDraftCount(count);
 	};
 
-	const handleStartAutoplay = () => {
+	const handleStartAutoplay = async () => {
 		if (args.isRoundBusy()) return;
-		args.startRoundAudio();
+		await args.startRoundAudio();
 		args.playOneShot('start_button');
 		startAutoplayRun(args.getAutoplayDraftCount());
 	};
 
 	const increaseBet = () => {
-		if (args.isRoundRunning()) return;
+		if (args.isRoundRunning() || args.getAutoplay()) return;
 		args.playOneShot('ui_bet_up');
 		const next = Math.min(args.getBetLevels().length - 1, args.getBetIndex() + 1);
 		args.setBetIndex(next);
@@ -170,7 +172,7 @@ export function createHudControlHandlers(args: {
 	};
 
 	const decreaseBet = () => {
-		if (args.isRoundRunning()) return;
+		if (args.isRoundRunning() || args.getAutoplay()) return;
 		args.playOneShot('ui_bet_down');
 		const next = Math.max(0, args.getBetIndex() - 1);
 		args.setBetIndex(next);
@@ -178,10 +180,12 @@ export function createHudControlHandlers(args: {
 	};
 
 	const setSpeed = (value: number) => {
+		if (args.getAutoplay()) return;
 		args.setSpeedFactor(value);
 	};
 
 	const cycleSpeed = () => {
+		if (args.getAutoplay()) return;
 		const order = [2, 4, 6] as const;
 		const currentIndex = order.indexOf(args.getSpeedFactor() as (typeof order)[number]);
 		const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % order.length;

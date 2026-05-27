@@ -1,5 +1,5 @@
 export function randomGhostOutcome(random: () => number = Math.random) {
-	const options = ['coin', 'star', 'lifering', 'banana'] as const;
+	const options = ['coin', 'star', 'banana'] as const;
 	const pick = options[Math.floor(random() * options.length)];
 	if (pick === 'coin') {
 		const coinValue = 1 + Math.floor(random() * 5);

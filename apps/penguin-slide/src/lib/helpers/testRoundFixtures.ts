@@ -1,4 +1,4 @@
-export const FORCE_TEST_ROUND = true;
+export const FORCE_TEST_ROUND = false;
 export const FORCED_TEST_ROUND_BET_ID = '2879301';
 
 export const FORCED_TEST_ROUND_STATE = [

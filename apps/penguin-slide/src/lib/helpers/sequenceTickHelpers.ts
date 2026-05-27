@@ -10,29 +10,35 @@ export type SequenceToken = {
 };
 
 export function findPendingGoalStep<T extends SequenceToken>(tokens: T[]) {
-	return tokens
-		.filter((entry) => entry.hit && !entry.activate && entry.type === 'goal')
-		.map((entry) => Number(entry.stepIndex))
-		.sort((a, b) => a - b)[0];
+	let minStep = Number.POSITIVE_INFINITY;
+	for (const entry of tokens) {
+		if (!entry.hit || entry.activate || entry.type !== 'goal') continue;
+		const step = Number(entry.stepIndex);
+		if (Number.isFinite(step) && step < minStep) minStep = step;
+	}
+	return Number.isFinite(minStep) ? minStep : undefined;
 }
 
 export function buildUpcomingTokens<T extends SequenceToken>(args: {
 	tokens: T[];
 	pickupTriggerAt: (stepIndex: number, type: string, spawnDelay: number) => number;
 }) {
-	return args.tokens
-		.filter((token) => !token.activate)
-		.map((token) => ({
+	const upcoming: Array<{ t: T; trigger: number }> = [];
+	for (const token of args.tokens) {
+		if (token.activate) continue;
+		upcoming.push({
 			t: token,
 			trigger: args.pickupTriggerAt(
 				token.stepIndex,
 				token.type,
 				Number(token.extra?.spawnDelay ?? 0)
 			)
-		}))
-		.sort((a, b) =>
-			a.t.stepIndex === b.t.stepIndex ? a.t.id - b.t.id : a.t.stepIndex - b.t.stepIndex
-		);
+		});
+	}
+	upcoming.sort((a, b) =>
+		a.t.stepIndex === b.t.stepIndex ? a.t.id - b.t.id : a.t.stepIndex - b.t.stepIndex
+	);
+	return upcoming;
 }
 
 export function firstPendingTargetableHit<T extends SequenceToken>(
@@ -90,9 +96,13 @@ export function filterVisibleUnactivatedTokens<T extends SequenceToken>(args: {
 	lateHideWindowFactor?: number;
 }) {
 	const lateHideWindow = args.stepSpacing * (args.lateHideWindowFactor ?? 0.2);
-	return args.tokens.filter((token) => {
+	let removedAny = false;
+	const nextTokens = args.tokens.filter((token) => {
 		if (token.activate) return true;
 		const relative = token.stepIndex * args.stepSpacing - args.renderStep;
-		return relative >= -lateHideWindow;
+		const keep = relative >= -lateHideWindow;
+		if (!keep) removedAny = true;
+		return keep;
 	});
+	return removedAny ? nextTokens : args.tokens;
 }
