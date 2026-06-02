@@ -22,6 +22,7 @@ export default {
 		preload: true,
 	},
 	foxTile: { type: 'sprite', src: './forest-gang/extracted/fox_tile.png', preload: true },
+	wildTile: { type: 'sprite', src: './forest-gang/extracted/wild_tile.png', preload: true },
 	wolfTile: { type: 'sprite', src: './forest-gang/extracted/wolf_tile.png', preload: true },
 	bearTile: { type: 'sprite', src: './forest-gang/extracted/bear_tile.png', preload: true },
 	rabbitTile: { type: 'sprite', src: './forest-gang/extracted/rabbit_tile.png', preload: true },

@@ -45,6 +45,22 @@ export const convertTorResumableBet = (betToResume: Bet) => {
 
 export const getSymbolX = (reelIndex: number) => SYMBOL_SIZE * (reelIndex + REEL_PADDING);
 export const getSymbolY = (symbolIndexOfBoard: number) => (symbolIndexOfBoard + 0.5) * SYMBOL_SIZE;
+export const getReelCenterX = (reelIndex: number) => SYMBOL_SIZE * (reelIndex + 0.5);
+
+export const spriteKeyByName: Record<string, string> = {
+	FOX: 'foxTile',
+	WOLF: 'wolfTile',
+	BEAR: 'bearTile',
+	RABBIT: 'rabbitTile',
+	SQUIRREL: 'squirrelTile',
+	A: 'aTile',
+	K: 'kTile',
+	Q: 'qTile',
+	J: 'jTile',
+	T: 'tTile',
+	WILD: 'wildTile',
+	SCATTER: 'scatterCustom',
+};
 
 export const getSymbolInfo = ({ rawSymbol, state }: { rawSymbol: RawSymbol; state: SymbolState }) => {
 	return SYMBOL_INFO_MAP[rawSymbol.name][state];

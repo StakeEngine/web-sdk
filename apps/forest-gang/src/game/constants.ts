@@ -67,6 +67,13 @@ export const SPIN_OPTIONS_FAST = {
 	reelBounceSizeMulti: 0.05,
 };
 
+export const SPIN_OPTIONS_ANTICIPATED = {
+	...SPIN_OPTIONS_SHARED,
+	reelPreSpinSpeed: 3.4,
+	reelSpinSpeed: 4.1,
+	reelBounceSizeMulti: 0.2,
+};
+
 export const MOTION_BLUR_VELOCITY = 31;
 
 export const zIndexes = {
@@ -97,7 +104,7 @@ const jStatic = { type: 'sprite', assetKey: 'jTile', sizeRatios: { width: 1, hei
 const tStatic = { type: 'sprite', assetKey: 'tTile', sizeRatios: { width: 1, height: 1 } };
 
 const scatterStatic = { type: 'sprite', assetKey: 'scatterCustom', sizeRatios: { width: 1.243, height: 1.243 } };
-const wildStatic = { type: 'sprite', assetKey: 'foxTile', sizeRatios: { width: 1, height: 1 } };
+const wildStatic = { type: 'sprite', assetKey: 'wildTile', sizeRatios: { width: 1, height: 1 } };
 
 const wildSizeRatios = { width: 1, height: 1 };
 const scatterSizeRatios = { width: 1.243, height: 1.243 };

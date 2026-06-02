@@ -7,11 +7,13 @@
 	import { App } from 'pixi-svelte';
 	import { stateMeta, stateModal } from 'state-shared';
 
-	import { GameVersion, Modals } from 'components-ui-html';
+	import { Modals } from 'components-ui-html';
 
 	import { getContext } from '../game/context';
+	import { i18nDerived } from '../i18n/i18nDerived';
 	import EnableSound from './EnableSound.svelte';
 	import EnableGameActor from './EnableGameActor.svelte';
+	import PendingRoundRecovery from './PendingRoundRecovery.svelte';
 	import ResumeBet from './ResumeBet.svelte';
 	import Sound from './Sound.svelte';
 	import Background from './Background.svelte';
@@ -25,102 +27,142 @@
 	import FreeSpinOutro from './FreeSpinOutro.svelte';
 	import Transition from './Transition.svelte';
 	import BonusSymbolPanel from './BonusSymbolPanel.svelte';
-	import ReelMultiplierPanel from './ReelMultiplierPanel.svelte';
+	import GlobalMultiplier from './GlobalMultiplier.svelte';
 	import ExpandedSymbolOverlay from './ExpandedSymbolOverlay.svelte';
 	import TempMultiplierBanner from './TempMultiplierBanner.svelte';
 	import HudHtml from './HudHtml.svelte';
+	import StakeSync from './StakeSync.svelte';
+	import ReplayHud from './replay/ReplayHud.svelte';
 
 	const context = getContext();
 	const heroArt = './forest-gang/visual_v2.png';
 	const bonusArt = './forest-gang/visual_v1.png';
 	const scatterArt = './forest-gang/scatter-symbol.png';
 	const uiRefArt = './forest-gang/ui-reference-1.png';
+	const paylinesArt = './forest-gang/extracted/paylines_reference.png';
+	const heroArtBackdrop = new URL('../../static/forest-gang/visual_v2.png', import.meta.url).href;
 
-	stateMeta.betModeMeta = {
-		BASE: {
-			mode: 'BASE',
-			costMultiplier: 1,
-			type: 'default',
-			parent: '',
-			children: '',
-			assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
-			text: {
-				title: 'BASE',
-				dialog: 'Standard Forest Gang base game.',
-				button: 'PLAY',
-				tickerIdle: 'FOREST GANG',
-				tickerSpin: 'GOOD LUCK',
+	$effect(() => {
+		stateMeta.betModeMeta = {
+			BASE: {
+				mode: 'BASE',
+				costMultiplier: 1,
+				type: 'default',
+				parent: '',
+				children: '',
+				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
+				text: {
+					title: i18nDerived.translate?.('BET MODE BASE TITLE') ?? i18nDerived.gameTitle(),
+					dialog: i18nDerived.translate?.('BET MODE BASE DIALOG') ?? '',
+					button: i18nDerived.translate?.('BET MODE BASE BUTTON') ?? 'PLAY',
+					tickerIdle: i18nDerived.translate?.('BET MODE BASE TICKER IDLE') ?? '',
+					tickerSpin: i18nDerived.translate?.('BET MODE BASE TICKER SPIN') ?? '',
+				},
+				maxWin: 20000,
 			},
-			maxWin: 20000,
-		},
-		BONUS: {
-			mode: 'BONUS',
-			costMultiplier: 100,
-			type: 'buy',
-			parent: '',
-			children: '',
-			assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
-			text: {
-				title: 'DEAL IT',
-				dialog: '10 free spins. Random premium expanding symbol. Winning spins may get temp multipliers.',
-				description: 'Book bonus with random x2, x3 or x5 spin multipliers.',
-				button: 'BUY',
-				tickerIdle: 'PLACE YOUR BET',
-				tickerSpin: 'DEAL IT ACTIVATED',
+			BONUS: {
+				mode: 'BONUS',
+				costMultiplier: 100,
+				type: 'buy',
+				parent: '',
+				children: '',
+				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
+				text: {
+					title: forestStakeTitle('BET MODE BONUS TITLE'),
+					dialog: forestStakeTitle('BET MODE BONUS DIALOG'),
+					description: forestStakeTitle('BET MODE BONUS DESCRIPTION'),
+					button: forestStakeTitle('BET MODE BONUS BUTTON'),
+					tickerIdle: forestStakeTitle('BET MODE BONUS TICKER IDLE'),
+					tickerSpin: forestStakeTitle('BET MODE BONUS TICKER SPIN'),
+				},
+				maxWin: 20000,
 			},
-			maxWin: 20000,
-		},
-		SUPER: {
-			mode: 'SUPER',
-			costMultiplier: 400,
-			type: 'buy',
-			parent: '',
-			children: '',
-			assets: { icon: '', volatility: '', button: '', dialogImage: heroArt, dialogVolatility: scatterArt },
-			text: {
-				title: 'ALL IN',
-				dialog: '10 free spins. Random premium expanding symbol. Persistent reel multipliers double on each hit.',
-				description: 'High-volatility super bonus with sticky reel multipliers.',
-				button: 'BUY',
-				tickerIdle: 'PLACE YOUR BET',
-				tickerSpin: 'ALL IN ACTIVATED',
+			SUPER: {
+				mode: 'SUPER',
+				costMultiplier: 400,
+				type: 'buy',
+				parent: '',
+				children: '',
+				assets: { icon: '', volatility: '', button: '', dialogImage: heroArt, dialogVolatility: scatterArt },
+				text: {
+					title: forestStakeTitle('BET MODE SUPER TITLE'),
+					dialog: forestStakeTitle('BET MODE SUPER DIALOG'),
+					description: forestStakeTitle('BET MODE SUPER DESCRIPTION'),
+					button: forestStakeTitle('BET MODE SUPER BUTTON'),
+					tickerIdle: forestStakeTitle('BET MODE SUPER TICKER IDLE'),
+					tickerSpin: forestStakeTitle('BET MODE SUPER TICKER SPIN'),
+				},
+				maxWin: 20000,
 			},
-			maxWin: 20000,
-		},
-	};
+		};
 
-	stateMeta.gameRuleMeta = {
-		gameRules: [
-			{
-				title: 'GAME INFO',
-				rows: 5,
-				columns: 1,
-				containers: [
-					{ title: 'FOREST GANG', text: '5x4 line slot with 20 fixed paylines. Wins pay left to right only.', image: heroArt, row: 0, column: 0, imagePosition: 'left' },
-					{ title: 'WILD', text: 'Wild substitutes for all regular symbols except Scatter. Wild helps line wins and expanding-symbol wins.', image: heroArt, row: 1, column: 0, imagePosition: 'left' },
-					{ title: 'SCATTER / DEAL IT', text: '3 Scatters trigger Deal It: 10 free spins and 1 random premium expanding symbol. Some winning expanded spins get x2, x3 or x5.', image: scatterArt, row: 2, column: 0, imagePosition: 'left' },
-					{ title: 'ALL IN', text: '4 or more Scatters trigger All In: 10 free spins, 1 random premium expanding symbol, and persistent reel multipliers that double when a reel hits again.', image: scatterArt, row: 3, column: 0, imagePosition: 'left' },
-					{ title: 'BUY BONUS / RTP', text: 'Deal It Buy = 100x bet. All In Buy = 400x bet. Target RTP from design docs is 96.10%. Current local math is prototype only, not final certified math.', image: bonusArt, row: 4, column: 0, imagePosition: 'left' },
-				],
-			},
-		],
-		payTable: [
-			{
-				title: 'PAYTABLE',
-				rows: 3,
-				columns: 2,
-				containers: [
-					{ title: 'FOX', text: '3 = 3x\n4 = 20x\n5 = 250x', image: heroArt, row: 0, column: 0, imagePosition: 'left' },
-					{ title: 'WOLF', text: '3 = 2.5x\n4 = 15x\n5 = 175x', image: heroArt, row: 0, column: 1, imagePosition: 'left' },
-					{ title: 'BEAR / RABBIT', text: 'BEAR: 3 = 2x, 4 = 12x, 5 = 150x\nRABBIT: 3 = 1.5x, 4 = 10x, 5 = 100x', image: heroArt, row: 1, column: 0, imagePosition: 'left' },
-					{ title: 'SQUIRREL / LOWS', text: 'SQUIRREL: 3 = 1x, 4 = 8x, 5 = 75x\nA: 40x, K: 35x, Q: 30x, J: 25x, 10: 20x for five.', image: uiRefArt, row: 1, column: 1, imagePosition: 'left' },
-					{ title: 'BONUS RULES', text: 'Scatters do not pay in the current setup. Expanding symbol is always one of the 5 premium animal symbols.', image: scatterArt, row: 2, column: 0, imagePosition: 'left' },
-					{ title: 'MAX WIN', text: 'Game design target max win is 20,000x. Current mock math also caps rounds at 20,000x.', image: bonusArt, row: 2, column: 1, imagePosition: 'left' },
-				],
-			},
-		],
-		splashScreen: [],
-	};
+		stateMeta.gameRuleMeta = {
+			gameRules: [
+				{
+					title: forestStakeTitle('RULE SECTION GAME INFO'),
+					rows: 6,
+					columns: 1,
+					containers: [
+						{ title: forestStakeTitle('RULE GAME TITLE'), text: forestStakeTitle('RULE GAME TEXT'), image: heroArt, row: 0, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('RULE WILD TITLE'), text: forestStakeTitle('RULE WILD TEXT'), image: heroArt, row: 1, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('RULE SCATTER TITLE'), text: forestStakeTitle('RULE SCATTER TEXT'), image: scatterArt, row: 2, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('RULE DEAL IT TITLE'), text: forestStakeTitle('RULE DEAL IT TEXT'), image: scatterArt, row: 3, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('RULE ALL IN TITLE'), text: forestStakeTitle('RULE ALL IN TEXT'), image: scatterArt, row: 4, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE TITLE PAYLINES'), text: forestStakeTitle('PAYTABLE TEXT PAYLINES'), image: paylinesArt, row: 5, column: 0, imagePosition: 'left' },
+					],
+				},
+				{
+					title: forestStakeTitle('RULE SECTION FEATURES'),
+					rows: 3,
+					columns: 1,
+					containers: [
+						{ title: forestStakeTitle('RULE BUY TITLE'), text: forestStakeTitle('RULE BUY TEXT'), image: bonusArt, row: 0, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('FEATURE SELECTED SYMBOL TITLE'), text: forestStakeTitle('FEATURE SELECTED SYMBOL TEXT'), image: heroArt, row: 1, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('FEATURE DEAL IT MULTIPLIER TITLE'), text: `${forestStakeTitle('FEATURE DEAL IT MULTIPLIER TEXT')}\n\n${forestStakeTitle('FEATURE ALL IN_MULTIPLIER TITLE')}\n${forestStakeTitle('FEATURE ALL IN_MULTIPLIER TEXT')}`, image: uiRefArt, row: 2, column: 0, imagePosition: 'left' },
+					],
+				},
+				{
+					title: forestStakeTitle('RULE SECTION HOW TO PLAY'),
+					rows: 6,
+					columns: 1,
+					containers: [
+						{ title: forestStakeTitle('HOWTO SPIN TITLE'), text: forestStakeTitle('HOWTO SPIN TEXT'), image: uiRefArt, row: 0, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('HOWTO BET TITLE'), text: forestStakeTitle('HOWTO BET TEXT'), image: uiRefArt, row: 1, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('HOWTO BUY TITLE'), text: forestStakeTitle('HOWTO BUY TEXT'), image: bonusArt, row: 2, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('HOWTO TURBO TITLE'), text: forestStakeTitle('HOWTO TURBO TEXT'), image: uiRefArt, row: 3, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('HOWTO AUTOPLAY TITLE'), text: forestStakeTitle('HOWTO AUTOPLAY TEXT'), image: uiRefArt, row: 4, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('HOWTO REPLAY TITLE'), text: forestStakeTitle('HOWTO REPLAY TEXT'), image: heroArt, row: 5, column: 0, imagePosition: 'left' },
+					],
+				},
+				{
+					title: forestStakeTitle('RULE SECTION DISCLAIMER'),
+					rows: 1,
+					columns: 1,
+					containers: [
+						{ title: '', text: forestStakeTitle('DISCLAIMER TEXT'), image: '', row: 0, column: 0, imagePosition: 'top' },
+					],
+				},
+			],
+			payTable: [
+				{
+					title: i18nDerived.paytable(),
+					rows: 3,
+					columns: 2,
+					containers: [
+						{ title: forestStakeTitle('PAYTABLE PREMIUM TITLE'), text: `${forestStakeTitle('PAYTABLE FOX')}\n\n${forestStakeTitle('PAYTABLE WOLF')}`, image: heroArt, row: 0, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE PREMIUM TITLE'), text: `${forestStakeTitle('PAYTABLE BEAR')}\n\n${forestStakeTitle('PAYTABLE RABBIT')}\n\n${forestStakeTitle('PAYTABLE SQUIRREL')}`, image: heroArt, row: 0, column: 1, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE LOW TITLE'), text: forestStakeTitle('PAYTABLE LOWS_1'), image: uiRefArt, row: 1, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE LOW TITLE'), text: forestStakeTitle('PAYTABLE LOWS_2'), image: uiRefArt, row: 1, column: 1, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE SPECIAL TITLE'), text: forestStakeTitle('PAYTABLE SPECIAL_TEXT'), image: scatterArt, row: 2, column: 0, imagePosition: 'left' },
+						{ title: forestStakeTitle('PAYTABLE BUY TITLE'), text: `${forestStakeTitle('PAYTABLE BUY_TEXT')}\n\n${forestStakeTitle('PAYTABLE MAX TITLE')}\n${forestStakeTitle('PAYTABLE MAX_TEXT')}`, image: bonusArt, row: 2, column: 1, imagePosition: 'left' },
+					],
+				},
+			],
+			splashScreen: [],
+		};
+	});
+
+	const forestStakeTitle = (key: string) => i18nDerived.translate?.(key) ?? key;
 
 	onMount(() => (context.stateLayout.showLoadingScreen = true));
 
@@ -131,13 +173,18 @@
 	});
 </script>
 
-<div class="forest-shell" data-layout={context.stateLayoutDerived.layoutType()}>
+<div
+	class="forest-shell"
+	data-layout={context.stateLayoutDerived.layoutType()}
+	style={`--forest-shell-bg:url('${heroArtBackdrop}')`}
+>
 	<div class="forest-stage">
 		<App>
 			<EnableSound />
 			<EnableHotkey />
 			<EnableGameActor />
 			<EnablePixiExtension />
+			<StakeSync />
 
 			<Background />
 
@@ -147,7 +194,7 @@
 				<ResumeBet />
 				<Sound />
 
-				<MainContainer>
+				<MainContainer zIndex={5}>
 					<BoardFrame />
 				</MainContainer>
 
@@ -158,7 +205,7 @@
 
 				<ExpandedSymbolOverlay />
 				<BonusSymbolPanel />
-				<ReelMultiplierPanel />
+				<GlobalMultiplier />
 				<TempMultiplierBanner />
 				<Win />
 				<FreeSpinIntro />
@@ -172,14 +219,14 @@
 
 		{#if !context.stateLayout.showLoadingScreen}
 			<HudHtml />
+			<ReplayHud />
+			<PendingRoundRecovery />
 		{/if}
 	</div>
 </div>
 
 <Modals>
-	{#snippet version()}
-		<GameVersion version="0.0.0" />
-	{/snippet}
+	{#snippet version()}{/snippet}
 </Modals>
 
 <style>
@@ -200,7 +247,7 @@
 	}
 
 	.forest-shell::before {
-		background: url('./forest-gang/visual_v2.png') center 22% / cover no-repeat;
+		background: var(--forest-shell-bg) center 22% / cover no-repeat;
 		filter: blur(20px) brightness(0.28) saturate(0.8);
 		transform: scale(1.12);
 		opacity: 0.95;
@@ -216,14 +263,12 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		max-width: 1440px;
-		margin: 0 auto;
 		z-index: 1;
 	}
 
-	.forest-shell[data-layout='portrait'] .forest-stage {
-		height: 100%;
-		max-width: 100%;
+	:global(html),
+	:global(body) {
+		overflow: hidden;
 	}
 
 	.forest-shell[data-layout='portrait']::before {

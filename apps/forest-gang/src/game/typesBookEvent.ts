@@ -93,11 +93,18 @@ type BookEventApplyTempMultiplier = {
 	winAfter: number;
 };
 
-type BookEventUpdateReelMultipliers = {
+type BookEventUpdateGlobalMultiplier = {
 	index: number;
-	type: 'updateReelMultipliers';
-	multipliers: [number, number, number, number, number];
-	changedReels: number[];
+	type: 'updateGlobalMultiplier';
+	multiplier: number;
+};
+
+type BookEventRetriggerFreeSpins = {
+	index: number;
+	type: 'retriggerFreeSpins';
+	amount: number;
+	scatterCount: number;
+	positions: Position[];
 };
 
 type BookEventCreateBonusSnapshot = {
@@ -118,7 +125,8 @@ export type BookEvent =
 	| BookEventBonusSymbolSelected
 	| BookEventExpandedSymbolReveal
 	| BookEventApplyTempMultiplier
-	| BookEventUpdateReelMultipliers
+	| BookEventUpdateGlobalMultiplier
+	| BookEventRetriggerFreeSpins
 	| BookEventCreateBonusSnapshot;
 
 export type Bet = BetType<BookEvent>;
