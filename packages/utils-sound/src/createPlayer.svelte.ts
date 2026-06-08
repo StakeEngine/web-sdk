@@ -82,8 +82,11 @@ function createPlayer<TSoundName extends string, TPlay extends Function>(playerO
 	const volume = (volume: number) => {
 		playerVolume = volume;
 
-		//Adjust the whole player volume
-		// howl.volume(playerVolume);
+		// Also set the Howl's default volume, so a sound played AFTER this runs
+		// inherits the current (e.g. muted) level. Otherwise it starts at the
+		// Howl default and emits a full-volume attack transient before
+		// initSoundVolume applies its per-sound volume — an audible click when muted.
+		playerOptions.howl.volume(playerVolume);
 
 		//adjust volume per sound
 		(Object.values(soundMap) as Sound[]).forEach((sound) => {
