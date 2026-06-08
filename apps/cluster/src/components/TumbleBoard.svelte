@@ -82,8 +82,19 @@
 			context.stateGame.tumbleBoardBase = [];
 		},
 		tumbleBoardExplode: async ({ explodingPositions }) => {
+			// Dedupe positions (same reason as boardWithAnimateSymbols in
+			// Board.svelte): a shared wild can appear in explodingPositions more
+			// than once; the duplicate overwrites `tumbleSymbol.oncomplete`, so the
+			// earlier await never settles and `Promise.all` hangs forever (#14).
+			const seen = new Set<string>();
+			const uniquePositions = explodingPositions.filter((position) => {
+				const key = `${position.reel},${position.row}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
 			const getPromises = () =>
-				explodingPositions.map(async (position) => {
+				uniquePositions.map(async (position) => {
 					const tumbleSymbol = context.stateGame.tumbleBoardBase[position.reel][position.row];
 					tumbleSymbol.symbolState = 'explosion';
 					await waitForResolve((resolve) => (tumbleSymbol.oncomplete = resolve));

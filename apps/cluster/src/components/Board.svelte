@@ -30,8 +30,22 @@
 		boardShow: () => (show = true),
 		boardHide: () => (show = false),
 		boardWithAnimateSymbols: async ({ symbolPositions }) => {
+			// Dedupe positions before awaiting. A board cell can appear in more
+			// than one win — a wild substitutes into multiple adjacent clusters,
+			// so each lists its position. Without dedupe, the duplicate iteration
+			// overwrites the prior `reelSymbol.oncomplete`, so the symbol's single
+			// `complete` resolves only the last await; the earlier one never
+			// settles and `Promise.all` hangs forever — the bonus/free-spin freeze
+			// (#14).
+			const seen = new Set<string>();
+			const uniquePositions = symbolPositions.filter((position) => {
+				const key = `${position.reel},${position.row}`;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			});
 			const getPromises = () =>
-				symbolPositions.map(async (position) => {
+				uniquePositions.map(async (position) => {
 					const reelSymbol = context.stateGame.board[position.reel].reelState.symbols[position.row];
 					reelSymbol.symbolState = 'win';
 					await waitForResolve((resolve) => (reelSymbol.oncomplete = resolve));
