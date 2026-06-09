@@ -137,6 +137,8 @@ export function createReelForCascading<TRawSymbol extends object, TSymbolState e
 		// A: When stop button is clicked(isTurbo) and is noStop is false
 		if (noStop) {
 			await waitToStartFallingIn();
+		} else if (stateBet.isSuperTurbo) {
+			// skip
 		} else if (stateBet.isTurbo) {
 			// skip
 		} else {

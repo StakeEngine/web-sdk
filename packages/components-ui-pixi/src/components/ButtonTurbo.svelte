@@ -9,12 +9,22 @@
 	const props: Partial<Omit<ButtonProps, 'children'>> = $props();
 	const context = getContext();
 	const sizes = { width: UI_BASE_SIZE, height: UI_BASE_SIZE };
-	const active = $derived(stateBet.isTurbo);
+	const active = $derived(stateBet.isTurbo || stateBet.isSuperTurbo);
 	const disabled = $derived(stateBet.isSpaceHold);
 
 	const onpress = () => {
 		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
-		stateBetDerived.updateIsTurbo(!stateBet.isTurbo, { persistent: true });
+		if (!stateBet.isTurbo && !stateBet.isSuperTurbo) {
+			stateBetDerived.updateIsTurbo(true, { persistent: true });
+			stateBet.isSuperTurbo = false;
+			return;
+		}
+		if (stateBet.isTurbo && !stateBet.isSuperTurbo) {
+			stateBet.isSuperTurbo = true;
+			return;
+		}
+		stateBetDerived.updateIsTurbo(false, { persistent: true });
+		stateBet.isSuperTurbo = false;
 	};
 
 	context.eventEmitter.subscribeOnMount({

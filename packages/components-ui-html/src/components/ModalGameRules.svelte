@@ -3,10 +3,11 @@
 
 	import { Popup } from 'components-shared';
 	import { zIndex } from 'constants-shared/zIndex';
-	import { stateModal } from 'state-shared';
+	import { stateMeta, stateModal } from 'state-shared';
 
 	import BaseContent from './BaseContent.svelte';
 	import BaseScrollable from './BaseScrollable.svelte';
+	import GameRuleSections from './GameRuleSections.svelte';
 
 	type Props = {
 		children: Snippet;
@@ -19,7 +20,7 @@
 	<Popup zIndex={zIndex.modal} onclose={() => (stateModal.modal = null)}>
 		<BaseContent maxWidth="100%">
 			<BaseScrollable type="column">
-				<span>ADD YOUR GAME RULES</span>
+				<GameRuleSections sections={stateMeta.gameRuleMeta.gameRules} />
 				{@render props.children()}
 			</BaseScrollable>
 		</BaseContent>

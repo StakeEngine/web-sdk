@@ -19,6 +19,7 @@ export const stateBet = $state({
 	autoSpinsSingleWinLimitAmount: Infinity,
 	isSpaceHold: false,
 	isTurbo: false,
+	isSuperTurbo: false,
 });
 
 const correctBetAmount = (value: number) => {
@@ -53,9 +54,9 @@ const activeBetMode = () => stateMeta.betModeMeta?.[stateBet.activeBetModeKey.to
 	?? stateMeta.betModeMeta?.[stateBet.activeBetModeKey.toLowerCase()]
 	?? null;
 const isContinuousBet = () => stateBet.autoSpinsCounter > 1 || stateBet.isSpaceHold;
-const timeScale = () => (stateBet.isTurbo ? 2 : 1);
+const timeScale = () => (stateBet.isSuperTurbo ? 3 : stateBet.isTurbo ? 2 : 1);
 const betCostMultiplier = () =>
-	stateBetDerived.activeBetMode().type === 'activate'
+	['activate', 'buy'].includes(stateBetDerived.activeBetMode()?.type)
 		? stateBetDerived.activeBetMode().costMultiplier
 		: 1;
 const betCost = () => stateBet.betAmount * betCostMultiplier();

@@ -29,11 +29,14 @@
 		text-align: center;
 		display: flex;
 		gap: 1rem;
+		width: 100%;
+		min-height: 0;
 
 		&.column {
 			flex-direction: column;
 			align-items: center;
 			max-height: 100%;
+			width: min(100%, calc(100vw - 2rem));
 		}
 
 		&.row {

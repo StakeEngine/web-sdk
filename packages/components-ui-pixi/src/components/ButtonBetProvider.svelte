@@ -56,7 +56,7 @@
 		if (!context.stateXstateDerived.isIdle()) {
 			if (stopDisabled) return 'stop_disabled';
 			if (stateBetDerived.hasAutoBetCounter()) return 'stop_default';
-			if (stateBet.isTurbo) return 'stop_disabled';
+			if (stateBet.isTurbo || stateBet.isSuperTurbo) return 'stop_disabled';
 			return 'stop_default';
 		}
 

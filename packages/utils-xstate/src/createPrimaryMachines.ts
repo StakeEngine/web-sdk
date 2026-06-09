@@ -1,7 +1,7 @@
 import { fromPromise } from 'xstate';
 
 import { API_AMOUNT_MULTIPLIER } from 'constants-shared/bet';
-import { stateBet, stateUrlDerived, stateModal } from 'state-shared';
+import { stateBet, stateBetDerived, stateUrlDerived, stateModal } from 'state-shared';
 import { requestBet, requestEndRound } from 'rgs-requests';
 
 import type { BaseBet } from './types';
@@ -90,6 +90,16 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 
 	let balanceAmountFromApiHolder: null | number = null;
 
+	const failInsufficientFunds = (onError: () => void) => {
+		onError();
+		stateBet.autoSpinsCounter = 0;
+		const error = new Error(
+			'INSUFFICIENT FUNDS TO PLACE THIS BET. PLEASE ADD FUNDS TO YOUR ACCOUNT OR LOWER THE BET LEVEL.',
+		);
+		stateModal.modal = { name: 'error', error };
+		throw error;
+	};
+
 	const BET_TYPE_METHODS_MAP = {
 		noWin: {
 			newGame: async () => undefined,
@@ -138,6 +148,10 @@ function createPrimaryMachines<TBet extends BaseBet>(options: Options<TBet>) {
 
 	// newGame
 	const newGame = fromPromise(async () => {
+		if (!stateBetDerived.isBetCostAvailable()) {
+			failInsufficientFunds(onNewGameError);
+		}
+
 		await onNewGameStart();
 
 		const data = await handleRequestBet({ onError: onNewGameError });

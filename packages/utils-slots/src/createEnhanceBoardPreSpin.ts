@@ -13,7 +13,7 @@ export function createEnhanceBoardPreSpin<TReel extends Reel<any, any>>({
 	const preSpin = async ({ paddingBoard }: { paddingBoard?: TRawSymbol[][] }) => {
 		stateSlots.isPreSpinning = true;
 
-		const isTurboBeforeAll = stateBet.isTurbo;
+		const isTurboBeforeAll = stateBet.isTurbo || stateBet.isSuperTurbo;
 
 		await Promise.all(
 			board.map((reel, reelIndex) => {

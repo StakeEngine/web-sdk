@@ -3,6 +3,7 @@
 	import { zIndex } from 'constants-shared/zIndex';
 	import { stateBet, stateModal, stateUi, INFINITY_MARK } from 'state-shared';
 	import { getContextEventEmitter } from 'utils-event-emitter';
+	import { numberToCurrencyString } from 'utils-shared/amount';
 
 	import BaseIcon from './BaseIcon.svelte';
 	import BaseTitle from './BaseTitle.svelte';
@@ -28,6 +29,10 @@
 			stateUi.autoSpinsSingleWinLimitText = INFINITY_MARK;
 		}
 	};
+
+	const selectedModeCost = $derived(
+		stateBet.betAmount * stateBonusDerived.selectedBetModeData().costMultiplier,
+	);
 </script>
 
 {#if stateModal.modal?.name === 'buyBonusConfirm'}
@@ -38,6 +43,12 @@
 			</BaseTitle>
 			<BaseScrollable type="column">
 				{stateBonusDerived.selectedBetModeData().text.dialog}
+				{#if stateBonusDerived.selectedBetModeData().type === 'buy'}
+					<div class="buy-cost-copy">
+						<div>BET {numberToCurrencyString(stateBet.betAmount)}</div>
+						<div>REAL COST {numberToCurrencyString(selectedModeCost)}</div>
+					</div>
+				{/if}
 			</BaseScrollable>
 			<BaseButtonWrap type="max-width">
 				<Button
@@ -57,3 +68,15 @@
 		</BaseContent>
 	</Popup>
 {/if}
+
+<style>
+	.buy-cost-copy {
+		margin-top: 1rem;
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.9rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		text-align: center;
+	}
+</style>

@@ -21,6 +21,9 @@
 		align-items: center;
 		z-index: var(--zIndex);
 		max-width: var(--maxWidth);
+		max-height: calc(100dvh - 3rem);
+		width: min(100%, calc(100vw - 2rem));
 		gap: 1rem;
+		min-height: 0;
 	}
 </style>

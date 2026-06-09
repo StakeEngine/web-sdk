@@ -112,20 +112,23 @@ function createSound<TSoundName extends string>() {
 
 
 	const volumeMusicEffect = () => {
+		const vol = stateSoundDerived.volumeMusic(); // read outside guard so $effect always tracks it
 		if (players) {
-			players.music.volume(stateSoundDerived.volumeMusic());
+			players.music.volume(vol);
 		}
 	};
 
 	const volumeLoopEffect = () => {
+		const vol = stateSoundDerived.volumeSoundEffect(); // read outside guard so $effect always tracks it
 		if (players) {
-			players.loop.volume(stateSoundDerived.volumeSoundEffect());
+			players.loop.volume(vol);
 		}
 	};
 
 	const volumeOnceEffect = () => {
+		const vol = stateSoundDerived.volumeSoundEffect(); // read outside guard so $effect always tracks it
 		if (players) {
-			players.once.volume(stateSoundDerived.volumeSoundEffect());
+			players.once.volume(vol);
 		}
 	};
 

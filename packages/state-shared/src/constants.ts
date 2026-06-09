@@ -111,6 +111,30 @@ const DEFAULT_BET_MODE_META = {
 			bannerText: 'example banner text',
 		},
 	},
+	FEATURE: {
+		mode: 'FEATURE',
+		costMultiplier: 20,
+		type: 'activate',
+		parent: '',
+		children: '',
+		assets: {
+			icon: '/assets/spines/foregroundFeatureAnimation/mm_bg_feature.png',
+			dialogImage: '/assets/spines/foregroundFeatureAnimation/mm_bg_feature.png',
+			dialogVolatility: '/assets/spines/foregroundFeatureAnimation/mm_bg_feature.webp',
+			volatility: '/assets/spines/foregroundFeatureAnimation/mm_bg_feature.webp',
+			button: '/assets/components/frames/bonus_buy_button_frame.png',
+		},
+		text: {
+			title: 'FEATURE SPIN',
+			dialog:
+				'Every spin is a single-feature spin. A random premium symbol can expand and trigger bonus action on the current round.',
+			description: '20x per spin feature mode.',
+			button: 'ACTIVATE',
+			tickerIdle: 'FEATURE SPIN IS ACTIVE',
+			tickerSpin: 'GOOD LUCK',
+			bannerText: 'example banner text',
+		},
+	},
 	BONUS: {
 		mode: 'BONUS',
 		costMultiplier: 100,
