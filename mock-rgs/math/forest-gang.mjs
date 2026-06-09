@@ -287,7 +287,7 @@ const createBonusSpinPlan = ({ rng, mode, totalAmount }) => {
   }));
 };
 
-function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialTotalWinAmount = 0 }) {
+function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialTotalWinAmount = 0, scatterPositions = null }) {
   const events = [];
   let idx = 0;
   let runningTotal = initialTotalWinAmount;
@@ -296,13 +296,15 @@ function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialT
   const winPlan = createBonusSpinPlan({ rng, mode, totalAmount: totalBonusAmount });
   const planMap = new Map(winPlan.map((entry) => [entry.spinIndex, entry.amount]));
 
+  const triggerPositions = scatterPositions ?? (mode === 'superspin'
+    ? [{ reel: 0, row: 1 }, { reel: 1, row: 2 }, { reel: 2, row: 3 }, { reel: 3, row: 2 }]
+    : [{ reel: 0, row: 1 }, { reel: 1, row: 2 }, { reel: 2, row: 3 }]);
+
   events.push({
     index: idx++,
     type: 'freeSpinTrigger',
     totalFs: BONUS_TOTAL_FS,
-    positions: mode === 'superspin'
-      ? [{ reel: 0, row: 1 }, { reel: 1, row: 2 }, { reel: 2, row: 3 }, { reel: 3, row: 2 }]
-      : [{ reel: 0, row: 1 }, { reel: 1, row: 2 }, { reel: 2, row: 3 }],
+    positions: triggerPositions,
   });
   events.push({ index: idx++, type: 'bonusSymbolSelected', symbol: selectedSymbol, mode });
 
@@ -450,6 +452,7 @@ function generateBaseRound(rng) {
     selectedSymbol,
     totalPayoutX: bonusOnlyX,
     initialTotalWinAmount: baseSpinAmount,
+    scatterPositions: triggerScatterPositions,
   });
 
   for (const event of bonusEvents) {
@@ -462,13 +465,25 @@ function generateBaseRound(rng) {
 function generateBuyRound(rng, mode) {
   const selectedSymbol = choice(rng, PREMIUMS);
   const totalPayoutX = weightedChoice(rng, mode === 'SUPER' ? BUY_SUPER_TOTAL_TABLE : BUY_BONUS_TOTAL_TABLE);
-  return generateBonusEvents({
+  const bonusMode = mode === 'SUPER' ? 'superspin' : 'freegame';
+
+  const cinematicScatterPositions = bonusMode === 'superspin'
+    ? [{ reel: 0, row: 1 }, { reel: 1, row: 3 }, { reel: 3, row: 2 }, { reel: 4, row: 1 }]
+    : [{ reel: 0, row: 2 }, { reel: 2, row: 1 }, { reel: 4, row: 3 }];
+
+  const cinematicBoard = createBoard({ rng, scatterPositions: cinematicScatterPositions });
+  const revealEvent = makeRevealEvent(0, cinematicBoard, 'basegame', rng);
+
+  const bonusEvents = generateBonusEvents({
     rng,
-    mode: mode === 'SUPER' ? 'superspin' : 'freegame',
+    mode: bonusMode,
     selectedSymbol,
     totalPayoutX,
     initialTotalWinAmount: 0,
+    scatterPositions: cinematicScatterPositions,
   });
+
+  return [revealEvent, ...bonusEvents.map((e, i) => ({ ...e, index: i + 1 }))];
 }
 
 export function generateRoundForMode({ mode = 'BASE', seed = Date.now() } = {}) {
