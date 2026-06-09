@@ -3,7 +3,11 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<link rel="stylesheet" href="https://use.typekit.net/aba0ebl.css" />
+		<style>
+			/* External fonts — @import is non-blocking and fails silently when the host blocks external requests */
+			@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+			@import url('https://use.typekit.net/aba0ebl.css');
+		</style>
 		<meta name="viewport" content="width=device-width" />
 		%sveltekit.head%
 	</head>

@@ -1,6 +1,6 @@
 <script lang="ts">
-	const heroUrl = './forest-gang/visual_v2.png';
-	const scatterUrl = './forest-gang/scatter-symbol.png';
+	const heroUrl = './assets/components/backgrounds/visual_v2.jpg';
+	const scatterUrl = './assets/components/symbols/scatter.png';
 </script>
 
 <div class="branding-overlay">

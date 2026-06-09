@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	import { SpineProvider, SpineTrack, SpineSlot } from 'pixi-svelte';
+	import { Container, SpineProvider, SpineTrack } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
 
@@ -23,12 +23,13 @@
 
 	const props: Props = $props();
 	const context = getContext();
+	const providerWidth = context.stateGameDerived.boardLayout().width * context.stateGameDerived.boardLayout().boardScale;
 
 	let oncomplete = $state(() => {});
 	let animationState = $state<AnimationState>('intro');
 </script>
 
-<SpineProvider width={context.stateGameDerived.boardLayout().width} key="bigwin">
+<SpineProvider width={providerWidth} key="bigwin">
 	<SpineTrack
 		trackIndex={0}
 		animationName={props.animationMap[animationState]}
@@ -38,9 +39,9 @@
 				if (animationState === 'intro') animationState = 'idle';
 				if (animationState === 'outro') oncomplete();
 			},
-		}}
+			}}
 	/>
-	<SpineSlot slotName="slot_win_count">
+	<Container x={0}>
 		{@render props.children()}
-	</SpineSlot>
+	</Container>
 </SpineProvider>

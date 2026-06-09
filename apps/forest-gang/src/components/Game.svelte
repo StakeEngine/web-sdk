@@ -5,7 +5,7 @@
 	import { EnableHotkey } from 'components-shared';
 	import { MainContainer } from 'components-layout';
 	import { App } from 'pixi-svelte';
-	import { stateMeta, stateModal } from 'state-shared';
+	import { stateMeta } from 'state-shared';
 
 	import { Modals } from 'components-ui-html';
 
@@ -29,18 +29,19 @@
 	import BonusSymbolPanel from './BonusSymbolPanel.svelte';
 	import GlobalMultiplier from './GlobalMultiplier.svelte';
 	import ExpandedSymbolOverlay from './ExpandedSymbolOverlay.svelte';
-	import TempMultiplierBanner from './TempMultiplierBanner.svelte';
+	import DealItMultiplierPanel from './DealItMultiplierPanel.svelte';
+	import GameLogoFrame from './GameLogoFrame.svelte';
 	import HudHtml from './HudHtml.svelte';
 	import StakeSync from './StakeSync.svelte';
 	import ReplayHud from './replay/ReplayHud.svelte';
 
 	const context = getContext();
-	const heroArt = './forest-gang/visual_v2.png';
-	const bonusArt = './forest-gang/visual_v1.png';
-	const scatterArt = './forest-gang/scatter-symbol.png';
-	const uiRefArt = './forest-gang/ui-reference-1.png';
-	const paylinesArt = './forest-gang/extracted/paylines_reference.png';
-	const heroArtBackdrop = new URL('../../static/forest-gang/visual_v2.png', import.meta.url).href;
+	const heroArt = './assets/components/backgrounds/visual_v2.jpg';
+	const bonusArt = './assets/components/backgrounds/visual_v1.jpg';
+	const scatterArt = './assets/components/symbols/scatter.png';
+	const uiRefArt = './assets/components/reference/ui-reference-1.png';
+	const paylinesArt = './assets/components/reference/paylines_reference.png';
+	const heroArtBackdrop = new URL('../../static/assets/components/backgrounds/visual_v2.jpg', import.meta.url).href;
 
 	$effect(() => {
 		stateMeta.betModeMeta = {
@@ -63,7 +64,7 @@
 			BONUS: {
 				mode: 'BONUS',
 				costMultiplier: 100,
-				type: 'buy',
+				type: 'default',
 				parent: '',
 				children: '',
 				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
@@ -80,7 +81,7 @@
 			SUPER: {
 				mode: 'SUPER',
 				costMultiplier: 400,
-				type: 'buy',
+				type: 'default',
 				parent: '',
 				children: '',
 				assets: { icon: '', volatility: '', button: '', dialogImage: heroArt, dialogVolatility: scatterArt },
@@ -166,11 +167,6 @@
 
 	onMount(() => (context.stateLayout.showLoadingScreen = true));
 
-	context.eventEmitter.subscribeOnMount({
-		buyBonusConfirm: () => {
-			stateModal.modal = { name: 'buyBonusConfirm' };
-		},
-	});
 </script>
 
 <div
@@ -203,10 +199,11 @@
 					<Anticipations />
 				</MainContainer>
 
+				<GameLogoFrame />
 				<ExpandedSymbolOverlay />
 				<BonusSymbolPanel />
 				<GlobalMultiplier />
-				<TempMultiplierBanner />
+				<DealItMultiplierPanel />
 				<Win />
 				<FreeSpinIntro />
 				{#if ['desktop', 'landscape'].includes(context.stateLayoutDerived.layoutType())}

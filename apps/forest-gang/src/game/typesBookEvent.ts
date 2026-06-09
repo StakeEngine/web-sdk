@@ -74,7 +74,7 @@ type BookEventBonusSymbolSelected = {
 	index: number;
 	type: 'bonusSymbolSelected';
 	symbol: SymbolName;
-	mode: 'freegame' | 'superspin';
+	mode: 'freegame' | 'superspin' | 'feature';
 };
 
 type BookEventExpandedSymbolReveal = {

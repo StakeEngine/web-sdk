@@ -29,13 +29,15 @@
 	const PANEL_WIDTH = SYMBOL_SIZE * 0.641;
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
-	const desktopPosition = $derived({
-		x: context.stateGameDerived.boardLayout().width - PANEL_WIDTH * 1.3,
-		y: -SYMBOL_SIZE * 0.47,
-	});
+	const BONUS_PANEL_W = SYMBOL_SIZE * 0.92;
+	// BonusSymbolPanel visual center x (pivot.x = BONUS_PANEL_W*0.5 maps position.x to center)
+	const multiX = $derived(context.stateGameDerived.boardLayout().width - BONUS_PANEL_W * 0.12 - 50);
+	// BonusSymbolPanel bottom = pos.y - pivot.y + height = SYMBOL_SIZE*0.3 - BONUS_PANEL_W*0.25 + BONUS_PANEL_W*0.72
+	const multiY = SYMBOL_SIZE * 0.3 - BONUS_PANEL_W * 0.25 + BONUS_PANEL_W * 0.72 + 30 + 40;
+	const desktopPosition = $derived({ x: multiX, y: multiY });
 	const portraitPosition = $derived({
-		x: context.stateGameDerived.boardLayout().width - PANEL_WIDTH * 1.5,
-		y: -SYMBOL_SIZE * 0.55,
+		x: context.stateGameDerived.boardLayout().width - PANEL_WIDTH * 0.8,
+		y: SYMBOL_SIZE * 0.2,
 	});
 	const position = $derived(
 		context.stateLayoutDerived.isStacked() ? portraitPosition : desktopPosition,
@@ -48,7 +50,12 @@
 	let oncomplete = $state(() => {});
 
 	context.eventEmitter.subscribeOnMount({
-		globalMultiplierShow: () => (show = true),
+		globalMultiplierShow: () => {
+			show = true;
+			multiplier = 1;
+			previousMultiplier.set(1, { duration: 0 });
+			animationName = 'static';
+		},
 		globalMultiplierHide: () => (show = false),
 		globalMultiplierUpdate: async (emitterEvent) => {
 			if (emitterEvent.multiplier === 1 && multiplier !== 1) {

@@ -61,17 +61,17 @@
 				<MainContainer>
 					<Container
 						x={context.stateGameDerived.boardLayout().x}
-						y={context.stateGameDerived.boardLayout().y}
+						y={context.stateGameDerived.boardLayout().y + 50}
 					>
 						{#if winLevelData?.animation}
 							<WinAnimation animationMap={winLevelData.animation}>
 								<ResponsiveBitmapText
 									anchor={0.5}
-									maxWidth={2130}
+									maxWidth={context.stateGameDerived.boardLayout().width * 0.85}
 									text={bookEventAmountToCurrencyString(countUpAmount)}
 									style={{
 										fontFamily: 'gold',
-										fontSize: SYMBOL_SIZE * 3.6,
+										fontSize: SYMBOL_SIZE * 2.2,
 										align: 'center',
 										fontWeight: 'bold',
 										letterSpacing: 0,

@@ -1,27 +1,55 @@
 <script lang="ts">
-	import { MainContainer } from 'components-layout';
 	import { BitmapText, Container, Rectangle } from 'pixi-svelte';
+	import { FadeContainer } from 'components-pixi';
 
+	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE } from '../game/constants';
+
+	const PANEL_WIDTH = SYMBOL_SIZE * 0.92;
 
 	const context = getContext();
 	const selectedSymbol = $derived(context.stateGame.selectedBonusSymbol);
 	const mode = $derived(context.stateGame.bonusMode);
 	const show = $derived(!!selectedSymbol && !!mode);
-	const position = $derived({
-		x: context.stateGameDerived.boardLayout().x,
-		y: context.stateGameDerived.boardLayout().y - context.stateGameDerived.boardLayout().height * 0.5 - SYMBOL_SIZE * 0.65,
-	});
-	const modeLabel = $derived(mode === 'superspin' ? 'ALL IN' : 'DEAL IT');
+	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
+	const position = $derived(
+		context.stateLayoutDerived.isStacked()
+			? {
+					// Portrait: above board, centered
+					x: context.stateGameDerived.boardLayout().width * 0.5,
+					y: -SYMBOL_SIZE * 0.6,
+			  }
+			: {
+					// Desktop/landscape: centered above multiplier panel
+					x: context.stateGameDerived.boardLayout().width - PANEL_WIDTH * 0.12 - 50,
+					y: SYMBOL_SIZE * 0.3,
+			  },
+	);
+	const modeLabel = $derived(mode === 'superspin' ? 'ALL IN' : mode === 'feature' ? 'FEATURE' : 'DEAL IT');
 </script>
 
-{#if show}
-	<MainContainer>
-		<Container x={position.x} y={position.y} pivot={{ x: 160, y: 40 }}>
-			<Rectangle width={320} height={80} backgroundColor={0x102214} alpha={0.9} radius={16} />
-			<BitmapText anchor={{ x: 0.5, y: 0 }} x={160} y={8} text={modeLabel} style={{ fontFamily: 'gold', fontSize: 24 }} />
-			<BitmapText anchor={{ x: 0.5, y: 0 }} x={160} y={40} text={`EXPAND: ${selectedSymbol}`} style={{ fontFamily: 'gold', fontSize: 20 }} />
+<BoardContainer>
+	<FadeContainer {show}>
+		<Container
+			x={position.x}
+			y={position.y}
+			{scale}
+			pivot={{ x: PANEL_WIDTH * 0.5, y: PANEL_WIDTH * 0.25 }}
+		>
+			<Rectangle
+				x={0}
+				y={0}
+			width={PANEL_WIDTH}
+			height={PANEL_WIDTH * 0.72}
+				backgroundColor={0x102214}
+				alpha={0.92}
+				radius={12}
+				borderWidth={2}
+				borderColor={0xd4a017}
+			/>
+			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={7} text={modeLabel} style={{ fontFamily: 'gold', fontSize: 18 }} />
+			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={34} text={`↕ ${selectedSymbol}`} style={{ fontFamily: 'gold', fontSize: 16 }} />
 		</Container>
-	</MainContainer>
-{/if}
+	</FadeContainer>
+</BoardContainer>

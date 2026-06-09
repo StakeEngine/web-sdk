@@ -8,7 +8,7 @@
 </script>
 
 <script lang="ts">
-	import { Sprite, SpineProvider, SpineTrack, SpineSlot } from 'pixi-svelte';
+	import { Sprite } from 'pixi-svelte';
 	import { FadeContainer, WinCountUpProvider, ResponsiveBitmapText } from 'components-pixi';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 	import { waitForResolve } from 'utils-shared/wait';
@@ -58,40 +58,29 @@
 						{#if isBigWin}
 							<Sprite
 								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 2.2}
-								height={156 * 2.2}
+								width={500 * 2.6}
+								height={156 * 2.6}
 								key="freespins_{stateUrlDerived.lang()}.png"
 							/>
 						{:else}
 							<Sprite
 								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 4.5}
-								height={80 * 4.5}
+								width={500 * 4.8}
+								height={80 * 4.8}
 								key="winsmall_{stateUrlDerived.lang()}.png"
 							/>
 						{/if}
 
-						<SpineProvider key="fsOutroNumber" width={sizes.width * 0.4}>
-							<SpineTrack
-								trackIndex={0}
-								{animationName}
-								loop={animationName === 'idle'}
-								listener={{
-									complete: () => (animationName = 'idle'),
-								}}
-							/>
-							<SpineSlot slotName="slot_number">
-								<ResponsiveBitmapText
-									anchor={0.5}
-									style={{
-										fontFamily: 'gold',
-										fontSize: sizes.width * 0.08,
-									}}
-									text={bookEventAmountToCurrencyString(countUpAmount)}
-									maxWidth={sizes.width}
-								/>
-							</SpineSlot>
-						</SpineProvider>
+						<ResponsiveBitmapText
+							anchor={0.5}
+							y={sizes.height * 0.54}
+							style={{
+								fontFamily: 'gold',
+								fontSize: sizes.width * 0.24,
+							}}
+							text={bookEventAmountToCurrencyString(countUpAmount)}
+							maxWidth={sizes.width * 0.82}
+						/>
 
 						<Sprite
 							anchor={{ x: 0.5, y: isBigWin ? -3.2 : -2 }}

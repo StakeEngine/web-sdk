@@ -96,5 +96,6 @@ export default {
 		basegame: basePaddingReels,
 		freegame: freegamePaddingReels,
 		superspin: superspinPaddingReels,
+		feature: freegamePaddingReels,
 	},
 };

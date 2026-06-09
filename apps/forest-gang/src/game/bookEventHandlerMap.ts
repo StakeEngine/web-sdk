@@ -41,8 +41,11 @@ const getBonusModeFromScatters = (positions: Position[]) => (positions.length >=
 export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContext> = {
 	reveal: async (bookEvent: BookEventOfType<'reveal'>, { bookEvents }: BookEventContext) => {
 		const isBonusGame = checkIsMultipleRevealEvents({ bookEvents });
-		if (isBonusGame) {
+		const hasAnticipation = bookEvent.anticipation?.some(Boolean);
+		if (isBonusGame || hasAnticipation) {
 			eventEmitter.broadcast({ type: 'stopButtonEnable' });
+		}
+		if (isBonusGame) {
 			recordBookEvent({ bookEvent });
 		}
 
@@ -52,31 +55,28 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 			stateGameDerived.resetBonusState();
 		}
 
-		// In bonus, look ahead for expansion anticipation: if 3+ reels will expand this spin,
-		// inject anticipation for reels after the 3rd expanding reel
-		let spinRevealEvent = bookEvent;
-		if (bookEvent.gameType !== 'basegame') {
-			const nextExpand = bookEvents.find(
-				(e) => e.type === 'expandedSymbolReveal' && e.index > bookEvent.index,
-			) as BookEventOfType<'expandedSymbolReveal'> | undefined;
-			if (nextExpand && nextExpand.reels.length >= 3) {
-				const sorted = [...nextExpand.reels].sort((a, b) => a - b);
-				const thirdReel = sorted[2];
-				const anticipation = [0, 0, 0, 0, 0];
-				let counter = 1;
-				for (let r = thirdReel + 1; r < 5; r++) anticipation[r] = counter++;
-				spinRevealEvent = { ...bookEvent, anticipation };
-			}
-		}
-
-		await stateGameDerived.enhancedBoard.spin({
-			revealEvent: spinRevealEvent,
-			paddingBoard: config.paddingReels[bookEvent.gameType],
-		});
-		// Clear expanded reels after board settles (no carry-over between spins)
+		// Clear expanded overlay BEFORE spin starts so it doesn't persist into the next round
 		if (stateGame.expandedSymbol && bookEvent.gameType !== 'basegame') {
 			stateGame.expandedSymbol = { ...stateGame.expandedSymbol, reels: [] };
 		}
+
+		// Add a brief pause between bonus spins so players can read the result
+		if (isBonusGame && bookEvent.gameType !== 'basegame' && !stateBet.isSuperTurbo) {
+			await waitForTimeout(600);
+		}
+
+		const hadPendingStop = stateGame.pendingStop && stateGame.awaitingFirstReveal;
+		// Close the buffer window — only works for the first reveal of the round
+		stateGame.awaitingFirstReveal = false;
+		stateGame.pendingStop = false;
+
+		const spinPromise = stateGameDerived.enhancedBoard.spin({
+			revealEvent: bookEvent,
+			paddingBoard: config.paddingReels[bookEvent.gameType],
+		});
+		// Apply buffered stop immediately after spin starts
+		if (hadPendingStop) stateGameDerived.enhancedBoard.stop();
+		await spinPromise;
 		eventEmitter.broadcast({ type: 'soundScatterCounterClear' });
 
 		if (stateGame.bonusMode === 'superspin' && bookEvent.gameType !== 'basegame') {
@@ -95,21 +95,35 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		stateGame.bonusMode = bookEvent.mode;
 	},
 	expandedSymbolReveal: async (bookEvent: BookEventOfType<'expandedSymbolReveal'>) => {
-		const sortedReels = [...bookEvent.reels].sort((a, b) => a - b);
 		stateGame.expandedSymbol = { symbol: bookEvent.symbol, reels: [], positions: bookEvent.positions };
-		await Promise.all(
-			sortedReels.map(async (reel, i) => {
-				await waitForTimeout(i * 80);
-				eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_reel_stop_1' });
-				stateGame.expandedSymbol = {
-					...stateGame.expandedSymbol!,
-					reels: [...stateGame.expandedSymbol!.reels, reel],
-				};
-			}),
-		);
+
+		// Find origin reel: leftmost reel that had the symbol in the original positions
+		const originReel = bookEvent.positions.length > 0
+			? Math.min(...bookEvent.positions.map((p) => p.reel))
+			: bookEvent.reels[0] ?? 0;
+
+		// Sort winning reels by distance from origin so they expand outward
+		const reelsByDistance = [...bookEvent.reels].sort((a, b) => {
+			const dA = Math.abs(a - originReel);
+			const dB = Math.abs(b - originReel);
+			return dA !== dB ? dA - dB : a - b;
+		});
+
+		// Reveal one by one in distance order (origin first, then outward)
+		for (let i = 0; i < reelsByDistance.length; i++) {
+			await waitForTimeout(i * 90);
+			eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_reel_stop_1' });
+			const reel = reelsByDistance[i];
+			stateGame.expandedSymbol = {
+				...stateGame.expandedSymbol!,
+				reels: [...stateGame.expandedSymbol!.reels, reel],
+			};
+		}
 	},
 	applyTempMultiplier: async (bookEvent: BookEventOfType<'applyTempMultiplier'>) => {
 		stateGame.tempMultiplier = bookEvent.multiplier;
+		// Update the landing target — cycling already running, will land here instead of 1x
+		eventEmitter.broadcast({ type: 'dealItMultiplierSetTarget', multiplier: bookEvent.multiplier });
 	},
 	retriggerFreeSpins: async (bookEvent: BookEventOfType<'retriggerFreeSpins'>) => {
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
@@ -129,40 +143,69 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	},
 	winInfo: async (bookEvent: BookEventOfType<'winInfo'>) => {
 		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_winlevel_small' });
-		await sequence(bookEvent.wins, async (win) => {
-			await animateSymbols({ positions: win.positions });
+		// Start Deal It multiplier cycling for every winning bonus spin — always spins, lands on 1x unless multiplier fires
+		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
+			eventEmitter.broadcast({ type: 'dealItMultiplierStart' });
+		}
+		// Deduplicate positions across all wins and animate once — prevents 5-10s freeze
+		const seen = new Set<string>();
+		const allPositions = bookEvent.wins.flatMap((win) => win.positions).filter((pos) => {
+			const key = `${pos.reel},${pos.row}`;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
 		});
+		await animateSymbols({ positions: allPositions });
 	},
 	setTotalWin: async (bookEvent: BookEventOfType<'setTotalWin'>) => {
 		stateBet.winBookEventAmount = bookEvent.amount;
 	},
 	freeSpinTrigger: async (bookEvent: BookEventOfType<'freeSpinTrigger'>) => {
-		const bonusMode = getBonusModeFromScatters(bookEvent.positions);
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
-		await animateSymbols({ positions: bookEvent.positions });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_superfreespin' });
-		await eventEmitter.broadcastAsync({ type: 'uiHide' });
-		await eventEmitter.broadcastAsync({ type: 'transition' });
-		eventEmitter.broadcast({ type: 'freeSpinIntroShow' });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'jng_intro_fs' });
-		eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_freespin' });
-		await eventEmitter.broadcastAsync({ type: 'freeSpinIntroUpdate', totalFreeSpins: bookEvent.totalFs });
+		const isFeatureSpin = bookEvent.totalFs === 1;
+		const bonusMode = isFeatureSpin ? 'feature' : getBonusModeFromScatters(bookEvent.positions);
+		// Stop on Bonus: stop autoplay when a multi-spin bonus triggers (Deal It / All In)
+		if (!isFeatureSpin && stateGame.stopAutoOnBonus && stateBet.autoSpinsCounter > 0) {
+			stateBet.autoSpinsCounter = 0;
+		}
+		if (!isFeatureSpin) {
+			// Full bonus intro sequence — only for Deal It / All In (multi-spin)
+			eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_scatter_win_v2' });
+			await animateSymbols({ positions: bookEvent.positions });
+			eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_superfreespin' });
+			await eventEmitter.broadcastAsync({ type: 'uiHide' });
+			await eventEmitter.broadcastAsync({ type: 'transition' });
+			eventEmitter.broadcast({ type: 'freeSpinIntroShow' });
+			eventEmitter.broadcast({ type: 'soundOnce', name: 'jng_intro_fs' });
+			eventEmitter.broadcast({ type: 'soundMusic', name: 'bgm_freespin' });
+			await eventEmitter.broadcastAsync({ type: 'freeSpinIntroUpdate', totalFreeSpins: bookEvent.totalFs });
+		}
 		stateGame.gameType = bonusMode;
 		stateGame.bonusMode = bonusMode;
-		eventEmitter.broadcast({ type: 'freeSpinIntroHide' });
+		if (!isFeatureSpin) {
+			eventEmitter.broadcast({ type: 'freeSpinIntroHide' });
+		}
 		eventEmitter.broadcast({ type: 'boardFrameGlowShow' });
-		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
-		stateUi.freeSpinCounterShow = true;
-		eventEmitter.broadcast({ type: 'freeSpinCounterUpdate', current: undefined, total: bookEvent.totalFs });
-		stateUi.freeSpinCounterTotal = bookEvent.totalFs;
+		if (!isFeatureSpin) {
+			eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
+			stateUi.freeSpinCounterShow = true;
+			eventEmitter.broadcast({ type: 'freeSpinCounterUpdate', current: undefined, total: bookEvent.totalFs });
+			stateUi.freeSpinCounterTotal = bookEvent.totalFs;
+		}
 		if (bonusMode === 'superspin') {
 			eventEmitter.broadcast({ type: 'globalMultiplierShow' });
 		}
-		await eventEmitter.broadcastAsync({ type: 'uiShow' });
-		await eventEmitter.broadcastAsync({ type: 'drawerButtonShow' });
-		eventEmitter.broadcast({ type: 'drawerFold' });
+		if (!isFeatureSpin) {
+			await eventEmitter.broadcastAsync({ type: 'uiShow' });
+			await eventEmitter.broadcastAsync({ type: 'drawerButtonShow' });
+			eventEmitter.broadcast({ type: 'drawerFold' });
+		}
 	},
 	updateFreeSpin: async (bookEvent: BookEventOfType<'updateFreeSpin'>) => {
+		if (stateGame.bonusMode === 'feature') {
+			stateUi.freeSpinCounterShow = false;
+			eventEmitter.broadcast({ type: 'freeSpinCounterHide' });
+			return;
+		}
 		eventEmitter.broadcast({ type: 'freeSpinCounterShow' });
 		stateUi.freeSpinCounterShow = true;
 		eventEmitter.broadcast({ type: 'freeSpinCounterUpdate', current: bookEvent.amount + 1, total: bookEvent.total });
@@ -171,53 +214,68 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	},
 	freeSpinEnd: async (bookEvent: BookEventOfType<'freeSpinEnd'>) => {
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
-		await eventEmitter.broadcastAsync({ type: 'uiHide' });
-		stateGame.gameType = 'basegame';
+		const isFeatureSpin = stateGame.bonusMode === 'feature';
+		// Clear expanding symbol overlay before total board shows
+		stateGame.expandedSymbol = null;
+		stateGame.gameType = isFeatureSpin ? 'feature' : 'basegame';
 		eventEmitter.broadcast({ type: 'boardFrameGlowHide' });
 		eventEmitter.broadcast({ type: 'globalMultiplierHide' });
-		eventEmitter.broadcast({ type: 'freeSpinOutroShow' });
-		eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_youwon_panel' });
-		winLevelSoundsPlay({ winLevelData });
-		await eventEmitter.broadcastAsync({ type: 'freeSpinOutroCountUp', amount: bookEvent.amount, winLevelData });
-		winLevelSoundsStop();
-		eventEmitter.broadcast({ type: 'freeSpinOutroHide' });
-		eventEmitter.broadcast({ type: 'freeSpinCounterHide' });
-		stateUi.freeSpinCounterShow = false;
-		await eventEmitter.broadcastAsync({ type: 'transition' });
-		await eventEmitter.broadcastAsync({ type: 'uiShow' });
-		await eventEmitter.broadcastAsync({ type: 'drawerUnfold' });
-		eventEmitter.broadcast({ type: 'drawerButtonHide' });
+		if (isFeatureSpin) {
+			// Feature spin: no outro panel, just let the win animate naturally
+			stateUi.freeSpinCounterShow = false;
+			await eventEmitter.broadcastAsync({ type: 'uiShow' });
+		} else {
+			await eventEmitter.broadcastAsync({ type: 'uiHide' });
+			eventEmitter.broadcast({ type: 'freeSpinOutroShow' });
+			eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_youwon_panel' });
+			winLevelSoundsPlay({ winLevelData });
+			await eventEmitter.broadcastAsync({ type: 'freeSpinOutroCountUp', amount: bookEvent.amount, winLevelData });
+			winLevelSoundsStop();
+			eventEmitter.broadcast({ type: 'freeSpinOutroHide' });
+			eventEmitter.broadcast({ type: 'freeSpinCounterHide' });
+			stateUi.freeSpinCounterShow = false;
+			await eventEmitter.broadcastAsync({ type: 'transition' });
+			await eventEmitter.broadcastAsync({ type: 'uiShow' });
+			await eventEmitter.broadcastAsync({ type: 'drawerUnfold' });
+			eventEmitter.broadcast({ type: 'drawerButtonHide' });
+		}
 	},
 	setWin: async (bookEvent: BookEventOfType<'setWin'>) => {
+		// Wait for Deal It multiplier cycling to finish before showing win amount
+		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
+			await eventEmitter.broadcastAsync({ type: 'dealItMultiplierAwaitCycle' });
+		}
 		const winLevelData = winLevelMap[bookEvent.winLevel as WinLevel];
 		eventEmitter.broadcast({ type: 'winShow' });
 		winLevelSoundsPlay({ winLevelData });
 		await eventEmitter.broadcastAsync({ type: 'winUpdate', amount: bookEvent.amount, winLevelData });
 		winLevelSoundsStop();
 		eventEmitter.broadcast({ type: 'winHide' });
+		// Hide Deal It multiplier panel after win animation
+		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
+			eventEmitter.broadcast({ type: 'dealItMultiplierHide' });
+		}
 	},
 	finalWin: async () => {
-		if (stateGame.gameType === 'basegame') stateGameDerived.resetBonusState();
+		if (stateGame.gameType === 'basegame' && stateGame.bonusMode !== 'feature') stateGameDerived.resetBonusState();
 	},
 	createBonusSnapshot: async (bookEvent: BookEventOfType<'createBonusSnapshot'>) => {
 		const { bookEvents } = bookEvent;
 
-		function findLastBookEvent<T>(type: T) {
-			return _.findLast(bookEvents, (entry) => entry.type === type) as BookEventOfType<T> | undefined;
+		const triggerIndex = bookEvents.findIndex((e) => e.type === 'freeSpinTrigger');
+		if (triggerIndex === -1) return;
+
+		// Find the reveal (scatter spin) just before the freeSpinTrigger so scatters are shown
+		const revealBeforeTrigger = [...bookEvents]
+			.slice(0, triggerIndex)
+			.reverse()
+			.find((e) => e.type === 'reveal');
+		const startIndex = revealBeforeTrigger
+			? bookEvents.indexOf(revealBeforeTrigger)
+			: triggerIndex;
+
+		for (const event of bookEvents.slice(startIndex)) {
+			await playBookEvent(event, { bookEvents });
 		}
-
-		const lastFreeSpinTriggerEvent = findLastBookEvent('freeSpinTrigger' as const);
-		const lastBonusSymbolSelected = findLastBookEvent('bonusSymbolSelected' as const);
-		const lastExpandedSymbolReveal = findLastBookEvent('expandedSymbolReveal' as const);
-		const lastUpdateGlobalMultiplier = findLastBookEvent('updateGlobalMultiplier' as const);
-		const lastUpdateFreeSpinEvent = findLastBookEvent('updateFreeSpin' as const);
-		const lastSetTotalWinEvent = findLastBookEvent('setTotalWin' as const);
-
-		if (lastFreeSpinTriggerEvent) await playBookEvent(lastFreeSpinTriggerEvent, { bookEvents });
-		if (lastBonusSymbolSelected) playBookEvent(lastBonusSymbolSelected, { bookEvents });
-		if (lastExpandedSymbolReveal) playBookEvent(lastExpandedSymbolReveal, { bookEvents });
-		if (lastUpdateGlobalMultiplier) playBookEvent(lastUpdateGlobalMultiplier, { bookEvents });
-		if (lastUpdateFreeSpinEvent) playBookEvent(lastUpdateFreeSpinEvent, { bookEvents });
-		if (lastSetTotalWinEvent) playBookEvent(lastSetTotalWinEvent, { bookEvents });
 	},
 };

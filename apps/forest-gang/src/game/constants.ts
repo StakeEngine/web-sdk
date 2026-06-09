@@ -2,21 +2,45 @@ import _ from 'lodash';
 
 import type { RawSymbol, SymbolState } from './types';
 
-export const SYMBOL_SIZE = 120;
+// Rectangular symbol cells — landscape aspect (~1.43:1) matching Figma card designs
+export const SYMBOL_W = 130;   // cell width
+export const SYMBOL_H = 91;    // cell height
+export const SYMBOL_SIZE = SYMBOL_H; // kept as alias for height-based calculations
 export const REEL_PADDING = 0.53;
 
+const _BASE_SYMBOLS: RawSymbol[] = [
+	{ name: 'A' }, { name: 'A' },
+	{ name: 'K' }, { name: 'K' },
+	{ name: 'Q' }, { name: 'Q' },
+	{ name: 'J' }, { name: 'J' }, { name: 'J' },
+	{ name: 'T' }, { name: 'T' }, { name: 'T' }, { name: 'T' },
+];
+
+const _makeRandomReel = (includeScatter: boolean): RawSymbol[] => {
+	const pool = [..._BASE_SYMBOLS];
+	const reel: RawSymbol[] = [];
+	for (let i = 0; i < 6; i++) {
+		const idx = Math.floor(Math.random() * pool.length);
+		reel.push({ ...pool[idx] });
+	}
+	if (includeScatter) {
+		reel[Math.floor(Math.random() * 6)] = { name: 'SCATTER', scatter: true };
+	}
+	return reel;
+};
+
 export const INITIAL_BOARD: RawSymbol[][] = [
-	[{ name: 'K' }, { name: 'A' }, { name: 'FOX' }, { name: 'J' }, { name: 'SCATTER', scatter: true }, { name: 'T' }],
-	[{ name: 'Q' }, { name: 'WOLF' }, { name: 'K' }, { name: 'A' }, { name: 'RABBIT' }, { name: 'J' }],
-	[{ name: 'J' }, { name: 'Q' }, { name: 'BEAR' }, { name: 'WILD', wild: true }, { name: 'K' }, { name: 'A' }],
-	[{ name: 'A' }, { name: 'RABBIT' }, { name: 'J' }, { name: 'Q' }, { name: 'WOLF' }, { name: 'K' }],
-	[{ name: 'T' }, { name: 'SCATTER', scatter: true }, { name: 'SQUIRREL' }, { name: 'A' }, { name: 'FOX' }, { name: 'Q' }],
+	_makeRandomReel(false),
+	_makeRandomReel(false),
+	_makeRandomReel(false),
+	_makeRandomReel(false),
+	_makeRandomReel(false),
 ];
 
 export const BOARD_DIMENSIONS = { x: INITIAL_BOARD.length, y: INITIAL_BOARD[0].length - 2 };
 export const BOARD_SIZES = {
-	width: SYMBOL_SIZE * BOARD_DIMENSIONS.x,
-	height: SYMBOL_SIZE * BOARD_DIMENSIONS.y,
+	width: SYMBOL_W * BOARD_DIMENSIONS.x,   // 150 × 5 = 750
+	height: SYMBOL_H * BOARD_DIMENSIONS.y,  // 105 × 4 = 420
 };
 
 export const BACKGROUND_RATIO = 2039 / 1000;
@@ -62,9 +86,17 @@ export const SPIN_OPTIONS_DEFAULT = {
 
 export const SPIN_OPTIONS_FAST = {
 	...SPIN_OPTIONS_SHARED,
-	reelPreSpinSpeed: 5,
-	reelSpinSpeed: 5,
-	reelBounceSizeMulti: 0.05,
+	reelPreSpinSpeed: 3,
+	reelSpinSpeed: 4,
+	reelBounceSizeMulti: 0.15,
+};
+
+export const SPIN_OPTIONS_TURBO = {
+	...SPIN_OPTIONS_SHARED,
+	reelPreSpinSpeed: 12,
+	reelSpinSpeed: 14,
+	reelBounceSizeMulti: 0.01,
+	reelSpinDelay: 30,
 };
 
 export const SPIN_OPTIONS_ANTICIPATED = {
@@ -72,6 +104,7 @@ export const SPIN_OPTIONS_ANTICIPATED = {
 	reelPreSpinSpeed: 3.4,
 	reelSpinSpeed: 4.1,
 	reelBounceSizeMulti: 0.2,
+	reelPaddingMultiplierAnticipated: 6,
 };
 
 export const MOTION_BLUR_VELOCITY = 31;

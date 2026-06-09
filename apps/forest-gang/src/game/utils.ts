@@ -2,7 +2,7 @@ import { stateBet } from 'state-shared';
 import { createPlayBookUtils } from 'utils-book';
 import { createGetEmptyPaddedBoard } from 'utils-slots';
 
-import { SYMBOL_SIZE, REEL_PADDING, SYMBOL_INFO_MAP, BOARD_DIMENSIONS } from './constants';
+import { SYMBOL_W, SYMBOL_H, SYMBOL_SIZE, REEL_PADDING, SYMBOL_INFO_MAP, BOARD_DIMENSIONS } from './constants';
 import { eventEmitter } from './eventEmitter';
 import type { Bet, BookEventOfType } from './typesBookEvent';
 import { bookEventHandlerMap } from './bookEventHandlerMap';
@@ -16,13 +16,19 @@ export const playBet = async (bet: Bet) => {
 	eventEmitter.broadcast({ type: 'stopButtonEnable' });
 };
 
+// Keep ALL event types so createBonusSnapshot can replay the full bonus from scratch
 const BOOK_EVENT_TYPES_TO_RESERVE_FOR_SNAPSHOT = [
+	'reveal',
 	'bonusSymbolSelected',
-	'updateReelMultipliers',
+	'updateGlobalMultiplier',
 	'expandedSymbolReveal',
 	'freeSpinTrigger',
 	'updateFreeSpin',
+	'applyTempMultiplier',
+	'winInfo',
+	'setWin',
 	'setTotalWin',
+	'retriggerFreeSpins',
 ];
 
 export const convertTorResumableBet = (betToResume: Bet) => {
@@ -43,16 +49,17 @@ export const convertTorResumableBet = (betToResume: Bet) => {
 	return { ...betToResume, state: stateToResume };
 };
 
-export const getSymbolX = (reelIndex: number) => SYMBOL_SIZE * (reelIndex + REEL_PADDING);
-export const getSymbolY = (symbolIndexOfBoard: number) => (symbolIndexOfBoard + 0.5) * SYMBOL_SIZE;
-export const getReelCenterX = (reelIndex: number) => SYMBOL_SIZE * (reelIndex + 0.5);
+export const getSymbolX = (reelIndex: number) => SYMBOL_W * (reelIndex + REEL_PADDING);
+export const getSymbolY = (symbolIndexOfBoard: number) => (symbolIndexOfBoard + 0.5) * SYMBOL_H;
+export const getReelCenterX = (reelIndex: number) => SYMBOL_W * (reelIndex + 0.5);
 
 export const spriteKeyByName: Record<string, string> = {
-	FOX: 'foxTile',
-	WOLF: 'wolfTile',
-	BEAR: 'bearTile',
-	RABBIT: 'rabbitTile',
-	SQUIRREL: 'squirrelTile',
+	// Premiums use bonus art (no card-letter badge) to distinguish from card symbols in base mode
+	FOX: 'foxBonusTile',
+	WOLF: 'wolfBonusTile',
+	BEAR: 'bearBonusTile',
+	RABBIT: 'rabbitBonusTile',
+	SQUIRREL: 'squirrelBonusTile',
 	A: 'aTile',
 	K: 'kTile',
 	Q: 'qTile',
@@ -60,6 +67,15 @@ export const spriteKeyByName: Record<string, string> = {
 	T: 'tTile',
 	WILD: 'wildTile',
 	SCATTER: 'scatterCustom',
+};
+
+export const bonusSpriteKeyByName: Record<string, string> = {
+	...spriteKeyByName,
+	FOX: 'foxBonusTile',
+	WOLF: 'wolfBonusTile',
+	BEAR: 'bearBonusTile',
+	RABBIT: 'rabbitBonusTile',
+	SQUIRREL: 'squirrelBonusTile',
 };
 
 export const getSymbolInfo = ({ rawSymbol, state }: { rawSymbol: RawSymbol; state: SymbolState }) => {

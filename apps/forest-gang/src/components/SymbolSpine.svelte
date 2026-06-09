@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { SpineProvider, SpineTrack, type SpineTrackProps } from 'pixi-svelte';
+	import { Sprite, type SpineTrackProps } from 'pixi-svelte';
 
-	import { SYMBOL_SIZE } from '../game/constants';
+	import { SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/constants';
 	import { getSymbolInfo } from '../game/utils';
 	import SymbolSpineMain from './SymbolSpineMain.svelte';
 
@@ -28,7 +28,12 @@
 
 <!-- tumble frame -->
 {#if props.showWinFrame}
-	<SpineProvider x={props.x} y={props.y} key="anticipation" width={SYMBOL_SIZE * 0.19}>
-		<SpineTrack trackIndex={0} animationName={'payframe'} loop />
-	</SpineProvider>
+	<Sprite
+		x={props.x}
+		y={props.y}
+		key="Frame_TumbleWin.png"
+		anchor={{ x: 0.5, y: 0.5 }}
+		width={SYMBOL_W * 0.95}
+		height={SYMBOL_H * BOARD_DIMENSIONS.y * 0.95}
+	/>
 {/if}

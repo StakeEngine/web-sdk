@@ -17,17 +17,21 @@
 
 	import { waitForTimeout } from 'utils-shared/wait';
 	import { SECOND } from 'constants-shared/time';
-	import { stateBet } from 'state-shared';
+	import { stateBet, stateSound } from 'state-shared';
 
 	import { getContext } from '../game/context';
 
 	const context = getContext();
-	const ambientTrackUrl = './forest-gang/audio-idea.wav';
+	const ambientTrackUrl = './assets/audio/audio-idea.wav';
 	let ambientAudio: HTMLAudioElement | null = null;
 	let ambientUnlocked = false;
 
 	const playAmbient = async (mode: 'base' | 'bonus') => {
 		if (!browser || !ambientAudio) return;
+		if (stateSound.volumeValueMaster === 0) {
+			stopAmbient();
+			return;
+		}
 		ambientAudio.loop = true;
 		ambientAudio.volume = mode === 'bonus' ? 0.32 : 0.22;
 		try {
@@ -45,6 +49,13 @@
 	};
 
 	const playMusic = ({ name }: { name: MusicName }) => {
+		if (stateSound.volumeValueMaster === 0) {
+			stopAmbient();
+			sound.stop({ name: 'bgm_main' });
+			sound.stop({ name: 'bgm_freespin' });
+			return;
+		}
+
 		if (name === 'bgm_main') {
 			sound.stop({ name: 'bgm_freespin' });
 			return playAmbient('base');
@@ -84,6 +95,14 @@
 		soundFade: async ({ name, duration, from, to }) => await sound.fade({ name, duration, from, to }), // prettier-ignore
 	});
 
+	$effect(() => {
+		if (stateSound.volumeValueMaster === 0) {
+			stopAmbient();
+			sound.stop({ name: 'bgm_main' });
+			sound.stop({ name: 'bgm_freespin' });
+		}
+	});
+
 	onMount(() => {
 		ambientAudio = browser ? new Audio(ambientTrackUrl) : null;
 		const unlockAmbient = async () => {
@@ -94,9 +113,9 @@
 		window.addEventListener('pointerdown', unlockAmbient, { once: true });
 		window.addEventListener('keydown', unlockAmbient, { once: true });
 
-		if (stateBet.activeBetModeKey === 'SUPER') {
+		if (stateSound.volumeValueMaster !== 0 && stateBet.activeBetModeKey === 'SUPER') {
 			playAmbient('bonus');
-		} else {
+		} else if (stateSound.volumeValueMaster !== 0) {
 			playAmbient('base');
 		}
 

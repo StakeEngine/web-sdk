@@ -18,6 +18,7 @@
 	x={context.stateGameDerived.boardLayout().x}
 	y={context.stateGameDerived.boardLayout().y}
 	pivot={context.stateGameDerived.boardLayout().pivot}
+	scale={context.stateGameDerived.boardLayout().boardScale}
 >
 	{@render props.children()}
 </Container>

@@ -21,14 +21,22 @@ const primaryMachines = createPrimaryMachines<Bet>({
 		if (lastRevealEvent) stateGameDerived.enhancedBoard.settle(lastRevealEvent.board);
 	},
 	onNewGameStart: async () => {
-		if ((stateBet.isTurbo && stateXstateDerived.isAutoBetting()) || stateBet.isSpaceHold) return;
+		if ((stateBet.isSuperTurbo && stateXstateDerived.isAutoBetting()) || stateBet.isSpaceHold) return;
 		stateBet.winBookEventAmount = 0;
+		stateGame.pendingStop = false;
+		stateGame.awaitingFirstReveal = true; // open the buffer window
 		await stateGameDerived.enhancedBoard.preSpin({
 			paddingBoard: config.paddingReels[stateGame.gameType],
 		});
 	},
 	onNewGameError: () => stateGameDerived.enhancedBoard.settle(),
-	onPlayGame: async (bet) => await playBet(bet),
+	onPlayGame: async (bet) => {
+		if (stateGame.endRoundOnly) {
+			stateGame.endRoundOnly = false;
+			return; // skip animation — endGame calls handleRequestEndRound and credits balance
+		}
+		await playBet(bet);
+	},
 	checkIsBonusGame: (bet) => checkIsMultipleRevealEvents({ bookEvents: bet.state }),
 });
 

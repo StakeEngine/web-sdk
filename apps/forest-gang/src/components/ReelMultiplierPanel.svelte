@@ -8,20 +8,50 @@
 	const context = getContext();
 	const show = $derived(context.stateGame.bonusMode === 'superspin');
 	const multipliers = $derived(context.stateGame.reelMultipliers);
-	const position = $derived({
-		x: context.stateGameDerived.boardLayout().x,
-		y: context.stateGameDerived.boardLayout().y + context.stateGameDerived.boardLayout().height * 0.5 + SYMBOL_SIZE * 0.35,
-	});
+	const board = $derived(context.stateGameDerived.boardLayout());
+
+	const boardLeft = $derived(board.x - board.width * 0.5 * board.boardScale);
+	const boardBottom = $derived(board.y + board.height * 0.5 * board.boardScale);
+	const reelWidth = $derived(SYMBOL_SIZE * board.boardScale);
+	const badgeWidth = $derived(Math.max(136, reelWidth * 1.36));
+	const badgeHeight = $derived(Math.max(64, reelWidth * 0.64));
+	const badgeY = $derived(boardBottom + SYMBOL_SIZE * 0.2 * board.boardScale);
+	const labelOffsetY = $derived(badgeHeight * 0.22);
+
+	const reelCenterX = (reelIndex: number) =>
+		boardLeft + (reelIndex + 0.5) * reelWidth;
 </script>
 
 {#if show}
 	<MainContainer>
-		<Container x={position.x} y={position.y} pivot={{ x: 230, y: 34 }}>
-			<Rectangle width={460} height={68} backgroundColor={0x1b0f0f} alpha={0.92} radius={14} />
-			<BitmapText x={16} y={18} text={'REEL MULTS'} style={{ fontFamily: 'gold', fontSize: 18 }} />
-			{#each multipliers as multiplier, reelIndex}
-				<BitmapText x={155 + reelIndex * 58} y={18} text={`R${reelIndex + 1}:${multiplier}x`} style={{ fontFamily: 'gold', fontSize: 18 }} />
-			{/each}
-		</Container>
+		{#each multipliers as multiplier, reelIndex}
+			<Container x={reelCenterX(reelIndex)} y={badgeY}>
+				<Rectangle
+					x={-badgeWidth * 0.5}
+					y={-badgeHeight * 0.5}
+					width={badgeWidth}
+					height={badgeHeight}
+					backgroundColor={0x1b0f0f}
+					alpha={0.96}
+					radius={16}
+				/>
+				<Rectangle
+					x={-badgeWidth * 0.5 + 3}
+					y={-badgeHeight * 0.5 + 3}
+					width={badgeWidth - 6}
+					height={badgeHeight - 6}
+					backgroundColor={0x4d2e12}
+					alpha={0.94}
+					radius={14}
+				/>
+				<BitmapText
+					anchor={{ x: 0.5, y: 0.5 }}
+					x={0}
+					y={-labelOffsetY}
+					text={`${multiplier}x`}
+					style={{ fontFamily: 'gold', fontSize: 32 }}
+				/>
+			</Container>
+		{/each}
 	</MainContainer>
 {/if}

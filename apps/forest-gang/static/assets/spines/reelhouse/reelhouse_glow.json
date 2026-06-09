@@ -7,7 +7,7 @@
 	"width": 1350,
 	"height": 1200,
 	"images": "./images/",
-	"audio": "D:/Cristina/TWIST GAMES/reel_frame"
+	"audio":""
 },
 "bones": [
 	{ "name": "MAIN_ROOT", "color": "440000ff" },

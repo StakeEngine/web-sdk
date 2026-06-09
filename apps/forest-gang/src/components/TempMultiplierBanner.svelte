@@ -9,8 +9,8 @@
 	const multiplier = $derived(context.stateGame.tempMultiplier);
 	const show = $derived(multiplier !== null && context.stateGame.bonusMode === 'freegame');
 	const position = $derived({
-		x: context.stateGameDerived.boardLayout().x + context.stateGameDerived.boardLayout().width * 0.5 + SYMBOL_SIZE * 0.2,
-		y: context.stateGameDerived.boardLayout().y - context.stateGameDerived.boardLayout().height * 0.4,
+		x: context.stateGameDerived.boardLayout().x + (context.stateGameDerived.boardLayout().width * 0.5 + SYMBOL_SIZE * 0.2) * context.stateGameDerived.boardLayout().boardScale,
+		y: context.stateGameDerived.boardLayout().y - context.stateGameDerived.boardLayout().height * 0.4 * context.stateGameDerived.boardLayout().boardScale,
 	});
 </script>
 

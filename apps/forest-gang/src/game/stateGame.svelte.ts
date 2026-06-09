@@ -16,6 +16,7 @@ import {
 	BOARD_DIMENSIONS,
 	SPIN_OPTIONS_DEFAULT,
 	SPIN_OPTIONS_FAST,
+	SPIN_OPTIONS_TURBO,
 	SPIN_OPTIONS_ANTICIPATED,
 	INITIAL_SYMBOL_STATE,
 	SCATTER_LAND_SOUND_MAP,
@@ -42,13 +43,15 @@ const board = _.range(BOARD_DIMENSIONS.x).map((reelIndex) => {
 			eventEmitter.broadcast({
 				type: 'soundOnce',
 				name: 'sfx_reel_stop_1',
-				forcePlay: !stateBet.isTurbo,
+				forcePlay: !(stateBet.isTurbo || stateBet.isSuperTurbo),
 			});
 		},
 		onSymbolLand,
 	});
 
 	reel.reelState.spinOptions = () => {
+		if (stateBet.isTurbo || stateBet.isSuperTurbo) return SPIN_OPTIONS_TURBO;
+
 		if (reel.reelState.spinType === 'fast') {
 			return stateGame.bonusMode ? SPIN_OPTIONS_DEFAULT : SPIN_OPTIONS_FAST;
 		}
@@ -82,19 +85,23 @@ export const stateGame = $state({
 	multiplierBoard: [] as (MultiplierSymbol | undefined)[][],
 	scatterCounter: 0,
 	selectedBonusSymbol: null as SymbolName | null,
-	bonusMode: null as 'freegame' | 'superspin' | null,
+	bonusMode: null as 'freegame' | 'superspin' | 'feature' | null,
 	globalMultiplier: 1,
 	expandedSymbol: null as null | { symbol: SymbolName; reels: number[]; positions: Position[] },
 	tempMultiplier: null as number | null,
+	endRoundOnly: false,
+	pendingStop: false,
+	awaitingFirstReveal: false,
+	stopAutoOnBonus: false,     // autoplay stops when a bonus triggers
 });
 
 const getBoardViewportPadding = () => {
 	const layoutType = stateLayoutDerived.layoutType();
 
 	if (layoutType === 'portrait') return { top: 8, right: 6, bottom: 146, left: 6 };
-	if (layoutType === 'landscape') return { top: 4, right: 12, bottom: 22, left: 12 };
+	if (layoutType === 'landscape') return { top: 4, right: 16, bottom: 22, left: 8 };
 	if (layoutType === 'tablet') return { top: 10, right: 20, bottom: 86, left: 20 };
-	return { top: 60, right: 132, bottom: 140, left: 196 };
+	return { top: 108, right: 220, bottom: 172, left: 208 };
 };
 
 const getBoardViewportMetrics = () => {
@@ -127,19 +134,23 @@ const getBoardScale = () => {
 const getBoardOffset = () => {
 	const { mainLayout, canvasSizes, padding, availableCanvasHeight, availableCanvasWidth } =
 		getBoardViewportMetrics();
+	const layoutType = stateLayoutDerived.layoutType();
+	const extraLeftShiftPx = layoutType === 'desktop' ? 75 : layoutType === 'landscape' ? 55 : 0;
 	const centeredCanvasX = padding.left + availableCanvasWidth * 0.5 - canvasSizes.width * 0.5;
 	const centeredCanvasY = padding.top + availableCanvasHeight * 0.5 - canvasSizes.height * 0.5;
+	const shiftRightPx = 40;
+	const shiftDownPx = 10;
 
 	return {
-		x: centeredCanvasX / (mainLayout.scale || 1),
-		y: centeredCanvasY / (mainLayout.scale || 1),
+		x: (centeredCanvasX - extraLeftShiftPx + shiftRightPx) / (mainLayout.scale || 1),
+		y: (centeredCanvasY + shiftDownPx) / (mainLayout.scale || 1),
 	};
 };
 
 const boardLayout = () => ({
 	x: stateLayoutDerived.mainLayout().width * 0.5 + getBoardOffset().x,
 	y: stateLayoutDerived.mainLayout().height * 0.5 + getBoardOffset().y,
-	boardScale: getBoardScale(),
+	boardScale: getBoardScale() * 1.15,
 	anchor: { x: 0.5, y: 0.5 },
 	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
 	...BOARD_SIZES,

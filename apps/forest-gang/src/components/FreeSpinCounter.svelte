@@ -26,17 +26,19 @@
 	const position = $derived({
 		x:
 			context.stateGameDerived.boardLayout().x -
-			context.stateGameDerived.boardLayout().width * 0.5 -
-			panelSizes.width -
-			SYMBOL_SIZE * 0.7,
+			(context.stateGameDerived.boardLayout().width * 0.5 + SYMBOL_SIZE * 0.05) * context.stateGameDerived.boardLayout().boardScale -
+			panelSizes.width * 0.72 -
+			50,
 		y:
 			context.stateGameDerived.boardLayout().y -
-			context.stateGameDerived.boardLayout().height * 0.5,
+			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale +
+			400,
 	});
 
 	const fontSize = SYMBOL_SIZE * 0.275;
 
 	let show = $state(false);
+	let hasCurrent = $state(false);
 	let current = $state(0);
 	let total = $state(0);
 	let titleSizes: Sizes = $state({ width: 0, height: 0 });
@@ -47,23 +49,35 @@
 		height: titleSizes.height + counterSizes.height,
 	});
 	const counterPosition = $derived({ x: titleSizes.width / 2, y: titleSizes.height });
+	const visible = $derived(show && context.stateGame.bonusMode !== 'feature');
 
 	context.eventEmitter.subscribeOnMount({
-		freeSpinCounterShow: () => (show = true),
-		freeSpinCounterHide: () => (show = false),
+		freeSpinCounterShow: () => {
+			show = false;
+			hasCurrent = false;
+			current = 0;
+		},
+		freeSpinCounterHide: () => {
+			show = false;
+			hasCurrent = false;
+		},
 		freeSpinCounterUpdate: (emitterEvent) => {
-			if (emitterEvent.current !== undefined) current = emitterEvent.current;
+			if (emitterEvent.current !== undefined) {
+				current = emitterEvent.current;
+				hasCurrent = true;
+				show = true;
+			}
 			if (emitterEvent.total !== undefined) total = emitterEvent.total;
 		},
 	});
 </script>
 
 <MainContainer>
-	<FadeContainer {show} {...position} {scale}>
+	<FadeContainer show={visible} {...position} {scale}>
 		<Sprite key={panelKey} {...panelSizes} />
 		<Container
 			x={panelSizes.width * 0.5}
-			y={panelSizes.height * 0.48}
+			y={panelSizes.height * 0.44}
 			pivot={anchorToPivot({
 				sizes: textContainerSizes,
 				anchor: { x: 0.5, y: 0.5 },
@@ -73,7 +87,8 @@
 				text={context.stateGame.bonusMode === 'superspin' ? 'ALL IN' : 'DEAL IT'}
 				style={{
 					fontFamily: 'gold',
-					fontSize,
+					fontSize: fontSize * 1.1,
+					fill: 0xff4b4b,
 					wordWrap: false,
 				}}
 				onresize={(sizes) => (titleSizes = sizes)}
@@ -84,7 +99,7 @@
 				anchor={{ x: 0.5, y: 0 }}
 				style={{
 					fontFamily: 'gold',
-					fontSize,
+					fontSize: fontSize * 1.08,
 				}}
 				onresize={(sizes) => (counterSizes = sizes)}
 			/>
