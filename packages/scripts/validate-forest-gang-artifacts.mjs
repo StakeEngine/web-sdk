@@ -3,10 +3,23 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 
-const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
+const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 const libraryDir = path.join(rootDir, 'apps/forest-gang/library');
 const publishDir = path.join(libraryDir, 'publish_files');
 const configsDir = path.join(libraryDir, 'configs');
+const decompressZst = (inputPath, outputPath) => {
+  execFileSync('python3', [
+    '-c',
+    [
+      'import pathlib, sys',
+      'import zstandard as zstd',
+      'inp = pathlib.Path(sys.argv[1]).read_bytes()',
+      'pathlib.Path(sys.argv[2]).write_bytes(zstd.ZstdDecompressor().decompress(inp))',
+    ].join('; '),
+    inputPath,
+    outputPath,
+  ]);
+};
 
 const config = JSON.parse(fs.readFileSync(path.join(configsDir, 'config.json'), 'utf8'));
 const index = JSON.parse(fs.readFileSync(path.join(publishDir, 'index.json'), 'utf8'));
@@ -33,7 +46,7 @@ for (const shelf of config.bookShelfConfig) {
 
   const zstPath = path.join(publishDir, modeIndex.events);
   const jsonlPath = path.join(tmpDir, `${shelf.name}.jsonl`);
-  execFileSync('zstd', ['-q', '-d', '-f', zstPath, '-o', jsonlPath]);
+  decompressZst(zstPath, jsonlPath);
   const books = fs
     .readFileSync(jsonlPath, 'utf8')
     .trim()

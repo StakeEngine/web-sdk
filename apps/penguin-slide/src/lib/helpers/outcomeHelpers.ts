@@ -1,8 +1,8 @@
-export function randomGhostOutcome(random: () => number = Math.random) {
+export function randomGhostOutcome(baseStake = 1, random: () => number = Math.random) {
 	const options = ['coin', 'star', 'banana'] as const;
 	const pick = options[Math.floor(random() * options.length)];
 	if (pick === 'coin') {
-		const coinValue = 1 + Math.floor(random() * 5);
+		const coinValue = Math.max(1, Math.round(baseStake)) * (1 + Math.floor(random() * 5));
 		return { type: 'coin', extra: { cosmetic: true, coinValue } };
 	}
 	if (pick === 'star') {
@@ -19,6 +19,7 @@ export function parseOutcome(
 	item: string,
 	padType?: string,
 	sinking?: boolean,
+	baseStake = 1,
 	random: () => number = Math.random
 ) {
 	void sinking;
@@ -50,7 +51,7 @@ export function parseOutcome(
 		return { type: 'coin', extra: { coinValue } };
 	}
 	if (normalized === 'GHOST') {
-		return randomGhostOutcome(random);
+		return randomGhostOutcome(baseStake, random);
 	}
 	if (normalized === 'SLIP' || normalized === 'SINK') {
 		return { type: 'banana', extra: { fall: true } };

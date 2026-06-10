@@ -87,6 +87,7 @@
 	export let formatCurrencyAmount: (amount: number) => string = (amount) => String(amount);
 	export let lowPowerMobile = false;
 	export let isMobileLandscape = false;
+	export let splashVisible = false;
 </script>
 
 <App>
@@ -118,37 +119,58 @@
 			{@const cloudsY = cloudsNativeHeight * (scenePortrait ? 0.875 : 0.9485)}
 			{@const slide = slideMetrics()}
 			{@const slideVisualOffsetY = scenePortrait ? -74 : 0}
+			{@const splashDesktop = splashVisible && !scenePortrait && !anyMobileLandscape}
+			{@const splashMobilePortrait = splashVisible && scenePortrait}
+			{@const splashMobileLandscape = splashVisible && anyMobileLandscape}
+			{@const splashSlideWidthScale = splashDesktop ? 0.54 : splashMobilePortrait ? 0.88 : splashMobileLandscape ? 0.6 : 1}
+			{@const splashSlideHeightScale = splashDesktop ? 0.68 : splashMobilePortrait ? 0.59 : splashMobileLandscape ? 0.52 : 1}
+			{@const splashDesktopHeightTrimPx = splashDesktop ? 8 : 0}
+			{@const splashDesktopYOffset = splashDesktop ? -viewport.h * 0.12 - 15 : 0}
+			{@const splashDesktopTopCutYOffset = splashDesktop ? slide.height * 0.0512 : 0}
+			{@const splashMobileLandscapeTopLockYOffset = splashMobileLandscape
+				? -(slide.height * (1 - splashSlideHeightScale)) * 0.64
+				: 0}
+			{@const splashMobilePortraitYOffset = splashMobilePortrait ? viewport.h * 0.04 : 0}
+			{@const splashMobileLandscapeYOffset = splashMobileLandscape ? viewport.h * 0.14 : 0}
+			{@const splashPenguinSizeScale = splashDesktop ? 1.092 : splashMobileLandscape ? 1.25 : splashMobilePortrait ? 1.45 : 1}
+			{@const splashPenguinYOffset = splashMobileLandscape
+				? -viewport.h * 0.15
+				: splashMobilePortrait
+					? viewport.h * 0.3
+					: 0}
 			{@const waterTimeScale = lowPowerMobile ? 0 : 1.4}
 			{@const iceSwayScale = lowPowerMobile ? 0 : 0.33}
 			{@const roundActive = animationStatus === 'running' || status === 'sliding'}
 			{@const bgAnim = 'idle'}
 			{@const bgTimeScale = lowPowerMobile ? 0 : roundActive ? sceneAnimationTimeScale : 0}
 			<Container y={viewport.h * (scenePortrait ? -0.02 : anyMobileLandscape ? -0.045 : -0.1)} sortableChildren>
-				<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY, zIndex: -10 })}>
-					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
-				</SpineProvider>
-				<SpineProvider
-					{...spineProps({
-						key: 'background_clouds',
-						x: cloudsX,
-						y: cloudsY,
-						anchor: { x: 0.5, y: 0.5 },
-						zIndex: -30
-					})}
-				>
-					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
-				</SpineProvider>
-				<SpineProvider
-					{...spineProps({
-						key: 'background_mountains',
-						x: viewport.w * 0.5,
-						y: mountainsY,
-						scaleX: mountainsScaleX,
-						zIndex: -20
-					})}
-				>
-					<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
-				</SpineProvider>
+				{#if !splashVisible}
+					<SpineProvider {...spineProps({ key: 'background_water', x: viewport.w * 0.5, y: waterY, zIndex: -10 })}>
+						<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
+					</SpineProvider>
+					<SpineProvider
+						{...spineProps({
+							key: 'background_clouds',
+							x: cloudsX,
+							y: cloudsY,
+							anchor: { x: 0.5, y: 0.5 },
+							zIndex: -30
+						})}
+					>
+						<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
+					</SpineProvider>
+					<SpineProvider
+						{...spineProps({
+							key: 'background_mountains',
+							x: viewport.w * 0.5,
+							y: mountainsY,
+							scaleX: mountainsScaleX,
+							zIndex: -20
+						})}
+					>
+						<SpineTrack trackIndex={0} animationName={bgAnim} loop timeScale={bgTimeScale} />
+					</SpineProvider>
+				{/if}
 				{@const spawnY = icePath.topY + viewport.h * (0.25 + iceSpawnYDownFrac + (scenePortrait ? 0.04 : 0))}
 				{@const spawnOffset = viewport.h * 0.25}
 				{@const scrollOffset = iceScroll * 0.715}
@@ -162,7 +184,8 @@
 				{@const leftLaneSlope = (leftB.x - leftA.x) / Math.max(1, (leftB.y + spawnOffset) - (leftA.y + spawnOffset))}
 				{@const rightLaneSlope =
 					(rightB.x - rightA.x) / Math.max(1, (rightB.y + spawnOffset) - (rightA.y + spawnOffset))}
-				{#each icePieces as piece (piece.id)}
+				{#if !splashVisible}
+					{#each icePieces as piece (piece.id)}
 					{@const spawnTravelOffset = Number(piece.spawnTravelOffset ?? 0)}
 					{@const travel = piece.spawnTravelOffset != null ? scrollOffset - spawnTravelOffset : scrollOffset}
 					{@const localOffset = piece.spawnTravelOffset != null ? Math.max(0, travel) : scrollOffset}
@@ -202,14 +225,22 @@
 							/>
 						</SpineProvider>
 					{/if}
-				{/each}
+					{/each}
+				{/if}
 				<SpineProvider
 					{...spineProps({
 						key: 'slide',
 						x: viewport.w * 0.5,
-						y: slide.y + slideVisualOffsetY,
-						width: slide.width,
-						height: slide.height
+						y:
+							slide.y +
+							slideVisualOffsetY +
+							splashDesktopYOffset +
+							splashDesktopTopCutYOffset +
+							splashMobileLandscapeTopLockYOffset +
+							splashMobilePortraitYOffset +
+							splashMobileLandscapeYOffset,
+						width: slide.width * splashSlideWidthScale,
+						height: Math.max(1, slide.height * splashSlideHeightScale - splashDesktopHeightTrimPx * 2)
 					})}
 				>
 					<SpineTrack trackIndex={0} animationName="init" loop={false} timeScale={sceneAnimationTimeScale} />
@@ -221,20 +252,22 @@
 					/>
 				</SpineProvider>
 				<Container zIndex={200}>
-					<PickupLayer
-						{tokens}
-						{renderStep}
-						{viewport}
-						{tokenRender}
-						lanePosition={pickupLanePosition}
-						{tokenSpineSize}
-						{coinAssetKey}
-						{itemSpawnOffset}
-						animationTimeScale={sceneAnimationTimeScale}
-						showSteps={false}
-						{stepSpacing}
-						{pickupTriggerAt}
-					/>
+					{#if !splashVisible}
+						<PickupLayer
+							{tokens}
+							{renderStep}
+							{viewport}
+							{tokenRender}
+							lanePosition={pickupLanePosition}
+							{tokenSpineSize}
+							{coinAssetKey}
+							{itemSpawnOffset}
+							animationTimeScale={sceneAnimationTimeScale}
+							showSteps={false}
+							{stepSpacing}
+							{pickupTriggerAt}
+						/>
+					{/if}
 					<DebugOverlay
 						enabled={false}
 						{viewport}
@@ -258,20 +291,27 @@
 						{itemSpawnOffset}
 					/>
 				</Container>
-				{@const pose = penguinPose()}
-				{@const tiltRot = ctrlRotation()}
-				{#key penguinActorKey}
+				{@const pose = splashVisible
+					? {
+							x: viewport.w * 0.5,
+							y: viewport.h * 0.835 + splashPenguinYOffset,
+							size: viewport.h * 0.226 * splashPenguinSizeScale,
+							depth: 0.9
+						}
+					: penguinPose()}
+				{@const tiltRot = splashVisible ? 0 : ctrlRotation()}
+				{#key `${penguinActorKey}-${splashVisible ? 'splash' : 'game'}`}
 					<PenguinActor
 						{spineProps}
 						{pose}
 						{tiltRot}
-						{penguinAnim}
-						{penguinSkin}
-						{hasLifering}
+						penguinAnim={splashVisible ? 'idle' : penguinAnim}
+						penguinSkin={splashVisible ? 'base' : penguinSkin}
+						hasLifering={splashVisible ? false : hasLifering}
 						{reviveRingVisible}
 						{vestAnim}
 						{vestAnimKey}
-						{roundAnimationTimeScale}
+						roundAnimationTimeScale={splashVisible ? 0 : roundAnimationTimeScale}
 						{invincibleLoop}
 						{reviveAnimationSpeedMult}
 						{slipAnimationSpeedMult}
@@ -279,17 +319,19 @@
 					/>
 				{/key}
 			</Container>
-			<AccumulatedAmountOverlay
-				{viewport}
-				{roundWinDisplay}
-				{amountWinPulse}
-				{accumulatedStrokeWidth}
-				amountY={accumulatedAmountY()}
-				{bananaLossFloat}
-				{floatTime}
-				{fontReady}
-				{formatCurrencyAmount}
-			/>
+			{#if !splashVisible}
+				<AccumulatedAmountOverlay
+					{viewport}
+					{roundWinDisplay}
+					{amountWinPulse}
+					{accumulatedStrokeWidth}
+					amountY={accumulatedAmountY()}
+					{bananaLossFloat}
+					{floatTime}
+					{fontReady}
+					{formatCurrencyAmount}
+				/>
+			{/if}
 		</Container>
 	</Container>
 </App>

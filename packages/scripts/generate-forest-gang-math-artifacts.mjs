@@ -3,9 +3,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
-import { generateRoundForMode } from '../mock-rgs/math/forest-gang.mjs';
+import { generateRoundForMode } from '../../mock-rgs/math/forest-gang.mjs';
 
-const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
+const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 const libraryDir = path.join(rootDir, 'apps/forest-gang/library');
 const booksDir = path.join(libraryDir, 'books');
 const publishDir = path.join(libraryDir, 'publish_files');
@@ -14,14 +14,27 @@ const forcesDir = path.join(libraryDir, 'forces');
 const lookupTablesDir = path.join(libraryDir, 'lookup_tables');
 
 const MODES = [
-  { key: 'BASE', name: 'base', cost: 1, gameType: 'basegame', feature: true, buyBonus: false, seeds: 1000000 },
-  { key: 'BONUS', name: 'bonus', cost: 100, gameType: 'freegame', feature: false, buyBonus: true, seeds: 500000 },
-  { key: 'SUPER', name: 'super', cost: 400, gameType: 'superspin', feature: false, buyBonus: true, seeds: 500000 },
+  { key: 'BASE', name: 'base', cost: 1, gameType: 'basegame', feature: true, buyBonus: false, seeds: 1000000, maxWin: 20000 },
+  { key: 'BONUS', name: 'bonus', cost: 100, gameType: 'freegame', feature: false, buyBonus: true, seeds: 500000, maxWin: 30000 },
+  { key: 'SUPER', name: 'super', cost: 400, gameType: 'superspin', feature: false, buyBonus: true, seeds: 500000, maxWin: 120000 },
 ];
 
 const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex');
 const ensureDir = (dir) => fs.mkdirSync(dir, { recursive: true });
 const json = (value) => `${JSON.stringify(value, null, 4)}\n`;
+const compressZst = (inputPath, outputPath) => {
+  execFileSync('python3', [
+    '-c',
+    [
+      'import pathlib, sys',
+      'import zstandard as zstd',
+      'inp = pathlib.Path(sys.argv[1]).read_bytes()',
+      'pathlib.Path(sys.argv[2]).write_bytes(zstd.ZstdCompressor(level=3).compress(inp))',
+    ].join('; '),
+    inputPath,
+    outputPath,
+  ]);
+};
 
 const stdOfNormalizedReturn = (payoutAmounts, cost) => {
   const vals = payoutAmounts.map((amount) => amount / 100 / cost);
@@ -111,7 +124,7 @@ const writeModeArtifacts = (mode, stats) => {
   writeFileWithSha(lookupSegmentedFile, lookupCsv);
   writeFileWithSha(lookupSegmentedFile2, lookupCsv);
   fs.writeFileSync(publishBooksRaw, booksJsonl);
-  execFileSync('zstd', ['-q', '-f', publishBooksRaw, '-o', publishBooksZst]);
+  compressZst(publishBooksRaw, publishBooksZst);
   fs.unlinkSync(publishBooksRaw);
   const zstSha = sha256(fs.readFileSync(publishBooksZst));
 
@@ -122,7 +135,7 @@ const writeModeArtifacts = (mode, stats) => {
     bookLength: stats.books.length,
     rtp: Number(stats.rtp.toFixed(6)),
     std: stats.std,
-    maxWin: 20000,
+    maxWin: mode.maxWin,
   };
 };
 
@@ -144,8 +157,8 @@ const main = () => {
     numRows: [4, 4, 4, 4, 4],
     betModes: {
       base: { cost: 1.0, feature: true, buyBonus: false, rtp: results[0].files.rtp, max_win: 20000 },
-      bonus: { cost: 100.0, feature: false, buyBonus: true, rtp: results[1].files.rtp, max_win: 20000 },
-      super: { cost: 400.0, feature: false, buyBonus: true, rtp: results[2].files.rtp, max_win: 20000 },
+      bonus: { cost: 100.0, feature: false, buyBonus: true, rtp: results[1].files.rtp, max_win: 30000 },
+      super: { cost: 400.0, feature: false, buyBonus: true, rtp: results[2].files.rtp, max_win: 120000 },
     },
     symbols: ['FOX', 'WOLF', 'BEAR', 'RABBIT', 'SQUIRREL', 'A', 'K', 'Q', 'J', 'T', 'WILD', 'SCATTER'],
     paddingReels: {},

@@ -1,4 +1,4 @@
-import { generateRoundForMode } from '../mock-rgs/math/forest-gang.mjs';
+import { generateRoundForMode } from '../../mock-rgs/math/forest-gang.mjs';
 
 const spins = Number(process.argv[2] || 100000);
 

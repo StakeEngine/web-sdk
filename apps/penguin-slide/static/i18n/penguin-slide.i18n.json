@@ -62,6 +62,7 @@
     "start_autospins": "START AUTOSPINS",
     "total_cost": "TOTAL COST",
     "bet_size": "BET SIZE",
+    "payout_label": "PAYOUT",
     "change_speed": "Change speed",
     "resume_last_round": "Resume last round?",
     "resume_last_round_desc": "We detected an unfinished round. Do you want to view it, or discard it?",
@@ -258,6 +259,7 @@
       "start_autospins": "START AUTOSPINS",
       "total_cost": "TOTAL COST",
       "bet_size": "BET SIZE",
+      "payout_label": "PAYOUT",
       "change_speed": "Change speed",
       "resume_last_round": "Resume last round?",
       "resume_last_round_desc": "We detected an unfinished round. Do you want to view it, or discard it?",
@@ -1135,7 +1137,7 @@
       "bet_size": "BASE PLAY AMOUNT",
       "insufficient_funds_title": "INSUFFICIENT BALANCE",
       "insufficient_funds_desc": "You do not have enough balance. Please get more coins and try again.",
-      "payout_label": "RESULT"
+      "payout_label": "PAYOUT"
     }
   }
 }

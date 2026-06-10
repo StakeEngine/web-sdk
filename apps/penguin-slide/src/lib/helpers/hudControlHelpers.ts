@@ -12,28 +12,35 @@ export function createAutoplayController(args: {
 	play: () => void;
 }) {
 	let timer: ReturnType<typeof setInterval> | null = null;
+	let spinDispatchLock = false;
 
 	const start = () => {
 		if (timer) return;
 		timer = setInterval(() => {
 			const remaining = args.getAutoplayRemaining();
 			if (!args.getAutoplay() || remaining <= 0) return;
+			if (spinDispatchLock) return;
 			if (args.isRoundBusy() || args.isSliding()) return;
 			const lastRoundEndAt = args.getLastRoundEndAt();
 			if (lastRoundEndAt && performance.now() - lastRoundEndAt < args.getAutoplayCooldownMs()) return;
+			spinDispatchLock = true;
 			const nextRemaining = Math.max(0, remaining - 1);
 			args.setAutoplayRemaining(nextRemaining);
 			if (nextRemaining <= 0) {
 				args.setAutoplay(false);
 			}
 			args.play();
-		}, 600);
+			setTimeout(() => {
+				spinDispatchLock = false;
+			}, 250);
+		}, 120);
 	};
 
 	const stop = () => {
 		if (!timer) return;
 		clearInterval(timer);
 		timer = null;
+		spinDispatchLock = false;
 	};
 
 	return { start, stop };

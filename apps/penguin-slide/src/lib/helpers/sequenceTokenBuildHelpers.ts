@@ -83,7 +83,7 @@ export function buildPadStepTokens({
 					? padData.padType
 					: undefined;
 		const normalized = item.trim().toUpperCase();
-		const { type, extra } = parseOutcome(item, padType, padData.sinking === true);
+		const { type, extra } = parseOutcome(item, padType, padData.sinking === true, stakeAmount());
 		const respawnGapSpawnBlocked =
 			entry.respawnGapStep === true && (type === 'goal' || type === 'lifering');
 		if (respawnGapSpawnBlocked) continue;

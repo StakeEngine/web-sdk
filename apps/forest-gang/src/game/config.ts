@@ -3,27 +3,27 @@ import type { RawSymbol, SymbolName } from './types';
 const makeReel = (names: SymbolName[]): RawSymbol[] => names.map((name) => ({ name }));
 
 const basePaddingReels = [
-	makeReel(['A', 'FOX', 'J', 'SCATTER', 'BEAR', 'K', 'WILD', 'Q', 'RABBIT', 'T', 'WOLF', 'A']),
-	makeReel(['K', 'Q', 'FOX', 'J', 'SCATTER', 'SQUIRREL', 'A', 'WILD', 'BEAR', 'T', 'RABBIT', 'K']),
-	makeReel(['Q', 'A', 'WOLF', 'SCATTER', 'J', 'FOX', 'T', 'BEAR', 'K', 'WILD', 'RABBIT', 'Q']),
-	makeReel(['J', 'BEAR', 'K', 'Q', 'SCATTER', 'WOLF', 'A', 'RABBIT', 'T', 'FOX', 'WILD', 'J']),
-	makeReel(['T', 'RABBIT', 'A', 'K', 'SCATTER', 'FOX', 'Q', 'WOLF', 'J', 'SQUIRREL', 'WILD', 'T']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'Q', 'SQUIRREL', 'RABBIT', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'Q', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'FOX', 'WILD', 'SCATTER']),
 ];
 
 const freegamePaddingReels = [
-	makeReel(['FOX', 'A', 'J', 'BEAR', 'SCATTER', 'FOX', 'K', 'RABBIT', 'WILD', 'Q', 'WOLF', 'A']),
-	makeReel(['K', 'FOX', 'Q', 'J', 'SCATTER', 'BEAR', 'A', 'WOLF', 'T', 'FOX', 'RABBIT', 'K']),
-	makeReel(['Q', 'A', 'FOX', 'SCATTER', 'J', 'FOX', 'T', 'BEAR', 'K', 'WILD', 'RABBIT', 'Q']),
-	makeReel(['J', 'BEAR', 'K', 'FOX', 'SCATTER', 'WOLF', 'A', 'RABBIT', 'T', 'FOX', 'WILD', 'J']),
-	makeReel(['T', 'FOX', 'A', 'K', 'SCATTER', 'FOX', 'Q', 'WOLF', 'J', 'SQUIRREL', 'WILD', 'T']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'Q', 'SQUIRREL', 'RABBIT', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'Q', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'FOX', 'WILD', 'SCATTER']),
 ];
 
 const superspinPaddingReels = [
-	makeReel(['WOLF', 'A', 'J', 'BEAR', 'SCATTER', 'FOX', 'K', 'RABBIT', 'WILD', 'Q', 'WOLF', 'A']),
-	makeReel(['K', 'FOX', 'Q', 'J', 'SCATTER', 'BEAR', 'A', 'WOLF', 'T', 'FOX', 'RABBIT', 'K']),
-	makeReel(['Q', 'A', 'WOLF', 'SCATTER', 'J', 'FOX', 'T', 'BEAR', 'K', 'WILD', 'RABBIT', 'Q']),
-	makeReel(['J', 'BEAR', 'K', 'WOLF', 'SCATTER', 'WOLF', 'A', 'RABBIT', 'T', 'FOX', 'WILD', 'J']),
-	makeReel(['T', 'FOX', 'A', 'K', 'SCATTER', 'WOLF', 'Q', 'WOLF', 'J', 'SQUIRREL', 'WILD', 'T']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'Q', 'SQUIRREL', 'RABBIT', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'J', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'Q', 'SQUIRREL', 'RABBIT', 'BEAR', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'T', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'WILD', 'SCATTER']),
+	makeReel(['T', 'J', 'Q', 'K', 'A', 'SQUIRREL', 'RABBIT', 'BEAR', 'WOLF', 'FOX', 'WILD', 'SCATTER']),
 ];
 
 export default {
@@ -46,14 +46,14 @@ export default {
 			feature: false,
 			buyBonus: true,
 			rtp: 0.961,
-			max_win: 20000,
+			max_win: 30000,
 		},
 		SUPER: {
 			cost: 400.0,
 			feature: false,
 			buyBonus: true,
 			rtp: 0.961,
-			max_win: 20000,
+			max_win: 120000,
 		},
 	},
 	paylines: {

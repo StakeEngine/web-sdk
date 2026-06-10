@@ -24,9 +24,32 @@ const PAYLINES = {
 const PREMIUMS = ['FOX', 'WOLF', 'BEAR', 'RABBIT', 'SQUIRREL'];
 const LOWS = ['A', 'K', 'Q', 'J', 'T'];
 const PAY_SYMBOLS = [...PREMIUMS, ...LOWS];
+const PAY_SYMBOL_WEIGHTS = [
+  ['T', 10],
+  ['J', 9],
+  ['Q', 8],
+  ['K', 7],
+  ['A', 6],
+  ['SQUIRREL', 5],
+  ['RABBIT', 4],
+  ['BEAR', 3],
+  ['WOLF', 2],
+  ['FOX', 1],
+];
+const PREMIUM_WEIGHTS = [
+  ['SQUIRREL', 5],
+  ['RABBIT', 4],
+  ['BEAR', 3],
+  ['WOLF', 2],
+  ['FOX', 1],
+];
 const WILD = 'WILD';
 const SCATTER = 'SCATTER';
-const MAX_WIN_X = 20000;
+const MAX_WIN_X_BY_MODE = {
+  basegame: 20000,
+  freegame: 30000,
+  superspin: 120000,
+};
 const BONUS_TOTAL_FS = 10;
 
 const BASE_HIT_RATE = 0.24;
@@ -86,23 +109,12 @@ const SUPER_TRIGGER_TOTAL_TABLE = [
   [20000, 20],
 ].map(([x, w]) => [+(x * BASE_TRIGGER_BONUS_SCALE).toFixed(3), w]);
 
-const BUY_VALUE_SCALE = 0.8807;
+const BUY_VALUE_SCALE = 0.88503;
 
 const BUY_BONUS_TOTAL_TABLE_RAW = [
-  [5, 4000],
-  [10, 10000],
-  [20, 12000],
-  [30, 13000],
-  [40, 11000],
-  [50, 10000],
-  [75, 10000],
-  [100, 10000],
-  [150, 9000],
-  [250, 6000],
-  [400, 3000],
-  [750, 1500],
-  [1200, 1000],
-  [2500, 500],
+  [5, 68316],
+  [50, 31384],
+  [30000, 300],
 ];
 
 const BUY_BONUS_TOTAL_TABLE = BUY_BONUS_TOTAL_TABLE_RAW.map(([x, w]) => [+(x * BUY_VALUE_SCALE).toFixed(3), w]);
@@ -142,7 +154,7 @@ const sampleBaseOutcomeKind = (rng) => {
 const randomVisibleSymbol = (rng) => {
   const roll = rng();
   if (roll < 0.04) return WILD;
-  return choice(rng, PAY_SYMBOLS);
+  return weightedChoice(rng, PAY_SYMBOL_WEIGHTS);
 };
 
 const createBoard = ({ rng, scatterPositions = [], forcedPositions = [], expandedReels = [], expandedSymbol = null }) => {
@@ -239,7 +251,7 @@ const randomLineIndex = (rng) => randomInt(rng, 20) + 1;
 const buildBaseLineWin = (rng, amount) => {
   const lineIndex = randomLineIndex(rng);
   const positions = positionsForLine(lineIndex);
-  const symbol = choice(rng, PAY_SYMBOLS);
+  const symbol = weightedChoice(rng, PAY_SYMBOL_WEIGHTS);
   const board = createBoard({
     rng,
     forcedPositions: positions.map((position) => ({ ...position, name: symbol })),
@@ -292,7 +304,11 @@ function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialT
   let idx = 0;
   let runningTotal = initialTotalWinAmount;
   let reelMultipliers = [1, 1, 1, 1, 1];
-  const totalBonusAmount = clamp(toAmount(totalPayoutX), 0, MAX_WIN_X * 100 - initialTotalWinAmount);
+  const totalBonusAmount = clamp(
+    toAmount(totalPayoutX),
+    0,
+    MAX_WIN_X_BY_MODE[mode] * 100 - initialTotalWinAmount,
+  );
   const winPlan = createBonusSpinPlan({ rng, mode, totalAmount: totalBonusAmount });
   const planMap = new Map(winPlan.map((entry) => [entry.spinIndex, entry.amount]));
 
@@ -353,7 +369,7 @@ function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialT
             winAfter: plannedAmount,
           });
         }
-        runningTotal = clamp(runningTotal + plannedAmount, 0, MAX_WIN_X * 100);
+        runningTotal = clamp(runningTotal + plannedAmount, 0, MAX_WIN_X_BY_MODE[mode] * 100);
         events.push({ index: idx++, type: 'setWin', amount: plannedAmount, winLevel: winLevelFromAmount(plannedAmount) });
       } else {
         const contributingReels = expandedReels;
@@ -367,7 +383,7 @@ function generateBonusEvents({ rng, mode, selectedSymbol, totalPayoutX, initialT
           totalWin: baseWin,
           wins: [makeLineWin({ symbol: selectedSymbol, positions, win: baseWin, lineIndex, globalMult })],
         });
-        runningTotal = clamp(runningTotal + plannedAmount, 0, MAX_WIN_X * 100);
+        runningTotal = clamp(runningTotal + plannedAmount, 0, MAX_WIN_X_BY_MODE[mode] * 100);
         events.push({ index: idx++, type: 'setWin', amount: plannedAmount, winLevel: winLevelFromAmount(plannedAmount) });
         reelMultipliers = reelMultipliers.map((multiplier, reel) =>
           contributingReels.includes(reel) ? clamp(multiplier * 2, 1, 32) : multiplier,
@@ -414,7 +430,7 @@ function generateBaseRound(rng) {
   }
 
   const isSuper = outcomeKind === 'superTrigger';
-  const selectedSymbol = choice(rng, PREMIUMS);
+  const selectedSymbol = weightedChoice(rng, PREMIUM_WEIGHTS);
   const totalRoundX = weightedChoice(rng, isSuper ? SUPER_TRIGGER_TOTAL_TABLE : DEAL_TRIGGER_TOTAL_TABLE);
   const baseSpinX = choice(rng, [0, 0.4, 0.8, 1.2, 2]);
   const baseSpinAmount = Math.min(toAmount(baseSpinX), toAmount(totalRoundX));
@@ -428,7 +444,7 @@ function generateBaseRound(rng) {
   if (baseSpinAmount > 0) {
     const lineIndex = randomLineIndex(rng);
     const positions = positionsForLine(lineIndex);
-    const symbol = choice(rng, PAY_SYMBOLS);
+    const symbol = weightedChoice(rng, PAY_SYMBOL_WEIGHTS);
     baseWins = [makeLineWin({ symbol, positions, win: baseSpinAmount, lineIndex })];
     forcedPositions = positions.map((position) => ({ ...position, name: symbol }));
   }
@@ -463,7 +479,7 @@ function generateBaseRound(rng) {
 }
 
 function generateBuyRound(rng, mode) {
-  const selectedSymbol = choice(rng, PREMIUMS);
+  const selectedSymbol = weightedChoice(rng, PREMIUM_WEIGHTS);
   const totalPayoutX = weightedChoice(rng, mode === 'SUPER' ? BUY_SUPER_TOTAL_TABLE : BUY_BONUS_TOTAL_TABLE);
   const bonusMode = mode === 'SUPER' ? 'superspin' : 'freegame';
 

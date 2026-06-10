@@ -4,7 +4,7 @@ import {
   generateRoundForMode,
   getRoundForMode,
   getReplayRound,
-} from '../mock-rgs/math/forest-gang.mjs';
+} from '../../mock-rgs/math/forest-gang.mjs';
 
 const sum = (values) => values.reduce((acc, value) => acc + value, 0);
 

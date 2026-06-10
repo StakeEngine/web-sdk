@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Tween } from 'svelte/motion';
 	import { MainContainer } from 'components-layout';
-	import { BitmapText, Container, Rectangle, Sprite } from 'pixi-svelte';
+	import { Container, Sprite } from 'pixi-svelte';
 	import { cubicOut } from 'svelte/easing';
 
 	import { getContext } from '../game/context';
-import { SYMBOL_SIZE, SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/constants';
-	import { getReelCenterX, bonusSpriteKeyByName } from '../game/utils';
+	import { SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/constants';
+	import { getReelCenterX, expandedSpriteKeyByName } from '../game/utils';
 
 	const context = getContext();
 	const expanded = $derived(context.stateGame.expandedSymbol);
@@ -24,7 +24,7 @@ import { SYMBOL_SIZE, SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/const
 	const getAnim = (reelIndex: number, originY: number): ReelAnim => {
 		if (!reelAnims[reelIndex]) {
 			reelAnims[reelIndex] = {
-				h: new Tween(SYMBOL_SIZE),
+				h: new Tween(SYMBOL_H),
 				y: new Tween(originY),
 				pop: new Tween(1),
 			};
@@ -40,12 +40,12 @@ import { SYMBOL_SIZE, SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/const
 		// Find origin row for this reel
 		const reelPos = expanded.positions.filter((p) => p.reel === lastReel);
 		const originRow = reelPos.length > 0 ? reelPos[0].row : 2;
-		const originY = (originRow - 1 + 0.5) * SYMBOL_SIZE; // center of origin row in board space
+		const originY = (originRow - 1 + 0.5) * SYMBOL_H; // center of origin row in board space
 
 		const anim = getAnim(lastReel, originY);
 
 		// Reset to start state
-		anim.h.set(SYMBOL_SIZE, { duration: 0 });
+		anim.h.set(SYMBOL_H, { duration: 0 });
 		anim.y.set(originY, { duration: 0 });
 		anim.pop.set(1, { duration: 0 });
 
@@ -74,44 +74,14 @@ import { SYMBOL_SIZE, SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/const
 				{@const cy = anim.y.current}
 				{@const px = anim.pop.current}
 				<Container x={cx} y={cy} scale={{ x: px, y: 1 }}>
-					<!-- Dark background stretches with symbol -->
-					<Rectangle
-						x={-halfW}
-						y={-h * 0.5}
-						width={SYMBOL_W}
-						height={h}
-						backgroundColor={0x0d0a06}
-						alpha={0.82}
-						radius={8}
-					/>
-					<!-- Gold glow border -->
-					<Rectangle
-						x={-halfW - 2}
-						y={-h * 0.5 - 2}
-						width={SYMBOL_W + 4}
-						height={h + 4}
-						borderWidth={2}
-						borderColor={0xffd84d}
-						backgroundColor={0xd4a017}
-						alpha={0.2}
-						radius={10}
-					/>
-					<!-- Single symbol sprite — stretches from origin to fill reel -->
+					<!-- Symbol sprite fills full reel column -->
 					<Sprite
-						key={bonusSpriteKeyByName[expanded.symbol] ?? 'bearBonusTile'}
+						key={expandedSpriteKeyByName[expanded.symbol] ?? 'bearBonusTile'}
 						x={0}
 						y={0}
 						anchor={0.5}
-						width={SYMBOL_W * 0.88}
-						height={h * 0.88}
-					/>
-					<!-- Label at top of stretched column -->
-					<BitmapText
-						x={0}
-						y={-h * 0.5 + 6}
-						anchor={{ x: 0.5, y: 0 }}
-						text={expanded.symbol}
-						style={{ fontFamily: 'gold', fontSize: 12 }}
+						width={SYMBOL_W}
+						height={h}
 					/>
 				</Container>
 			{/each}

@@ -23,15 +23,15 @@
             "cost": 100,
             "feature": false,
             "buyBonus": true,
-            "rtp": 0.961118,
-            "max_win": 20000
+            "rtp": 0.961039,
+            "max_win": 30000
         },
         "super": {
             "cost": 400,
             "feature": false,
             "buyBonus": true,
-            "rtp": 0.961118,
-            "max_win": 20000
+            "rtp": 0.961013,
+            "max_win": 120000
         }
     },
     "symbols": [

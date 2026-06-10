@@ -2,6 +2,7 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	import './+page.css';
+
 	import {
 		readAssetDimension,
 		isNothingItemValue
@@ -277,7 +278,7 @@
 	}
 
 	function parseOutcomeForRound(item: string, padType?: string, sinking?: boolean) {
-		return parseOutcome(item, padType, sinking, nextGhostRandom);
+		return parseOutcome(item, padType, sinking, stakeAmount(), nextGhostRandom);
 	}
 
 const stepLaneSlots = new Map<number, { left?: number; right?: number }>();
@@ -448,8 +449,11 @@ let speedFactor = $state(2);
 	let entrySplashVisible = $state(true);
 	let audioUnlocked = false;
 	const stakeLoaderSrc = assetPath('/stake-engine-loader.gif');
-	const splashLandscapeSrc = assetPath('/assets/splash/penguin_1280x675.png');
-	const splashPortraitSrc = assetPath('/assets/splash/penguin_1080x1920.png');
+	const splashBackgroundSrc = assetPath('/assets/splash/custom/background.png');
+	const splashLogoSrc = assetPath('/assets/splash/custom/logo.png');
+	const splashPartnerLogoSrc = assetPath('/assets/splash/custom/easy-games-white.png');
+	const splashCenterLandscapeSrc = assetPath('/assets/splash/penguin_1280x675.png');
+	const splashCenterPortraitSrc = assetPath('/assets/splash/penguin_1080x1920.png');
 	const SOUND_SRC: Record<SoundKey, string> = buildSoundSrc(assetPath);
 	let soundEnabled = false;
 	const audioEngine = createAudioEngine<SoundKey>({
@@ -958,7 +962,11 @@ function bananaLossAmount(
 	let wobbleRisk = $state(0);
 	let wobbleBoost = $state(0);
 	let lastRoundEndAt = $state(0);
-	const autoplayCooldownMs = 1400;
+	const autoplayCooldownMsBySpeed: Record<number, number> = {
+		2: 900,
+		4: 500,
+		6: 180
+	};
 	let laneFreeze = $state(false);
 	const autoplayController = createAutoplayController({
 		getAutoplay: () => autoplay,
@@ -972,7 +980,7 @@ function bananaLossAmount(
 		isRoundBusy: () => animationStatus === 'running' || pendingRound,
 		isSliding: () => status === 'sliding',
 		getLastRoundEndAt: () => lastRoundEndAt,
-		getAutoplayCooldownMs: () => autoplayCooldownMs,
+		getAutoplayCooldownMs: () => autoplayCooldownMsBySpeed[speedFactor] ?? 900,
 		play
 	});
 	const startAutoplay = autoplayController.start;
@@ -1249,7 +1257,7 @@ const SOCIAL_EN_US_FALLBACK: Record<string, string> = {
 	bet_size: 'BASE PLAY AMOUNT',
 	insufficient_funds_title: 'INSUFFICIENT BALANCE',
 	insufficient_funds_desc: 'You do not have enough balance. Please get more coins and try again.',
-	payout_label: 'RESULT'
+	payout_label: 'PAYOUT'
 };
 let I18N_EN = $state<Record<string, string>>({ ...BUILTIN_I18N_EN });
 let I18N = $state<Record<string, Record<string, string>>>(
@@ -4411,6 +4419,7 @@ function shouldUsePreStepFreeRoam(pendingHit: { trigger: number; t?: { stepIndex
 		if (tokens.some((t) => t.extra?.cosmetic)) return;
 		const tailCount = 5;
 		const types = ['coin', 'star', 'banana'];
+		const baseStake = Math.max(1, Math.round(stakeAmount()));
 		for (let i = 1; i <= tailCount; i += 1) {
 			const type = types[(startStep + i) % types.length];
 			const lane = [-1, 1][(startStep + i) % 2];
@@ -4418,7 +4427,7 @@ function shouldUsePreStepFreeRoam(pendingHit: { trigger: number; t?: { stepIndex
 				type === 'star'
 					? { cosmetic: true, multiplier: 2 }
 					: type === 'coin'
-						? { cosmetic: true, coinValue: 1 }
+						? { cosmetic: true, coinValue: baseStake * (1 + ((startStep + i) % 5)) }
 						: { cosmetic: true };
 			tokenId += 1;
 			tokens = [
@@ -5113,6 +5122,12 @@ function stepDebugGuides(): StepDebugGuide[] {
 		}
 		else if (audioUnlocked && !musicMuted && hudVolume > 0) startBackgroundMusic();
 	});
+	$effect(() => {
+		if (!bootLoading && entrySplashVisible && status === 'idle' && !pendingRound) {
+			penguinAnim = 'idle';
+			penguinSkin = 'base';
+		}
+	});
 
 
 	
@@ -5132,15 +5147,23 @@ function stepDebugGuides(): StepDebugGuide[] {
 	<BootLoader visible={bootLoading} src={stakeLoaderSrc} alt="Loading game" />
 	<EntrySplash
 		visible={!bootLoading && entrySplashVisible}
-		landscapeSrc={splashLandscapeSrc}
-		portraitSrc={splashPortraitSrc}
+		overlayOnly
+		backgroundSrc={splashBackgroundSrc}
+		logoSrc={splashLogoSrc}
+		partnerLogoSrc={splashPartnerLogoSrc}
+		centerLandscapeSrc={splashCenterLandscapeSrc}
+		centerPortraitSrc={splashCenterPortraitSrc}
 		alt="Enter Penguin Slide"
 		onEnter={enterGameFromSplash}
 	/>
 	<div
 		class="game-body"
 		bind:this={gameBodyEl}
-		style={`width: ${gameBox.w}px; height: ${gameBox.h}px; transform: translate(${stageOffset.x}px, ${stageOffset.y}px) scale(${stageScale}); transform-origin: top left;`}
+		style={`width: ${gameBox.w}px; height: ${gameBox.h}px; transform: translate(${stageOffset.x}px, ${stageOffset.y}px) scale(${stageScale}); transform-origin: top left;${
+			!bootLoading && entrySplashVisible
+				? ` background-image: url('${splashBackgroundSrc}'); background-size: cover; background-position: center; background-repeat: no-repeat;`
+				: ''
+		}`}
 	>
 		<div class="stage">
 			<GameStageScene
@@ -5177,6 +5200,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{pickupLanePosition}
 				{depthForPickupPathY}
 				{isTargetableHitToken}
+				splashVisible={!bootLoading && entrySplashVisible}
 				{pickupPosition}
 				{pickupBandState}
 				{pickupTriggerAt}
@@ -5194,12 +5218,12 @@ function stepDebugGuides(): StepDebugGuide[] {
 				{vestAnimKey}
 				penguinActorKey={runId}
 				{invincibleLoop}
-				roundAnimationTimeScale={currentPenguinAnimationTimeScale()}
+				roundAnimationTimeScale={entrySplashVisible ? 0 : currentPenguinAnimationTimeScale()}
 				reviveAnimationSpeedMult={currentRespawnAnimationSpeedScale()}
 				slipAnimationSpeedMult={SLIP_ANIMATION_SPEED_MULT * currentSlipSpeedScale()}
 				{handlePenguinEvent}
 				{slideTimeScale}
-				sceneAnimationTimeScale={currentSceneAnimationTimeScale()}
+				sceneAnimationTimeScale={entrySplashVisible ? 0 : currentSceneAnimationTimeScale()}
 				{roundWinDisplay}
 				{amountWinPulse}
 				{accumulatedStrokeWidth}
@@ -5228,7 +5252,7 @@ function stepDebugGuides(): StepDebugGuide[] {
 				onReplayStart={startReplayRound}
 				onReplayRetry={loadReplayRound}
 			/>
-		{:else}
+		{:else if !entrySplashVisible}
 			<GameHud
 				{t}
 				{formatCurrencyAmount}

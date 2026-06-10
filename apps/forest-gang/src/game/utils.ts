@@ -69,6 +69,7 @@ export const spriteKeyByName: Record<string, string> = {
 	SCATTER: 'scatterCustom',
 };
 
+// Board sprites in bonus mode — premiums use bonus art, cards keep normal card art
 export const bonusSpriteKeyByName: Record<string, string> = {
 	...spriteKeyByName,
 	FOX: 'foxBonusTile',
@@ -76,6 +77,16 @@ export const bonusSpriteKeyByName: Record<string, string> = {
 	BEAR: 'bearBonusTile',
 	RABBIT: 'rabbitBonusTile',
 	SQUIRREL: 'squirrelBonusTile',
+};
+
+// Expanded symbol overlay — full-body art for whichever symbol is currently expanding
+export const expandedSpriteKeyByName: Record<string, string> = {
+	...bonusSpriteKeyByName,
+	A: 'aExpTile',
+	J: 'jExpTile',
+	Q: 'qExpTile',
+	T: 'tExpTile',
+	K: 'kExpTile',
 };
 
 export const getSymbolInfo = ({ rawSymbol, state }: { rawSymbol: RawSymbol; state: SymbolState }) => {

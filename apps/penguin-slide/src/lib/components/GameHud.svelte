@@ -362,6 +362,77 @@
 	{/if}
 </div>
 
+<style>
+	@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+		.hud-mobile-controls-row {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			column-gap: 8px;
+		}
+
+		.hud-mobile-bet-triplet {
+			gap: 8px;
+		}
+
+		.bet-info {
+			margin-top: 14px;
+			margin-right: 8px;
+			gap: 2px;
+			font-size: 10px;
+		}
+
+		.bet-total,
+		.bet-size {
+			gap: 3px;
+		}
+
+		.bet-total strong,
+		.bet-total span,
+		.bet-size strong,
+		.bet-size span {
+			font-size: 13px;
+			line-height: 1;
+		}
+	}
+
+	@supports (-webkit-touch-callout: none) {
+		@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+			.hud-right-rail {
+				padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+			}
+
+			.bet-cluster {
+				margin-bottom: 4px;
+			}
+
+			.bet-info {
+				margin-top: 28px;
+				margin-right: 12px;
+			}
+
+			.panel-help-pop {
+				width: min(320px, calc(100vw - 24px));
+				max-height: calc(100dvh - 120px);
+				overflow: auto;
+				box-sizing: border-box;
+			}
+		}
+	}
+
+	@media (orientation: landscape) and (max-width: 900px) and (hover: none) and (pointer: coarse) {
+		.bet-info {
+			margin-top: 18px;
+			margin-right: 10px;
+		}
+
+		.bet-total strong,
+		.bet-total span,
+		.bet-size strong,
+		.bet-size span {
+			font-size: 12px;
+		}
+	}
+</style>
+
 {#if menuOpen}
 	<div class="menu-left-dock" aria-hidden="true"></div>
 	<button class="hud-panel-dismiss" type="button" aria-label={t('close_menu')} onclick={toggleMenuOpen}></button>
@@ -371,27 +442,40 @@
 		onpointerup={stopMenuEvent}
 	>
 		<div class="hud-panel-content">
-			<div class="panel-section">
-				<div class="panel-title">{t('volatility')}</div>
-				<div class="panel-help-anchor" class:panel-help-open={volatilityHelpOpen}>
+			<div class="hud-panel-header">
+				<div class="hud-panel-fade"></div>
+				{#if isMobilePortraitUi}
 					<button
 						type="button"
-						class="panel-help-btn"
-						aria-label={t('volatility_help_label')}
-						aria-expanded={volatilityHelpOpen ? 'true' : 'false'}
-						onclick={(event) => toggleVolatilityHelp(event)}
-					>
-						?
-					</button>
-					<div class="panel-help-pop">
-						<h4>{t('volatility_help_title')}</h4>
-						<p>{t('volatility_help_intro')}</p>
-						<p>{t('volatility_help_desc')}</p>
-						<ul>
-							<li>{t('volatility_low_desc')}</li>
-							<li>{t('volatility_medium_desc')}</li>
-							<li>{t('volatility_high_desc')}</li>
-						</ul>
+						class="autoplay-close hud-btn-close hud-panel-close"
+						onclick={toggleMenuOpen}
+						aria-label={t('close_menu')}
+					></button>
+				{/if}
+			</div>
+			<div class="panel-section">
+				<div class="panel-title-row">
+					<div class="panel-title">{t('volatility')}</div>
+					<div class="panel-help-anchor" class:panel-help-open={volatilityHelpOpen}>
+						<button
+							type="button"
+							class="panel-help-btn"
+							aria-label={t('volatility_help_label')}
+							aria-expanded={volatilityHelpOpen ? 'true' : 'false'}
+							onclick={(event) => toggleVolatilityHelp(event)}
+						>
+							?
+						</button>
+						<div class="panel-help-pop">
+							<h4>{t('volatility_help_title')}</h4>
+							<p>{t('volatility_help_intro')}</p>
+							<p>{t('volatility_help_desc')}</p>
+							<ul>
+								<li>{t('volatility_low_desc')}</li>
+								<li>{t('volatility_medium_desc')}</li>
+								<li>{t('volatility_high_desc')}</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 				<div class="panel-segment-wrap">
@@ -653,7 +737,14 @@
 				<div class="autoplay-menu-content">
 					<div class="autoplay-header">
 						<div class={`autoplay-main-title ${autoplayTitleClass(t('autoplay'))}`.trim()}>{t('autoplay')}</div>
-						<button type="button" class="autoplay-close hud-btn-close" onclick={toggleAutoplayOpen} aria-label={t('close')}></button>
+						{#if isMobilePortraitUi}
+							<button
+								type="button"
+								class="autoplay-close hud-btn-close"
+								onclick={toggleAutoplayOpen}
+								aria-label={t('close')}
+							></button>
+						{/if}
 					</div>
 					<div class="autoplay-title autoplay-spins-title">{t('spins')}</div>
 					<div class="autoplay-row">

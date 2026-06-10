@@ -2,7 +2,7 @@
     "workingName": "forest_gang",
     "frontendConfig": {
         "file": "config_fe_forest_gang.json",
-        "sha256": "ccb98d0ff9bbf48a49b49d76fba806b04e5384472ce26e4b4f02900c8a5fc9c8"
+        "sha256": "89f8760321f62970922d50bb18ae6a5a079b910fd1c8cf4c8e74bf051adea63f"
     },
     "gameID": "0_0_forest_gang",
     "rtp": 96.1,
@@ -32,7 +32,7 @@
             "maxWin": 20000,
             "booksFile": {
                 "file": "books_base.jsonl.zst",
-                "sha256": "90747e8df607771c919cca2f86e7563fc86c6923c776ec794068845cebac7de8"
+                "sha256": "547a01aaae1ffbb85ef259256f1656a48b5fed708a07ae59936640e4170810d5"
             },
             "forceFile": {
                 "file": "force_record_base.json",
@@ -44,20 +44,20 @@
             "tables": [
                 {
                     "file": "lookUpTable_bonus_0.csv",
-                    "sha256": "dea9b302ed626819c1447e19a8d51c6346c6eb616d0545f2fb08d7071484403e"
+                    "sha256": "32f6c616c7abd4c248cbe2607b97beb3da426bd8717f64118fb47c20b0baa1c3"
                 }
             ],
             "cost": 100,
-            "rtp": 0.961118,
-            "std": 2.0419,
-            "bookLength": 14,
+            "rtp": 0.961039,
+            "std": 14.474,
+            "bookLength": 3,
             "feature": false,
             "autoEndRoundDisabled": false,
             "buyBonus": true,
-            "maxWin": 20000,
+            "maxWin": 30000,
             "booksFile": {
                 "file": "books_bonus.jsonl.zst",
-                "sha256": "848b6df1a486299dd0f36bcba586e9fcfe15ecb8c3df44c92141f5c3699faa7d"
+                "sha256": "12dc43abf10b642b2971b34f4d90d58feb4eedea5cf955b17e87bfac6b8faced"
             },
             "forceFile": {
                 "file": "force_record_bonus.json",
@@ -69,20 +69,20 @@
             "tables": [
                 {
                     "file": "lookUpTable_super_0.csv",
-                    "sha256": "c55c41ed948eb431c674afad3e4e6a458f5553d4af221bd1774d67df81663511"
+                    "sha256": "d95f267388436af1a61cb82098c6620422770527a8fcd26a26e3d95aeb724eee"
                 }
             ],
             "cost": 400,
-            "rtp": 0.961118,
-            "std": 2.0419,
-            "bookLength": 14,
+            "rtp": 0.961013,
+            "std": 14.474,
+            "bookLength": 3,
             "feature": false,
             "autoEndRoundDisabled": false,
             "buyBonus": true,
-            "maxWin": 20000,
+            "maxWin": 120000,
             "booksFile": {
                 "file": "books_super.jsonl.zst",
-                "sha256": "019c1b680d8ed21972b27ddec7bfd189605b286bd03f25453b8d9d5e953b4997"
+                "sha256": "23d497248dc93cad33d274a598d99661616192458574bf941c0aed61a87add0b"
             },
             "forceFile": {
                 "file": "force_record_super.json",
