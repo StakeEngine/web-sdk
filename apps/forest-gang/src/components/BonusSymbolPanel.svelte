@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BitmapText, Container, Rectangle } from 'pixi-svelte';
+	import { BitmapText, Container, Sprite } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
 
 	import BoardContainer from './BoardContainer.svelte';
@@ -37,19 +37,13 @@
 			{scale}
 			pivot={{ x: PANEL_WIDTH * 0.5, y: PANEL_WIDTH * 0.25 }}
 		>
-			<Rectangle
-				x={0}
-				y={0}
-			width={PANEL_WIDTH}
-			height={PANEL_WIDTH * 0.72}
-				backgroundColor={0x102214}
-				alpha={0.92}
-				radius={12}
-				borderWidth={2}
-				borderColor={0xd4a017}
+			<Sprite
+				key="Frame_FSCounter.png"
+				width={PANEL_WIDTH}
+				height={PANEL_WIDTH * 0.72}
 			/>
 			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={7} text={modeLabel} style={{ fontFamily: 'gold', fontSize: 18 }} />
-			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={34} text={`↕ ${selectedSymbol}`} style={{ fontFamily: 'gold', fontSize: 16 }} />
+			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={34} text={`${selectedSymbol ?? ""}`} style={{ fontFamily: 'gold', fontSize: 16 }} />
 		</Container>
 	</FadeContainer>
 </BoardContainer>

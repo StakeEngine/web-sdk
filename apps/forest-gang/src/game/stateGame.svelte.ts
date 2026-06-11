@@ -138,7 +138,7 @@ const getBoardOffset = () => {
 	const extraLeftShiftPx = layoutType === 'desktop' ? 75 : layoutType === 'landscape' ? 55 : 0;
 	const centeredCanvasX = padding.left + availableCanvasWidth * 0.5 - canvasSizes.width * 0.5;
 	const centeredCanvasY = padding.top + availableCanvasHeight * 0.5 - canvasSizes.height * 0.5;
-	const shiftRightPx = 40;
+	const shiftRightPx = 90;
 	const shiftDownPx = 10;
 
 	return {

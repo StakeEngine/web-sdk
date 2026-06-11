@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Container, SpineProvider, SpineTrack } from 'pixi-svelte';
 	import type { Reel } from '../game/stateGame.svelte';
-	import { SYMBOL_W, BOARD_SIZES } from '../game/constants';
+	import { SYMBOL_W, SYMBOL_SIZE, BOARD_SIZES } from '../game/constants';
 	import { getContext } from '../game/context';
 
 	type Props = {
@@ -36,11 +36,11 @@
 <Container
 	x={context.stateGameDerived.boardLayout().x + ((props.reel.reelIndex + 0.5) * SYMBOL_W - BOARD_SIZES.width * 0.5) * context.stateGameDerived.boardLayout().boardScale}
 	y={context.stateGameDerived.boardLayout().y}
-	scale={{ x: 1, y: 0.57 }}
 >
 <SpineProvider
 	key="anticipation"
-	width={SYMBOL_W * context.stateGameDerived.boardLayout().boardScale * 0.57}
+	width={SYMBOL_W * context.stateGameDerived.boardLayout().boardScale / 2}
+	height={SYMBOL_SIZE * 4 * context.stateGameDerived.boardLayout().boardScale / 2}
 >
 	<SpineTrack
 		trackIndex={0}

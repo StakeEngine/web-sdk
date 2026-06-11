@@ -17,18 +17,18 @@
 	const PANEL_KEY_DESKTOP = 'Frame_FSCounter.png';
 	const PANEL_RATIO_DESKTOP = 824 / 622;
 	const panelKey = PANEL_KEY_DESKTOP;
-	const panelWidth = $derived(SYMBOL_SIZE * 2);
+	const panelWidth = $derived(SYMBOL_SIZE * 2 * 0.8);
 	const panelSizes = $derived({
 		width: panelWidth,
 		height: panelWidth / PANEL_RATIO_DESKTOP,
 	});
 	const scale = 1;
 	const position = $derived({
-		x:
-			context.stateGameDerived.boardLayout().x -
-			(context.stateGameDerived.boardLayout().width * 0.5 + SYMBOL_SIZE * 0.05) * context.stateGameDerived.boardLayout().boardScale -
-			panelSizes.width * 0.72 -
-			50,
+		// Mirror the scatter card CSS: left: max(18px, calc(50% - 702px))
+		x: Math.max(
+			18 / context.stateLayoutDerived.mainLayout().scale,
+			context.stateLayoutDerived.mainLayout().width / 2 - 702 / context.stateLayoutDerived.mainLayout().scale,
+		),
 		y:
 			context.stateGameDerived.boardLayout().y -
 			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale +
@@ -88,7 +88,6 @@
 				style={{
 					fontFamily: 'gold',
 					fontSize: fontSize * 1.1,
-					fill: 0xff4b4b,
 					wordWrap: false,
 				}}
 				onresize={(sizes) => (titleSizes = sizes)}

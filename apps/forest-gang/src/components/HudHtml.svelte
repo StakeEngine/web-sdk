@@ -274,18 +274,20 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 
 		<div class="hud-stats">
 			<div class="value-pill value-pill--balance">
-				<button class="circle-btn circle-btn--small circle-btn--icon label-icon-frame" type="button" tabindex="-1" aria-hidden="true" disabled>
-					<img src={iconCoins} class="pill-icon" alt="" />
-				</button>
 				<div class="label label--balance">
 					<span class="label-text">{i18nDerived.balance()}</span>
 				</div>
 				<span class="value">{formattedBalance}</span>
 			</div>
 
-			<div class="value-pill bet-pill" role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (stateModal.modal = { name: 'betAmountMenu' })} onclick={() => (stateModal.modal = { name: 'betAmountMenu' })}>
-				<span class="label">{i18nDerived.betLabel()}</span>
-				<span class="value">{formattedBet}</span>
+			<div class="value-pill value-pill--bet bet-pill" role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (stateModal.modal = { name: 'betAmountMenu' })} onclick={() => (stateModal.modal = { name: 'betAmountMenu' })}>
+				<span class="label-icon-frame bet-coin" aria-hidden="true">
+					<img src={iconCoins} class="pill-icon" alt="" />
+				</span>
+				<div class="bet-values">
+					<span class="label">{i18nDerived.betLabel()}</span>
+					<span class="value">{formattedBet}</span>
+				</div>
 			</div>
 		</div>
 
@@ -481,7 +483,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
-		justify-content: space-around;
+		justify-content: space-evenly;
 		gap: 4px;
 		padding: 0;
 		border-radius: 28px;
@@ -501,7 +503,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 10px;
+		gap: 0;
 		flex: 0 0 auto;
 		min-width: 0;
 	}
@@ -526,39 +528,61 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	}
 
 	.value-pill--balance {
-		display: grid;
-		grid-template-columns: 52px auto;
-		grid-template-rows: auto auto;
-		column-gap: 6px;
-		row-gap: 0;
-		align-items: center;
-		padding-right: 0;
-	}
-
-	.value-pill--balance .label-icon-frame {
-		grid-column: 1;
-		grid-row: 1 / span 2;
-		align-self: center;
-		justify-self: center;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 0 16px;
+		flex: 0 0 auto;
+		min-width: 150px;
+		border-left: none;
 	}
 
 	.value-pill--balance .label--balance {
-		grid-column: 2;
-		grid-row: 1;
-		width: auto;
-		justify-content: flex-start;
 		line-height: 1;
+		justify-content: flex-start;
 	}
 
 	.value-pill--balance .value {
-		grid-column: 2;
-		grid-row: 2;
-		justify-self: start;
 		line-height: 1;
 	}
 
-	.value-pill:first-of-type {
-		border-left: none;
+	.value-pill--bet {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+		padding: 0 16px;
+		border-left: 1px solid rgba(255,255,255,0.30);
+		flex: 0 0 auto;
+	}
+
+	.bet-values {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+	}
+
+	.value-pill--bet .label {
+		line-height: 1;
+	}
+
+	.value-pill--bet .value {
+		line-height: 1;
+	}
+
+	.bet-coin {
+		pointer-events: none;
+	}
+
+	.value-pill--bet .bet-coin {
+		width: 40px;
+		height: 40px;
+	}
+
+	.bet-coin .pill-icon {
+		width: 18px;
+		height: 18px;
 	}
 
 	.bet-pill {
@@ -588,7 +612,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 
 	.value {
 		font-family: 'Cinzel', serif;
-		font-size: 1rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		color: #fff;
 	}

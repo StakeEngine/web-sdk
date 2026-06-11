@@ -65,18 +65,20 @@
 					>
 						{#if winLevelData?.animation}
 							<WinAnimation animationMap={winLevelData.animation}>
-								<ResponsiveBitmapText
-									anchor={0.5}
-									maxWidth={context.stateGameDerived.boardLayout().width * 0.85}
-									text={bookEventAmountToCurrencyString(countUpAmount)}
-									style={{
-										fontFamily: 'gold',
-										fontSize: SYMBOL_SIZE * 2.2,
-										align: 'center',
-										fontWeight: 'bold',
-										letterSpacing: 0,
-									}}
-								/>
+								<Container y={SYMBOL_SIZE * 1.8}>
+									<ResponsiveBitmapText
+										anchor={0.5}
+										maxWidth={context.stateGameDerived.boardLayout().width * 0.85}
+										text={bookEventAmountToCurrencyString(countUpAmount)}
+										style={{
+											fontFamily: 'gold',
+											fontSize: SYMBOL_SIZE * 2.2,
+											align: 'center',
+											fontWeight: 'bold',
+											letterSpacing: 0,
+										}}
+									/>
+								</Container>
 							</WinAnimation>
 						{:else}
 							<ResponsiveBitmapText

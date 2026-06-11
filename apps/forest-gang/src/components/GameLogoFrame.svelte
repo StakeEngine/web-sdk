@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Sprite, Text, Container } from 'pixi-svelte';
+	import { Sprite, Container } from 'pixi-svelte';
 	import { MainContainer } from 'components-layout';
 
 	import { getContext } from '../game/context';
@@ -27,19 +27,11 @@
 			width={LOGO_W}
 			height={LOGO_H}
 		/>
-		<Text
-			x={10}
-			y={-10}
+		<Sprite
+			key="forestGangLogo"
 			anchor={{ x: 0.5, y: 0.5 }}
-			text="FOREST"
-			style={{ fontFamily: 'Cinzel', fontSize: 31, fontWeight: '900', fill: 0xf2efd9, dropShadow: true, dropShadowDistance: 4, dropShadowBlur: 8, dropShadowColor: 0x000000, dropShadowAngle: 45, dropShadowAlpha: 0.9 }}
-		/>
-		<Text
-			x={11}
-			y={26}
-			anchor={{ x: 0.5, y: 0.5 }}
-			text="GANG"
-			style={{ fontFamily: 'Cinzel', fontSize: 22, fontWeight: '700', fill: 0xffd84a, dropShadow: true, dropShadowDistance: 4, dropShadowBlur: 8, dropShadowColor: 0x000000, dropShadowAngle: 45, dropShadowAlpha: 0.9, letterSpacing: 6 }}
+			width={LOGO_W * 0.44}
+			height={LOGO_W * 0.44 / (1176 / 572)}
 		/>
 	</Container>
 </MainContainer>

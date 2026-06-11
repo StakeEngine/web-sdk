@@ -16,9 +16,19 @@ export default {
 		src: './assets/components/backgrounds/visual_v2.jpg',
 		preload: true,
 	},
+	splash: {
+		type: 'sprite',
+		src: './assets/components/backgrounds/splash.jpg',
+		preload: true,
+	},
 	logoFrame: {
 		type: 'sprite',
 		src: './assets/components/frames/logo_frame.png',
+		preload: true,
+	},
+	forestGangLogo: {
+		type: 'sprite',
+		src: './assets/components/ui/forest_gang_logo.png',
 		preload: true,
 	},
 	scatterPanelImage: {

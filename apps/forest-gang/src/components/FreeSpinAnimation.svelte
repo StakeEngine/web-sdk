@@ -12,7 +12,7 @@
 	import { MainContainer } from 'components-layout';
 
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE, BOARD_DIMENSIONS } from '../game/constants';
+	import { SYMBOL_SIZE, SYMBOL_W, BOARD_DIMENSIONS } from '../game/constants';
 
 	type Props = {
 		children: Snippet<[{ sizes: Sizes }]>;
@@ -24,14 +24,17 @@
 
 	const context = getContext();
 	const BACKGROUND_RATIO = 920 / 720;
-	const BACKGROUND_WIDTH = SYMBOL_SIZE * BOARD_DIMENSIONS.x;
+	// LAYOUT_WIDTH drives text positions (unchanged from original 455)
+	const LAYOUT_WIDTH = SYMBOL_SIZE * BOARD_DIMENSIONS.x;
+	// PANEL_WIDTH drives the spine visual width (wider wooden board)
+	const PANEL_WIDTH = SYMBOL_W * BOARD_DIMENSIONS.x;
 	const BACKGROUND_SIZES = {
-		width: BACKGROUND_WIDTH,
-		height: BACKGROUND_WIDTH / BACKGROUND_RATIO,
+		width: LAYOUT_WIDTH,
+		height: LAYOUT_WIDTH / BACKGROUND_RATIO,
 	};
 	const PANEL_SIZES = {
-		width: SYMBOL_SIZE * BOARD_DIMENSIONS.x,
-		height: SYMBOL_SIZE * BOARD_DIMENSIONS.x,
+		width: PANEL_WIDTH,
+		height: LAYOUT_WIDTH,
 	};
 
 	let animationName = $state<AnimationName>('intro');
@@ -46,7 +49,7 @@
 		<SpineProvider
 			key="fsIntro"
 			width={PANEL_SIZES.width}
-			x={PANEL_SIZES.width * 0.5}
+			x={BACKGROUND_SIZES.width * 0.5}
 			y={PANEL_SIZES.height * 0.4}
 		>
 			<SpineTrack

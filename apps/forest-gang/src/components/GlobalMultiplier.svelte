@@ -26,7 +26,7 @@
 
 	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
 
-	const PANEL_WIDTH = SYMBOL_SIZE * 0.641;
+	const PANEL_WIDTH = SYMBOL_SIZE * 0.641 * 0.75;
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
 	const BONUS_PANEL_W = SYMBOL_SIZE * 0.92;
