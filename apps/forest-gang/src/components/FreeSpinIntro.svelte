@@ -36,8 +36,8 @@
 	<CanvasSizeRectangle backgroundColor={0x000000} backgroundAlpha={0.5} />
 
 	<FreeSpinAnimation>
-		{#snippet children(_)}
-			{@const BW = 1100}
+		{#snippet children({ sizes })}
+			{@const BW = sizes.width}
 
 			<!-- Square wooden board centred on slot pivot -->
 			<Sprite key="fsBoardBg" anchor={{ x: 0.5, y: 0.5 }} width={BW} height={BW} />
