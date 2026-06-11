@@ -43,7 +43,7 @@
 				height={PANEL_WIDTH * 0.72}
 			/>
 			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={7} text={modeLabel} style={{ fontFamily: 'gold', fontSize: 18 }} />
-			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={34} text={`${selectedSymbol ?? ""}`} style={{ fontFamily: 'gold', fontSize: 16 }} />
+			<BitmapText anchor={{ x: 0.5, y: 0 }} x={PANEL_WIDTH * 0.5} y={26} text={`${selectedSymbol ?? ""}`} style={{ fontFamily: 'silver', fontSize: 16 }} />
 		</Container>
 	</FadeContainer>
 </BoardContainer>
