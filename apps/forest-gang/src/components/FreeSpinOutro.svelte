@@ -24,6 +24,7 @@
 	type AnimationName = 'intro' | 'idle';
 
 	const context = getContext();
+	const bs = $derived(context.stateGameDerived.boardLayout().boardScale);
 
 	let show = $state(true);
 	let animationName = $state<AnimationName>('intro');
@@ -58,15 +59,15 @@
 						{#if isBigWin}
 							<Sprite
 								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 2.6}
-								height={156 * 2.6}
+								width={500 * 2.6 * bs}
+								height={156 * 2.6 * bs}
 								key="freespins_{stateUrlDerived.lang()}.png"
 							/>
 						{:else}
 							<Sprite
 								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 4.8}
-								height={80 * 4.8}
+								width={500 * 4.8 * bs}
+								height={80 * 4.8 * bs}
 								key="winsmall_{stateUrlDerived.lang()}.png"
 							/>
 						{/if}
@@ -84,8 +85,8 @@
 
 						<Sprite
 							anchor={{ x: 0.5, y: isBigWin ? -3.2 : -2 }}
-							width={177 * (isBigWin ? 2.2 : 3)}
-							height={42 * (isBigWin ? 2.2 : 3)}
+							width={177 * (isBigWin ? 2.2 : 3) * bs}
+							height={42 * (isBigWin ? 2.2 : 3) * bs}
 							key="totalwin.png"
 						/>
 					{/snippet}

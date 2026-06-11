@@ -24,33 +24,27 @@
 
 	const context = getContext();
 	const BACKGROUND_RATIO = 920 / 720;
-	// LAYOUT_WIDTH drives text positions (unchanged from original 455)
 	const LAYOUT_WIDTH = SYMBOL_SIZE * BOARD_DIMENSIONS.x;
-	// PANEL_WIDTH drives the spine visual width (wider wooden board)
 	const PANEL_WIDTH = SYMBOL_W * BOARD_DIMENSIONS.x;
-	const BACKGROUND_SIZES = {
-		width: LAYOUT_WIDTH,
-		height: LAYOUT_WIDTH / BACKGROUND_RATIO,
-	};
-	const PANEL_SIZES = {
-		width: PANEL_WIDTH,
-		height: LAYOUT_WIDTH,
-	};
 
 	let animationName = $state<AnimationName>('intro');
+
+	const bs = $derived(context.stateGameDerived.boardLayout().boardScale);
+	const scaledBackground = $derived({ width: LAYOUT_WIDTH * bs, height: (LAYOUT_WIDTH / BACKGROUND_RATIO) * bs });
+	const scaledPanel = $derived({ width: PANEL_WIDTH * bs, height: LAYOUT_WIDTH * bs });
 </script>
 
 <MainContainer>
 	<Container
 		x={context.stateGameDerived.boardLayout().x}
 		y={context.stateGameDerived.boardLayout().y}
-		pivot={anchorToPivot({ anchor: 0.5, sizes: BACKGROUND_SIZES })}
+		pivot={anchorToPivot({ anchor: 0.5, sizes: scaledBackground })}
 	>
 		<SpineProvider
 			key="fsIntro"
-			width={PANEL_SIZES.width}
-			x={BACKGROUND_SIZES.width * 0.5}
-			y={PANEL_SIZES.height * 0.4}
+			width={scaledPanel.width}
+			x={scaledBackground.width * 0.5}
+			y={scaledPanel.height * 0.4}
 		>
 			<SpineTrack
 				trackIndex={0}
@@ -61,7 +55,7 @@
 				}}
 			/>
 			<SpineSlot slotName="slot_text_placeholder">
-				{@render props.children({ sizes: BACKGROUND_SIZES })}
+				{@render props.children({ sizes: scaledBackground })}
 			</SpineSlot>
 		</SpineProvider>
 	</Container>

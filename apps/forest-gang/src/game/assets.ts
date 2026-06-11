@@ -285,6 +285,22 @@ export default {
 			scale: 2,
 		},
 	},
+	fsBoardBg: {
+		type: 'sprite',
+		src: './assets/sprites/fsBoardBg/fsBoardBg.png',
+	},
+	fsMedallion: {
+		type: 'sprite',
+		src: './assets/sprites/fsMedallion/fsMedallion.png',
+	},
+	fsNumFrame: {
+		type: 'sprite',
+		src: './assets/sprites/fsNumFrame/fsNumFrame.png',
+	},
+	fsCongratsText: {
+		type: 'sprites',
+		src: './assets/sprites/fsCongratsText/fsCongratsText.json',
+	},
 	progressBar: {
 		type: 'sprites',
 		src: './assets/sprites/progressBar/progressBar.json',
