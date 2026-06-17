@@ -1,26 +1,43 @@
 <script lang="ts">
-	import { Container, Graphics, Sprite } from 'pixi-svelte';
 	import { SYMBOL_W, SYMBOL_H } from '../game/constants';
+	import VineRope from './VineRope.svelte';
 
-	type WinPath = Array<{ reel: number; row: number }>;
-
-	type Props = {
-		wins: WinPath[];
-	};
+	type WinEntry = { lineIndex: number; path: Array<{ reel: number; row: number }> };
+	type Props = { wins: WinEntry[] };
 
 	const props: Props = $props();
 
-	// Symbol center in board-local coords
 	const cx = (reel: number) => SYMBOL_W * (reel + 0.5);
 	const cy = (row: number) => SYMBOL_H * (row + 0.5);
 
-	// Vine height in board pixels (original is 2508×627, thin strip ~30bp)
-	const VINE_H = 28;
+	const VINE_H = 8;
+	const GROW_DURATION = 600;
 
-	// Animation timing — grow once and hold
-	const GROW_DURATION = 600; // ms — full vine grows left→right
+	// Fixed color per payline (1-20), always the same regardless of win order
+	const PAYLINE_COLORS: Record<number, number> = {
+		1:  0xFFD700, // gold
+		2:  0x00E5FF, // cyan
+		3:  0xFF3333, // red
+		4:  0x33FF77, // green
+		5:  0xFF33FF, // magenta
+		6:  0x3399FF, // blue
+		7:  0xFF8800, // orange
+		8:  0xFF66BB, // pink
+		9:  0xBBFF00, // lime
+		10: 0x66CCFF, // sky blue
+		11: 0xFFEE44, // yellow
+		12: 0x44FFDD, // teal
+		13: 0xFF4488, // hot pink
+		14: 0x88FF44, // yellow-green
+		15: 0xBB88FF, // lavender
+		16: 0xFF9944, // amber
+		17: 0x44BBFF, // light blue
+		18: 0xFF5544, // coral
+		19: 0x44FF99, // mint
+		20: 0xFFCC44, // golden yellow
+	};
 
-	let progress = $state(0); // 0→1, stays at 1 until next spin
+	let progress = $state(0);
 
 	$effect(() => {
 		const show = props.wins.length > 0;
@@ -40,51 +57,20 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
-	// For each win path, compute segments between consecutive positions
-	type Segment = { id: string; x1: number; y1: number; len: number; angle: number; segIndex: number; totalSegs: number };
-
-	const allSegments = $derived(
-		props.wins.flatMap((path, winIdx) => {
-			const segs: Segment[] = [];
-			for (let i = 0; i < path.length - 1; i++) {
-				const x1 = cx(path[i].reel);
-				const y1 = cy(path[i].row);
-				const x2 = cx(path[i + 1].reel);
-				const y2 = cy(path[i + 1].row);
-				const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-				const angle = Math.atan2(y2 - y1, x2 - x1);
-				segs.push({ id: `${winIdx}-${i}`, x1, y1, len, angle, segIndex: i, totalSegs: path.length - 1 });
-			}
-			return segs;
-		})
+	const winsWithWaypoints = $derived(
+		props.wins.map((win) => ({
+			id: String(win.lineIndex),
+			waypoints: win.path.map((p) => ({ x: cx(p.reel), y: cy(p.row) })),
+			color: PAYLINE_COLORS[win.lineIndex] ?? 0xFFFFFF,
+		}))
 	);
-
-	// Local progress for one segment (sequential grow left→right)
-	const segProgress = (segIndex: number, totalSegs: number) => {
-		const frac = 1 / totalSegs;
-		return Math.min(Math.max((progress - segIndex * frac) / frac, 0), 1);
-	};
 </script>
 
-{#each allSegments as seg (seg.id)}
-	{@const sp = segProgress(seg.segIndex, seg.totalSegs)}
-	{#if sp > 0}
-		<Container x={seg.x1} y={seg.y1} rotation={seg.angle}>
-			<Graphics
-				isMask
-				draw={(g) => {
-					g.clear();
-					g.beginFill(0xffffff);
-					g.rect(0, -VINE_H / 2, seg.len * sp, VINE_H);
-					g.endFill();
-				}}
-			/>
-			<Sprite
-				key="vineLineTexture"
-				width={seg.len}
-				height={VINE_H}
-				anchor={{ x: 0, y: 0.5 }}
-			/>
-		</Container>
-	{/if}
+{#each winsWithWaypoints as win (win.id)}
+	<VineRope
+		waypoints={win.waypoints}
+		color={win.color}
+		{progress}
+		vineH={VINE_H}
+	/>
 {/each}

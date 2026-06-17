@@ -49,6 +49,7 @@
 		"utils-book": "workspace:*",
 		"utils-bet": "workspace:*",
 		"utils-layout": "workspace:*",
-		"utils-sound": "workspace:*"
+		"utils-sound": "workspace:*",
+		"pixi-filters": "6.1.0"
 	}
 }

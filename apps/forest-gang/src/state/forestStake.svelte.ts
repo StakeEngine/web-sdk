@@ -1,6 +1,6 @@
 import { stateBet, stateI18nDerived, stateModal, stateUi, stateUrlDerived } from 'state-shared';
 import type { BaseBet } from 'utils-bet';
-import { formatCurrencyAmountForCurrency, normalizeCurrency } from '../../../penguin-slide/src/lib/utils/currency';
+import { formatCurrencyAmountForCurrency, normalizeCurrency } from '../lib/utils/currency';
 import { logForestDiagnostic } from '../utils/forestDiagnostics';
 
 type BootStatus = 'booting' | 'ready' | 'error';

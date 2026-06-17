@@ -1,5 +1,5 @@
 export default {
-	vineLineTexture: { type: 'sprite', src: './assets/components/ui/vine_line.png?v=20260617', preload: false },
+	vineLineTexture: { type: 'sprite', src: './assets/components/ui/vine_line.png?v=20260617g', preload: true },
 	loader: {
 		type: 'spine',
 		src: {
@@ -52,6 +52,20 @@ export default {
 			skeleton: './assets/new_assets/slots_replacement/standard/squirrel_J_anim.json',
 			scale: 1,
 		},
+		preload: true,
+	},
+	rabbitExpAnimTest: {
+		type: 'spine',
+		src: {
+			atlas: './assets/new_assets/slots_replacement/standard_expanded/rabbit_10_anim/rabbit_10_anim.atlas',
+			skeleton: './assets/new_assets/slots_replacement/standard_expanded/rabbit_10_anim/rabbit_10_anim.json',
+			scale: 1,
+		},
+		preload: true,
+	},
+	rabbitExpAnimTestSheet: {
+		type: 'spriteSheet',
+		src: './assets/new_assets/slots_replacement/standard_expanded/rabbit_10_anim/rabbit_10_anim_sheet.json',
 		preload: true,
 	},
 	tTile: { type: 'sprite', src: './assets/components/symbols/card_t.png?v=20260616', preload: true },

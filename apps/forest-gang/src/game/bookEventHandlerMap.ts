@@ -169,9 +169,9 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 			.map((w) => {
 				const rows = paylines[String(w.meta.lineIndex)];
 				if (!rows) return null;
-				return rows.map((row, reel) => ({ reel, row }));
+				return { lineIndex: w.meta.lineIndex, path: rows.map((row, reel) => ({ reel, row })) };
 			})
-			.filter((p): p is Array<{ reel: number; row: number }> => p !== null);
+			.filter((p): p is { lineIndex: number; path: Array<{ reel: number; row: number }> } => p !== null);
 		// Deduplicate positions across all wins and animate once — prevents 5-10s freeze
 		const seen = new Set<string>();
 		const allPositions = wins.flatMap((win) => win.positions).filter((pos) => {

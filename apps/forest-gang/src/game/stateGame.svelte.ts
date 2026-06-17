@@ -89,7 +89,7 @@ export const stateGame = $state({
 	globalMultiplier: 1,
 	expandedSymbol: null as null | { symbol: SymbolName; reels: number[]; positions: Position[] },
 	expandedSymbolWon: false,
-	paylineWins: [] as Array<Array<{ reel: number; row: number }>>,
+	paylineWins: [] as Array<{ lineIndex: number; path: Array<{ reel: number; row: number }> }>,
 	tempMultiplier: null as number | null,
 	endRoundOnly: false,
 	pendingStop: false,
