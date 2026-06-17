@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SymbolSpine from './SymbolSpine.svelte';
 	import SymbolSprite from './SymbolSprite.svelte';
+	import SymbolSpineIntroLoop from './SymbolSpineIntroLoop.svelte';
 	import { getSymbolInfo } from '../game/utils';
 	import type { SymbolState, RawSymbol } from '../game/types';
 	import { getContext } from '../game/context';
@@ -19,9 +20,20 @@
 	const context = getContext();
 	const symbolInfo = $derived(getSymbolInfo({ rawSymbol: props.rawSymbol, state: props.state }));
 	const isSprite = $derived(symbolInfo.type === 'sprite');
+	const isSpineIntroLoop = $derived(symbolInfo.type === 'spineIntroLoop');
 </script>
 
-{#if isSprite}
+{#if isSpineIntroLoop}
+	{@const il = symbolInfo as { assetKey: string; introAnimation: string; loopAnimation: string; sizeRatios: { height: number } }}
+	<SymbolSpineIntroLoop
+		assetKey={il.assetKey}
+		introAnimation={il.introAnimation}
+		loopAnimation={il.loopAnimation}
+		sizeRatio={il.sizeRatios.height}
+		x={props.x}
+		y={props.y}
+	/>
+{:else if isSprite}
 	<SymbolSprite {symbolInfo} x={props.x} y={props.y} oncomplete={props.oncomplete} />
 {:else}
 	<SymbolSpine

@@ -56,38 +56,45 @@
 
 				<FreeSpinAnimation>
 					{#snippet children({ sizes })}
+						{@const BW = sizes.width}
+						<!-- YOU WON / freespins text — proportional to slot width like intro -->
 						{#if isBigWin}
 							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 2.6 * bs}
-								height={156 * 2.6 * bs}
+								anchor={{ x: 0.5, y: 0.5 }}
+								width={Math.round(BW * 0.55)}
+								height={Math.round(BW * 0.55 * (156 / 500))}
 								key="freespins_{stateUrlDerived.lang()}.png"
+								y={Math.round(-BW * 0.28)}
 							/>
 						{:else}
 							<Sprite
-								anchor={{ x: 0.5, y: 1.2 }}
-								width={500 * 4.8 * bs}
-								height={80 * 4.8 * bs}
+								anchor={{ x: 0.5, y: 0.5 }}
+								width={Math.round(BW * 0.55)}
+								height={Math.round(BW * 0.55 * (80 / 500))}
 								key="winsmall_{stateUrlDerived.lang()}.png"
+								y={Math.round(-BW * 0.28)}
 							/>
 						{/if}
 
-						<ResponsiveBitmapText
-							anchor={0.5}
-							y={sizes.height * 0.54}
-							style={{
-								fontFamily: 'gold',
-								fontSize: sizes.width * 0.24,
-							}}
-							text={bookEventAmountToCurrencyString(countUpAmount)}
-							maxWidth={sizes.width * 0.82}
+						<!-- TOTAL WIN label -->
+						<Sprite
+							anchor={{ x: 0.5, y: 0.5 }}
+							width={Math.round(BW * 0.38)}
+							height={Math.round(BW * 0.38 * (42 / 177))}
+							key="totalwin.png"
+							y={Math.round(BW * 0.08)}
 						/>
 
-						<Sprite
-							anchor={{ x: 0.5, y: isBigWin ? -3.2 : -2 }}
-							width={177 * (isBigWin ? 2.2 : 3) * bs}
-							height={42 * (isBigWin ? 2.2 : 3) * bs}
-							key="totalwin.png"
+						<!-- Win amount -->
+						<ResponsiveBitmapText
+							anchor={0.5}
+							y={Math.round(BW * 0.24)}
+							style={{
+								fontFamily: 'gold',
+								fontSize: Math.round(BW * 0.20),
+							}}
+							text={bookEventAmountToCurrencyString(countUpAmount)}
+							maxWidth={Math.round(BW * 0.82)}
 						/>
 					{/snippet}
 				</FreeSpinAnimation>

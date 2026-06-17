@@ -124,20 +124,25 @@ const explosion = {
 	sizeRatios: { width: 1, height: 1 },
 };
 
-const foxStatic = { type: 'sprite', assetKey: 'foxTile', sizeRatios: { width: 1, height: 1 } };
-const wolfStatic = { type: 'sprite', assetKey: 'wolfTile', sizeRatios: { width: 1, height: 1 } };
-const bearStatic = { type: 'sprite', assetKey: 'bearTile', sizeRatios: { width: 1, height: 1 } };
-const rabbitStatic = { type: 'sprite', assetKey: 'rabbitTile', sizeRatios: { width: 1, height: 1 } };
-const squirrelStatic = { type: 'sprite', assetKey: 'squirrelTile', sizeRatios: { width: 1, height: 1 } };
+const s = (key: string) => ({ type: 'sprite', assetKey: key, sizeRatios: { width: 1, height: 1 } });
 
-const aStatic = { type: 'sprite', assetKey: 'aTile', sizeRatios: { width: 1, height: 1 } };
-const kStatic = { type: 'sprite', assetKey: 'kTile', sizeRatios: { width: 1, height: 1 } };
-const qStatic = { type: 'sprite', assetKey: 'qTile', sizeRatios: { width: 1, height: 1 } };
-const jStatic = { type: 'sprite', assetKey: 'jTile', sizeRatios: { width: 1, height: 1 } };
-const tStatic = { type: 'sprite', assetKey: 'tTile', sizeRatios: { width: 1, height: 1 } };
+const foxStatic      = s('foxTile');       const foxWin      = s('foxWinTile');
+const wolfStatic     = s('wolfTile');      const wolfWin     = s('wolfWinTile');
+const bearStatic     = s('bearTile');      const bearWin     = s('bearWinTile');
+const rabbitStatic   = s('rabbitTile');    const rabbitWin   = s('rabbitWinTile');
+const squirrelStatic = s('squirrelTile');  const squirrelWin = s('squirrelWinTile');
+
+const aStatic = s('aTile');  const aWin = s('aWinTile');
+const kStatic = s('kTile');  const kWin = s('kWinTile');
+const qStatic = s('qTile');  const qWin = s('qWinTile');
+const jStatic = s('jTile');
+const jWin = { type: 'spineIntroLoop', assetKey: 'squirrelJAnim', introAnimation: 'intro_to_win', loopAnimation: 'win_loop', sizeRatios: { width: 1, height: 1 } };
+const tStatic = s('tTile');  const tWin = s('tWinTile');
 
 const scatterStatic = { type: 'sprite', assetKey: 'scatterCustom', sizeRatios: { width: 1.243, height: 1.243 } };
-const wildStatic = { type: 'sprite', assetKey: 'wildTile', sizeRatios: { width: 1, height: 1 } };
+const scatterWin   = { type: 'sprite', assetKey: 'scatterWin',    sizeRatios: { width: 1.243, height: 1.243 } };
+const wildStatic  = { type: 'sprite', assetKey: 'wildTile',    sizeRatios: { width: 1, height: 1 } };
+const wildWin     = { type: 'sprite', assetKey: 'wildWinTile', sizeRatios: { width: 1, height: 1 } };
 
 const wildSizeRatios = { width: 1, height: 1 };
 const scatterSizeRatios = { width: 1.243, height: 1.243 };
@@ -145,7 +150,7 @@ const scatterSizeRatios = { width: 1.243, height: 1.243 };
 export const SYMBOL_INFO_MAP = {
 	FOX: {
 		explosion,
-		win: foxStatic,
+		win: foxWin,
 		postWinStatic: foxStatic,
 		static: foxStatic,
 		spin: foxStatic,
@@ -153,7 +158,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	WOLF: {
 		explosion,
-		win: wolfStatic,
+		win: wolfWin,
 		postWinStatic: wolfStatic,
 		static: wolfStatic,
 		spin: wolfStatic,
@@ -161,7 +166,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	BEAR: {
 		explosion,
-		win: bearStatic,
+		win: bearWin,
 		postWinStatic: bearStatic,
 		static: bearStatic,
 		spin: bearStatic,
@@ -169,7 +174,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	RABBIT: {
 		explosion,
-		win: rabbitStatic,
+		win: rabbitWin,
 		postWinStatic: rabbitStatic,
 		static: rabbitStatic,
 		spin: rabbitStatic,
@@ -177,7 +182,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	SQUIRREL: {
 		explosion,
-		win: squirrelStatic,
+		win: squirrelWin,
 		postWinStatic: squirrelStatic,
 		static: squirrelStatic,
 		spin: squirrelStatic,
@@ -185,7 +190,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	A: {
 		explosion,
-		win: aStatic,
+		win: aWin,
 		postWinStatic: aStatic,
 		static: aStatic,
 		spin: aStatic,
@@ -193,7 +198,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	K: {
 		explosion,
-		win: kStatic,
+		win: kWin,
 		postWinStatic: kStatic,
 		static: kStatic,
 		spin: kStatic,
@@ -201,7 +206,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	Q: {
 		explosion,
-		win: qStatic,
+		win: qWin,
 		postWinStatic: qStatic,
 		static: qStatic,
 		spin: qStatic,
@@ -209,7 +214,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	J: {
 		explosion,
-		win: jStatic,
+		win: jWin,
 		postWinStatic: jStatic,
 		static: jStatic,
 		spin: jStatic,
@@ -217,7 +222,7 @@ export const SYMBOL_INFO_MAP = {
 	},
 	T: {
 		explosion,
-		win: tStatic,
+		win: tWin,
 		postWinStatic: tStatic,
 		static: tStatic,
 		spin: tStatic,
@@ -228,7 +233,7 @@ export const SYMBOL_INFO_MAP = {
 		postWinStatic: wildStatic,
 		static: wildStatic,
 		spin: wildStatic,
-		win: wildStatic,
+		win: wildWin,
 		land: wildStatic,
 	},
 	SCATTER: {
@@ -236,7 +241,7 @@ export const SYMBOL_INFO_MAP = {
 		postWinStatic: scatterStatic,
 		static: scatterStatic,
 		spin: scatterStatic,
-		win: scatterStatic,
+		win: scatterWin,
 		land: scatterStatic,
 	},
 } as const;

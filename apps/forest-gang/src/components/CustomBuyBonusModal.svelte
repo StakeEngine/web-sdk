@@ -9,6 +9,8 @@
 	const dealItIcon      = ap('/assets/components/ui/bonus_deal_it_icon.webp');
 	const allInIcon       = ap('/assets/components/ui/bonus_all_in_icon.webp');
 	const featureSpinIcon = ap('/assets/components/ui/bonus_feature_spin_icon.webp');
+	const spinBtnFrame    = ap('/assets/components/frames/play_button-frame.png?v=20260616');
+	const iconPlay        = ap('/assets/hud/icon-play.svg');
 
 	type Props = {
 		onclose: () => void;
@@ -21,7 +23,7 @@
 
 	const betAmount   = $derived(stateBet.betAmount);
 	const dealItCost  = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 100));
-	const allInCost   = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 400));
+	const allInCost   = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 200));
 	const featureCost = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 20));
 	const canBuy      = $derived(stateBetDerived.isBetCostAvailable());
 
@@ -73,14 +75,17 @@
 			<img class="icon" src={allInIcon} alt="" />
 			<div class="info">
 				<span class="name name--purple">ALL IN</span>
-				<span class="desc">5 FREE SPINS · RANDOM START MULTIPLIER · DOUBLES EACH WIN · MAX 20,000×</span>
+				<span class="desc">5 FREE SPINS · PROFILE-DRIVEN MULTIPLIER · MAX 25,000×</span>
 			</div>
 			<div class="badge badge--purple"><span>{allInCost}</span></div>
 		</button>
 
 		<!-- FEATURE SPIN -->
 		<div class="card card--static">
-			<img class="icon" src={featureSpinIcon} alt="" />
+			<div class="icon feature-spin-icon">
+				<img src={spinBtnFrame} alt="" />
+				<img class="play-arrow" src={iconPlay} alt="" />
+			</div>
 			<div class="info">
 				<span class="name">FEATURE SPIN</span>
 				<span class="desc">Every spin is a 1-spin Deal It · {featureCost} / spin</span>
@@ -194,7 +199,40 @@
 	.card:disabled { opacity: 0.4; cursor: default; }
 	.card--static  { cursor: default; }
 
+	/* Feature spin stacked icon */
+	.feature-spin-icon {
+		width: 44px;
+		height: 44px;
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+	.feature-spin-icon img:first-child {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	.feature-spin-icon .play-arrow {
+		position: absolute;
+		width: 36%;
+		height: 36%;
+		object-fit: contain;
+		top: 52%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+
 	/* Icon */
+	.spin-icon {
+		width: 1.2em;
+		height: 1.2em;
+		vertical-align: middle;
+		margin-right: 0.3em;
+		object-fit: contain;
+	}
+
 	.icon {
 		width: 60px; height: 60px;
 		object-fit: contain; flex-shrink: 0;

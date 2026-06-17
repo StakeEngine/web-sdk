@@ -6,7 +6,7 @@
 
 	import { getContext } from '../game/context';
 	import { SYMBOL_W, SYMBOL_H, BOARD_DIMENSIONS } from '../game/constants';
-	import { getReelCenterX, expandedSpriteKeyByName } from '../game/utils';
+	import { getReelCenterX, expandedSpriteKeyByName, expandedWinSpriteKeyByName } from '../game/utils';
 
 	const context = getContext();
 	const expanded = $derived(context.stateGame.expandedSymbol);
@@ -74,9 +74,11 @@
 				{@const cy = anim.y.current}
 				{@const px = anim.pop.current}
 				<Container x={cx} y={cy} scale={{ x: px, y: 1 }}>
-					<!-- Symbol sprite fills full reel column -->
+					<!-- Symbol sprite: normal expanded state or win state -->
+					{@const isWon = context.stateGame.expandedSymbolWon}
+					{@const spriteMap = isWon ? expandedWinSpriteKeyByName : expandedSpriteKeyByName}
 					<Sprite
-						key={expandedSpriteKeyByName[expanded.symbol] ?? 'bearBonusTile'}
+						key={spriteMap[expanded.symbol] ?? expandedSpriteKeyByName[expanded.symbol] ?? 'bearBonusTile'}
 						x={0}
 						y={0}
 						anchor={0.5}

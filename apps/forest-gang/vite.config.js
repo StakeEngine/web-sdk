@@ -12,14 +12,4 @@ export default {
 			treeshake: { preset: 'safest' },
 		},
 	},
-	plugins: [
-		...(base.plugins ?? []),
-		{
-			name: 'force-exit',
-			closeBundle() {
-				// SvelteKit/Vite sometimes keeps the process alive after build — force clean exit
-				setTimeout(() => process.exit(0), 300);
-			},
-		},
-	],
 };

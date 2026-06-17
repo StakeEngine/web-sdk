@@ -79,14 +79,59 @@ export const bonusSpriteKeyByName: Record<string, string> = {
 	SQUIRREL: 'squirrelBonusTile',
 };
 
-// Expanded symbol overlay — full-body art for whichever symbol is currently expanding
+// Expanded symbol overlay — premium no-badge art + card expanded art
 export const expandedSpriteKeyByName: Record<string, string> = {
-	...bonusSpriteKeyByName,
+	FOX: 'foxExpTile',
+	WOLF: 'wolfExpTile',
+	BEAR: 'bearExpTile',
+	RABBIT: 'rabbitExpTile',
+	SQUIRREL: 'squirrelExpTile',
 	A: 'aExpTile',
-	J: 'jExpTile',
-	Q: 'qExpTile',
-	T: 'tExpTile',
 	K: 'kExpTile',
+	Q: 'qExpTile',
+	J: 'jExpTile',
+	T: 'tExpTile',
+	WILD: 'wildTile',
+	SCATTER: 'scatterCustom',
+};
+
+// Win-state board sprites on reel (lit up when symbol wins)
+export const winSpriteKeyByName: Record<string, string> = {
+	FOX: 'foxWinTile',
+	WOLF: 'wolfWinTile',
+	BEAR: 'bearWinTile',
+	RABBIT: 'rabbitWinTile',
+	SQUIRREL: 'squirrelWinTile',
+	A: 'aWinTile',
+	K: 'kWinTile',
+	Q: 'qWinTile',
+	J: 'jWinTile',
+	T: 'tWinTile',
+	WILD: 'wildWinTile',
+	SCATTER: 'scatterWin',
+};
+
+// Win-state expanded sprites — shown when the expanding symbol pays
+export const expandedWinSpriteKeyByName: Record<string, string> = {
+	FOX: 'foxExpWinTile',
+	WOLF: 'wolfExpWinTile',
+	BEAR: 'bearExpWinTile',
+	RABBIT: 'rabbitExpWinTile',
+	SQUIRREL: 'squirrelExpWinTile',
+	A: 'aWinExpTile',
+	K: 'kWinExpTile',
+	Q: 'qWinExpTile',
+	J: 'jWinExpTile',
+	T: 'tWinExpTile',
+};
+
+// Win board asset key by win level alias
+export const winBoardByAlias: Record<string, string> = {
+	big: 'sweetWinBoard',
+	superwin: 'wildWinBoard',
+	mega: 'epicWinBoard',
+	epic: 'mythicWinBoard',
+	max: 'legendaryWinBoard',
 };
 
 export const getSymbolInfo = ({ rawSymbol, state }: { rawSymbol: RawSymbol; state: SymbolState }) => {

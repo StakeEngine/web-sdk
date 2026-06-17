@@ -1,22 +1,28 @@
 {
     "modes": [
         {
-            "name": "base",
-            "cost": 1,
-            "events": "books_base.jsonl.zst",
-            "weights": "lookUpTable_base_0.csv"
+            "name": "BASE",
+            "cost": 1.0,
+            "events": "books_BASE.jsonl.zst",
+            "weights": "lookUpTable_BASE_0.csv"
         },
         {
-            "name": "bonus",
-            "cost": 100,
-            "events": "books_bonus.jsonl.zst",
-            "weights": "lookUpTable_bonus_0.csv"
+            "name": "BONUS",
+            "cost": 100.0,
+            "events": "books_BONUS.jsonl.zst",
+            "weights": "lookUpTable_BONUS_0.csv"
         },
         {
-            "name": "super",
-            "cost": 400,
-            "events": "books_super.jsonl.zst",
-            "weights": "lookUpTable_super_0.csv"
+            "name": "SUPER",
+            "cost": 400.0,
+            "events": "books_SUPER.jsonl.zst",
+            "weights": "lookUpTable_SUPER_0.csv"
+        },
+        {
+            "name": "FEATURE",
+            "cost": 20.0,
+            "events": "books_FEATURE.jsonl.zst",
+            "weights": "lookUpTable_FEATURE_0.csv"
         }
     ]
 }

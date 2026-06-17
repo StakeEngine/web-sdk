@@ -59,6 +59,8 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		if (stateGame.expandedSymbol && bookEvent.gameType !== 'basegame') {
 			stateGame.expandedSymbol = { ...stateGame.expandedSymbol, reels: [] };
 		}
+		stateGame.expandedSymbolWon = false;
+		stateGame.paylineWins = [];
 
 		// Add a brief pause between bonus spins so players can read the result
 		if (isBonusGame && bookEvent.gameType !== 'basegame' && !stateBet.isSuperTurbo) {
@@ -95,6 +97,14 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		stateGame.bonusMode = bookEvent.mode;
 	},
 	expandedSymbolReveal: async (bookEvent: BookEventOfType<'expandedSymbolReveal'>) => {
+		// Clear any win states from the previous spin before expanding starts
+		for (const reel of stateGame.board) {
+			for (const sym of reel.reelState.symbols) {
+				if (sym.symbolState === 'win' || sym.symbolState === 'postWinStatic') {
+					sym.symbolState = 'static';
+				}
+			}
+		}
 		stateGame.expandedSymbol = { symbol: bookEvent.symbol, reels: [], positions: bookEvent.positions };
 
 		// Find origin reel: leftmost reel that had the symbol in the original positions
@@ -119,6 +129,8 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 				reels: [...stateGame.expandedSymbol!.reels, reel],
 			};
 		}
+		// Brief pause after final reel expands before win state flips in
+		await waitForTimeout(320);
 	},
 	applyTempMultiplier: async (bookEvent: BookEventOfType<'applyTempMultiplier'>) => {
 		stateGame.tempMultiplier = bookEvent.multiplier;
@@ -147,9 +159,22 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
 			eventEmitter.broadcast({ type: 'dealItMultiplierStart' });
 		}
+		// When expanding symbol is active, only highlight its positions — never mislead with other payline wins
+		const wins = stateGame.expandedSymbol
+			? bookEvent.wins.filter((w) => w.symbol === stateGame.expandedSymbol!.symbol)
+			: bookEvent.wins;
+		// Store full 5-reel payline paths for vine animation using lineIndex lookup
+		const paylines = config.paylines as Record<string, number[]>;
+		stateGame.paylineWins = wins
+			.map((w) => {
+				const rows = paylines[String(w.meta.lineIndex)];
+				if (!rows) return null;
+				return rows.map((row, reel) => ({ reel, row }));
+			})
+			.filter((p): p is Array<{ reel: number; row: number }> => p !== null);
 		// Deduplicate positions across all wins and animate once — prevents 5-10s freeze
 		const seen = new Set<string>();
-		const allPositions = bookEvent.wins.flatMap((win) => win.positions).filter((pos) => {
+		const allPositions = wins.flatMap((win) => win.positions).filter((pos) => {
 			const key = `${pos.reel},${pos.row}`;
 			if (seen.has(key)) return false;
 			seen.add(key);
@@ -241,6 +266,10 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		}
 	},
 	setWin: async (bookEvent: BookEventOfType<'setWin'>) => {
+		// Trigger win-state animation on the expanded symbol overlay if active
+		if (stateGame.expandedSymbol) {
+			stateGame.expandedSymbolWon = true;
+		}
 		// Wait for Deal It multiplier cycling to finish before showing win amount
 		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
 			await eventEmitter.broadcastAsync({ type: 'dealItMultiplierAwaitCycle' });

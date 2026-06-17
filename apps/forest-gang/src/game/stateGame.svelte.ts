@@ -88,6 +88,8 @@ export const stateGame = $state({
 	bonusMode: null as 'freegame' | 'superspin' | 'feature' | null,
 	globalMultiplier: 1,
 	expandedSymbol: null as null | { symbol: SymbolName; reels: number[]; positions: Position[] },
+	expandedSymbolWon: false,
+	paylineWins: [] as Array<Array<{ reel: number; row: number }>>,
 	tempMultiplier: null as number | null,
 	endRoundOnly: false,
 	pendingStop: false,
@@ -170,6 +172,7 @@ const resetBonusState = () => {
 	stateGame.bonusMode = null;
 	stateGame.globalMultiplier = 1;
 	stateGame.expandedSymbol = null;
+	stateGame.expandedSymbolWon = false;
 	stateGame.tempMultiplier = null;
 };
 

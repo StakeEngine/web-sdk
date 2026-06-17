@@ -9,13 +9,13 @@
 </script>
 
 <script lang="ts">
-	import { Container, Graphics, Rectangle, Sprite, Text } from 'pixi-svelte';
-	import { waitForTimeout } from 'utils-shared/wait';
+	import { Container, Graphics, Rectangle, Sprite } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
 	import { SYMBOL_W, SYMBOL_H, SYMBOL_SIZE, BOARD_DIMENSIONS } from '../game/constants';
-	import { spriteKeyByName, bonusSpriteKeyByName } from '../game/utils';
+	import { spriteKeyByName, bonusSpriteKeyByName, winSpriteKeyByName } from '../game/utils';
 	import type { SymbolName } from '../game/types';
+	import PaylineVine from './PaylineVine.svelte';
 
 	const context = getContext();
 	const board = $derived(context.stateGame.board);
@@ -23,7 +23,10 @@
 	let show = $state(true);
 
 	const activeMap = $derived(context.stateGame.bonusMode ? bonusSpriteKeyByName : spriteKeyByName);
-	const getSpriteKey = (name: SymbolName) => activeMap[name] ?? 'aTile';
+	const getSpriteKey = (name: SymbolName, state?: string) => {
+		if (state === 'win') return winSpriteKeyByName[name] ?? activeMap[name] ?? 'aTile';
+		return activeMap[name] ?? 'aTile';
+	};
 
 	const getX = (reelIndex: number) => SYMBOL_W * (reelIndex + 0.5);
 
@@ -36,15 +39,22 @@
 		boardShow: () => (show = true),
 		boardHide: () => (show = false),
 		boardWithAnimateSymbols: async ({ symbolPositions }) => {
+			// Set win state — stays until next spin (boardSettle resets all to static)
 			for (const position of symbolPositions) {
 				const reelSymbol = context.stateGame.board[position.reel].reelState.symbols[position.row];
 				reelSymbol.symbolState = 'win';
 			}
-			await waitForTimeout(250);
-			for (const position of symbolPositions) {
-				const reelSymbol = context.stateGame.board[position.reel].reelState.symbols[position.row];
-				reelSymbol.symbolState = 'postWinStatic';
+		},
+		boardSettle: ({ board }) => {
+			// Reset all symbols to static at start of next spin
+			for (const reel of context.stateGame.board) {
+				for (const sym of reel.reelState.symbols) {
+					if (sym.symbolState === 'win' || sym.symbolState === 'postWinStatic') {
+						sym.symbolState = 'static';
+					}
+				}
 			}
+			context.stateGameDerived.enhancedBoard.settle(board);
 		},
 	});
 
@@ -74,18 +84,15 @@
 					radius={2}
 				/>
 				<Sprite
-					key={getSpriteKey(reelSymbol.rawSymbol.name)}
+					key={getSpriteKey(reelSymbol.rawSymbol.name, reelSymbol.symbolState)}
 					x={getX(reelIndex)}
 					y={y}
 					anchor={{ x: 0.5, y: 0.5 }}
-					alpha={reelSymbol.symbolState === 'win' ? 0.65 : 1}
 					width={SYMBOL_W}
 					height={SYMBOL_H}
 				/>
-				{#if reelSymbol.rawSymbol.name === 'WILD'}
-					<Text x={getX(reelIndex)} y={y + SYMBOL_SIZE * 0.26} anchor={{ x: 0.5, y: 0.5 }} text="WILD" style={{ fill: 0xf7d46a, fontFamily: 'Arial', fontSize: 14, fontWeight: '700' }} />
-				{/if}
 			{/each}
 		{/each}
+		<PaylineVine wins={context.stateGame.paylineWins} />
 	</Container>
 {/if}

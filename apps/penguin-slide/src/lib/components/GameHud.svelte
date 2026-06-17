@@ -431,6 +431,42 @@
 			font-size: 12px;
 		}
 	}
+
+	.menu-info-section {
+		display: grid;
+		gap: 10px;
+		margin-bottom: 16px;
+	}
+
+	.menu-info-section:last-child {
+		margin-bottom: 0;
+	}
+
+	.menu-info-section p {
+		margin: 0;
+	}
+
+	.menu-info-inline-icon {
+		display: block;
+		width: min(120px, 34vw);
+		height: auto;
+		margin: 2px auto 0;
+	}
+
+	.menu-info-coins {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 10px;
+		align-items: center;
+	}
+
+	.menu-info-coins img {
+		display: block;
+		width: 100%;
+		max-width: 90px;
+		height: auto;
+		margin: 0 auto;
+	}
 </style>
 
 {#if menuOpen}
@@ -585,10 +621,32 @@
 			onpointerup={(event) => event.stopPropagation()}
 		>
 			<button class="menu-info-close" onclick={closeMenuInfo} aria-label={t('close')}></button>
-			<h3>{t('how_to_play')}</h3>
-			<p>{t('how_to_play_text')}</p>
-			<h3>{t('autoplay')}</h3>
-			<p>{t('autoplay_text')}</p>
+			<h3>GAME OVERVIEW</h3>
+			<div class="menu-info-section">
+				<p>When you place your bet the penguin starts sliding.</p>
+			</div>
+			<div class="menu-info-section">
+				<div class="menu-info-coins">
+					<img src="./assets/rules/coin_1.png" alt="Bronze coin symbol" />
+					<img src="./assets/rules/coin_2.png" alt="Silver coin symbol" />
+					<img src="./assets/rules/coin_3.png" alt="Gold coin symbol" />
+				</div>
+				<p>It can collect coins along the way. They represent bet multipliers and come in 3 tiers:</p>
+				<p>Any collected coins increase your potential win.</p>
+			</div>
+			<div class="menu-info-section">
+				<img class="menu-info-inline-icon" src="./assets/rules/banana.png" alt="Banana symbol" />
+				<p>The penguin keeps moving left or right down the slide and can fall at any time. If the penguin falls off the slide you lose your bet.</p>
+				<p>Sliding over a banana increases your chance to fall off the slide and removes 50% of your current accumulated win.</p>
+			</div>
+			<div class="menu-info-section">
+				<img class="menu-info-inline-icon" src="./assets/rules/lifering.png" alt="Life ring symbol" />
+				<p>If the penguin slides over a life ring it equips it, saving you from falling off the slide once. This means that if the penguin falls off the slide with a life ring on, it immediately gets back on. The life ring is then removed.</p>
+			</div>
+			<div class="menu-info-section">
+				<img class="menu-info-inline-icon" src="./assets/rules/goal.png" alt="Finish gate symbol" />
+				<p>The round ends when the penguin hits the goal gate and you collect your current win.</p>
+			</div>
 		</div>
 	</div>
 {/if}

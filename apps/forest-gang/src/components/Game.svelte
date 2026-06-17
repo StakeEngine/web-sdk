@@ -59,7 +59,7 @@
 					tickerIdle: i18nDerived.translate?.('BET MODE BASE TICKER IDLE') ?? '',
 					tickerSpin: i18nDerived.translate?.('BET MODE BASE TICKER SPIN') ?? '',
 				},
-				maxWin: 20000,
+				maxWin: 25000,
 			},
 			BONUS: {
 				mode: 'BONUS',
@@ -76,11 +76,11 @@
 					tickerIdle: forestStakeTitle('BET MODE BONUS TICKER IDLE'),
 					tickerSpin: forestStakeTitle('BET MODE BONUS TICKER SPIN'),
 				},
-				maxWin: 20000,
+				maxWin: 25000,
 			},
 			SUPER: {
 				mode: 'SUPER',
-				costMultiplier: 400,
+				costMultiplier: 200,
 				type: 'default',
 				parent: '',
 				children: '',
@@ -93,7 +93,7 @@
 					tickerIdle: forestStakeTitle('BET MODE SUPER TICKER IDLE'),
 					tickerSpin: forestStakeTitle('BET MODE SUPER TICKER SPIN'),
 				},
-				maxWin: 20000,
+				maxWin: 25000,
 			},
 		};
 

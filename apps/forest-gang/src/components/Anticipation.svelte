@@ -24,11 +24,12 @@
 	});
 
 	context.eventEmitter.subscribeOnMount({
-		// Press during anticipation: skip the animation only — reel continues spinning naturally
+		// Press during anticipation: stop reel immediately AND start the out animation
 		stopButtonClick: () => {
 			if (animationName === 'anticipation_out') return;
 			speedUp = true;
 			animationName = 'anticipation_out';
+			props.reel.stop(); // stop reel immediately, not waiting for animation
 		},
 	});
 </script>
@@ -55,8 +56,6 @@
 				}
 
 				if (animationName === 'anticipation_out') {
-					// If user force-stopped: stop the reel exactly when the animation ends
-					if (speedUp) props.reel.stop();
 					props.oncomplete();
 				}
 			},
