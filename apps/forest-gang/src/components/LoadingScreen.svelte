@@ -5,9 +5,8 @@
 	import { MainContainer } from 'components-layout';
 
 	import { getContext } from '../game/context';
-	import PressToContinue from './PressToContinue.svelte';
 
-	type Props = { onloaded: () => void };
+	type Props = { onloaded: () => void; oncanproceed?: (onpress: () => void) => void };
 	const props: Props = $props();
 	const context = getContext();
 	let loadingType = $state<'start' | 'ready'>('start');
@@ -44,6 +43,17 @@
 
 	// Leaf slides from bar left edge (progress=0) to bar right edge (progress=100).
 	const leafX = $derived(LEAF_W / 2 + (BAR_W - LEAF_W) * (leafProgress / 100));
+
+	let _notified = false;
+	$effect(() => {
+		if (canProceed && !_notified) {
+			_notified = true;
+			props.oncanproceed?.(() => {
+				loadingType = 'ready';
+				props.onloaded();
+			});
+		}
+	});
 
 	// Cover-scale splash to 16:9.
 	const SPLASH_ASPECT = 16 / 9;
@@ -93,6 +103,3 @@
 	</MainContainer>
 </FadeContainer>
 
-<FadeContainer show={canProceed && loadingType === 'start'}>
-	<PressToContinue onpress={() => { loadingType = 'ready'; props.onloaded(); }} />
-</FadeContainer>

@@ -2,8 +2,8 @@ import _ from 'lodash';
 
 import type { RawSymbol, SymbolState } from './types';
 
-// Rectangular symbol cells — landscape aspect (~1.43:1) matching Figma card designs
-export const SYMBOL_W = 130;   // cell width
+// Symbol cells match the 1.33 card art; 5×4 grid fills the wooden frame panel
+export const SYMBOL_W = 121;   // cell width  (121/91 ≈ 1.33)
 export const SYMBOL_H = 91;    // cell height
 export const SYMBOL_SIZE = SYMBOL_H; // kept as alias for height-based calculations
 export const REEL_PADDING = 0.53;

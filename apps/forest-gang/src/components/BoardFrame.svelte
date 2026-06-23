@@ -1,19 +1,30 @@
 <script lang="ts">
-	import { Rectangle } from 'pixi-svelte';
+	import { Sprite } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE } from '../game/constants';
 
 	const context = getContext();
 	const board = $derived(context.stateGameDerived.boardLayout());
+
+	// slot_pad.png is 3616×2528. Measured geometry of the inner brown panel
+	// (where the reels sit): centred at ~(0.50, 0.46) of the image, ~57% of the
+	// image width. We scale the whole frame so the inner panel ≈ board + margin,
+	// then anchor it at the inner-panel centre over the board centre.
+	const FRAME_ASPECT = 3616 / 2528;
+	const INNER_W_FRAC = 0.64; // inner brown panel ≈ 64% of the image width
+	const ANCHOR_X = 0.5;
+	const ANCHOR_Y = 0.45; // inner panel centre sits slightly above image centre
+	const MARGIN = 1.04; // inner panel a touch larger than the board grid
+
+	const frameW = $derived((board.width * board.boardScale * MARGIN) / INNER_W_FRAC);
+	const frameH = $derived(frameW / FRAME_ASPECT);
 </script>
 
-<Rectangle
-	x={board.x - (board.width * 0.5 + SYMBOL_SIZE * 0.08) * board.boardScale}
-	y={board.y - (board.height * 0.5 + SYMBOL_SIZE * 0.08) * board.boardScale}
-	width={(board.width + SYMBOL_SIZE * 0.16) * board.boardScale}
-	height={(board.height + SYMBOL_SIZE * 0.16) * board.boardScale}
-	backgroundColor={0x1b150e}
-	alpha={0.22}
-	radius={0}
+<Sprite
+	key="slotPad"
+	anchor={{ x: ANCHOR_X, y: ANCHOR_Y }}
+	x={board.x}
+	y={board.y}
+	width={frameW}
+	height={frameH}
 />

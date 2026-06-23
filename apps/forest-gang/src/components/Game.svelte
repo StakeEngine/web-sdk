@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	import { EnablePixiExtension } from 'components-pixi';
 	import { EnableHotkey } from 'components-shared';
@@ -34,8 +35,12 @@
 	import HudHtml from './HudHtml.svelte';
 	import StakeSync from './StakeSync.svelte';
 	import ReplayHud from './replay/ReplayHud.svelte';
+	import SplashIntro from './SplashIntro.svelte';
 
 	const context = getContext();
+
+	let splashIntroVisible = $state(false);
+	let splashPressHandler = $state<(() => void) | undefined>(undefined);
 	const heroArt = './assets/components/backgrounds/visual_v2.jpg';
 	const bonusArt = './assets/components/backgrounds/visual_v1.jpg';
 	const scatterArt = './assets/components/symbols/scatter.png';
@@ -185,12 +190,15 @@
 			<Background />
 
 			{#if context.stateLayout.showLoadingScreen}
-				<LoadingScreen onloaded={() => (context.stateLayout.showLoadingScreen = false)} />
+				<LoadingScreen
+					onloaded={() => (context.stateLayout.showLoadingScreen = false)}
+					oncanproceed={(handler) => { splashPressHandler = handler; splashIntroVisible = true; }}
+				/>
 			{:else}
 				<ResumeBet />
 				<Sound />
 
-				<MainContainer zIndex={5}>
+				<MainContainer zIndex={0}>
 					<BoardFrame />
 				</MainContainer>
 
@@ -213,6 +221,12 @@
 				<Transition />
 			{/if}
 		</App>
+
+		{#if splashIntroVisible}
+			<div transition:fade={{ duration: 350 }} style="position:absolute;inset:0;z-index:10;">
+				<SplashIntro onpress={() => { splashIntroVisible = false; splashPressHandler?.(); }} />
+			</div>
+		{/if}
 
 		{#if !context.stateLayout.showLoadingScreen}
 			<HudHtml />

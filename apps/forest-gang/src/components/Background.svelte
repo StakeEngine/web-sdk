@@ -4,7 +4,7 @@
 	import { getContext } from '../game/context';
 
 	const context = getContext();
-	const BACKGROUND_ASPECT = 1440 / 1024;
+	const BACKGROUND_ASPECT = 1920 / 1080;
 	const canvas = $derived(context.stateLayoutDerived.canvasSizes());
 	const cover = $derived.by(() => {
 		const width = canvas.width;

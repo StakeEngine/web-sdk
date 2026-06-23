@@ -152,7 +152,7 @@ const getBoardOffset = () => {
 const boardLayout = () => ({
 	x: stateLayoutDerived.mainLayout().width * 0.5 + getBoardOffset().x,
 	y: stateLayoutDerived.mainLayout().height * 0.5 + getBoardOffset().y,
-	boardScale: getBoardScale() * 1.15,
+	boardScale: getBoardScale() * 0.72,
 	anchor: { x: 0.5, y: 0.5 },
 	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
 	...BOARD_SIZES,

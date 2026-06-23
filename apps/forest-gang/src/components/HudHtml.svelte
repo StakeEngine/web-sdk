@@ -21,6 +21,20 @@
 	// Frame backgrounds — passed as CSS vars because url() in style blocks can't use runtime paths
 	const menuBtnFrame   = ap('/assets/components/frames/top_menu-button_frame.png');
 	const soundBtnFrame  = ap('/assets/components/frames/top_sound_button_frame.png');
+	const menuBarFrame   = ap('/assets/components/navbar/bar.png');
+
+	// Navbar button artwork (full pre-rendered PNGs from the Figma UI kit)
+	const navMenu     = ap('/assets/components/navbar/menu.png');
+	const navSound    = ap('/assets/components/navbar/sound.png');
+	const navMinus    = ap('/assets/components/navbar/minus.png');
+	const navPlus     = ap('/assets/components/navbar/plus.png');
+	const navAuto     = ap('/assets/components/navbar/auto.png');
+	const navTurbo1   = ap('/assets/components/navbar/turbo_1.png');
+	const navTurbo2   = ap('/assets/components/navbar/turbo_2.png');
+	const navTurbo3   = ap('/assets/components/navbar/turbo_3.png');
+	const navSpin     = ap('/assets/components/navbar/spin.png');
+	const navBuyBonus = ap('/assets/components/navbar/buy_bonus.png');
+	const navCoins    = ap('/assets/components/navbar/coins.png');
 	const scatterFrame   = ap('/assets/components/frames/scatter_frame.png');
 	const hudFrame       = ap('/assets/components/frames/hud_frame.png');
 	const buyBtnFrame    = ap('/assets/components/frames/bonus_buy_button_frame.png');
@@ -53,6 +67,10 @@
 		}
 	});
 	const isFeatureActive = $derived(stateBet.activeBetModeKey === 'FEATURE');
+	const turboImg = $derived(
+		stateBet.isSuperTurbo ? navTurbo3 : stateBet.isTurbo ? navTurbo2 : navTurbo1,
+	);
+	const isMuted = $derived(stateSound.volumeValueMaster === 0);
 	const betOptions = $derived(stateConfig.betAmountOptions);
 	const smallestBet = $derived(stateConfig.betAmountOptions[0]);
 	const biggestBet = $derived(stateConfig.betAmountOptions[stateConfig.betAmountOptions.length - 1]);
@@ -231,44 +249,28 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 <div
 	class="hud-shell"
 	data-layout={layoutType}
-	style={`--forest-card-bg:url('${heroCardBg}');--forest-controls-bg:url('${controlsBg}');--forest-buy-bg:url('${buyBonusBg}');--menu-btn-bg:url('${menuBtnFrame}');--sound-btn-bg:url('${soundBtnFrame}');--scatter-frame-bg:url('${scatterFrame}');--hud-frame-bg:url('${hudFrame}');--buy-btn-bg:url('${buyBtnFrame}');--small-btn-bg:url('${smallBtnFrame}');--play-btn-bg:url('${playBtnFrame}')`}
+	style={`--forest-card-bg:url('${heroCardBg}');--forest-controls-bg:url('${controlsBg}');--forest-buy-bg:url('${buyBonusBg}');--menu-btn-bg:url('${menuBtnFrame}');--sound-btn-bg:url('${soundBtnFrame}');--menu-bar-bg:url('${menuBarFrame}');--scatter-frame-bg:url('${scatterFrame}');--hud-frame-bg:url('${hudFrame}');--buy-btn-bg:url('${buyBtnFrame}');--small-btn-bg:url('${smallBtnFrame}');--play-btn-bg:url('${playBtnFrame}')`}
 >
-	<div class="hud-top">
-		<button class="circle-btn" type="button" onclick={openRules} aria-label="Game rules">
-			<span class="btn-face btn-face--icon">
-				<img src={iconMenu} class="btn-icon" alt="menu" />
-			</span>
-		</button>
-		<button class="circle-btn" type="button" onclick={toggleSound} aria-label="Sound">
-			<span class="btn-face btn-face--icon">
-				<img src={iconVolume} class="btn-icon" alt="sound"
-					style={stateSound.volumeValueMaster === 0 ? 'opacity:0.35' : ''} />
-			</span>
-		</button>
-	</div>
-
-	<div class="stage-overlay">
-		{#if !isPortrait && !isLandscapeMobile}
-			<button class="scatter-card" type="button" onclick={openPaytable} aria-label="Open paytable">
-				<div class="scatter-card__title">SCATTER</div>
-				<img src={scatterImg} alt="Scatter symbol" />
-				<div class="scatter-card__text">
-					<div class="space"></div>
-					<div>3 SCATTERS</div>
-					<div><span>TRIGGER</span> <span class="scatter-card__text--hot">"{i18nDerived.dealIt()}"</span></div>
-					<div class="space"></div>
-					<div>4 SCATTERS</div>
-					<div><span>TRIGGER</span> <span class="scatter-card__text--hot">"{i18nDerived.allIn()}"</span></div>
-				</div>
-			</button>
-		{/if}
-	</div>
 
 	<div class="hud-bottom">
-		<div class="hud-buy">
-			<button class="buy-btn" class:buy-btn--feature-on={isFeatureActive} type="button" onclick={openBuyBonus} aria-label={i18nDerived.buyBonus()}>
-				<span class="buy-btn__text">{isFeatureActive ? 'FEATURE ON' : 'BUY BONUS'}</span>
-			</button>
+		<div class="hud-left">
+			<div class="hud-system">
+				<button class="nav-btn" type="button" onclick={openRules} aria-label="Game rules">
+					<img src={navMenu} alt="menu" />
+				</button>
+				<button class="nav-btn" type="button" onclick={toggleSound} aria-label="Sound">
+					<img src={navSound} alt="sound" class:is-muted={isMuted} />
+				</button>
+			</div>
+
+			<div class="hud-buy">
+				<button class="buy-btn" class:buy-btn--feature-on={isFeatureActive} type="button" onclick={openBuyBonus} aria-label={i18nDerived.buyBonus()}>
+					<img src={navBuyBonus} alt="" class="buy-btn__img" />
+					{#if isFeatureActive}
+						<span class="buy-btn__text">FEATURE ON</span>
+					{/if}
+				</button>
+			</div>
 		</div>
 
 
@@ -281,8 +283,8 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 			</div>
 
 			<div class="value-pill value-pill--bet bet-pill" role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (stateModal.modal = { name: 'betAmountMenu' })} onclick={() => (stateModal.modal = { name: 'betAmountMenu' })}>
-				<span class="label-icon-frame bet-coin" aria-hidden="true">
-					<img src={iconCoins} class="pill-icon" alt="" />
+				<span class="bet-coin" aria-hidden="true">
+					<img src={navCoins} alt="" />
 				</span>
 				<div class="bet-values">
 					<span class="label">{i18nDerived.betLabel()}</span>
@@ -294,20 +296,15 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		<div class="hud-controls">
 			<div class="stepper">
 				{#if isLandscapeMobile}
-					<button class="circle-btn circle-btn--small circle-btn--icon" type="button" onclick={openRules} aria-label="Game rules">
-						<span class="btn-face btn-face--icon">
-							<img src={iconMenu} class="btn-icon" alt="menu" />
-						</span>
+					<button class="nav-btn" type="button" onclick={openRules} aria-label="Game rules">
+						<img src={navMenu} alt="menu" />
 					</button>
-					<button class="circle-btn circle-btn--small circle-btn--icon" type="button" onclick={toggleSound} aria-label="Sound">
-						<span class="btn-face btn-face--icon">
-							<img src={iconVolume} class="btn-icon" alt="sound"
-								style={stateSound.volumeValueMaster === 0 ? 'opacity:0.35' : ''} />
-						</span>
+					<button class="nav-btn" type="button" onclick={toggleSound} aria-label="Sound">
+						<img src={navSound} alt="sound" class:is-muted={isMuted} />
 					</button>
 				{/if}
 				<button
-					class="circle-btn circle-btn--small"
+					class="nav-btn"
 					type="button"
 					onpointerdown={(event) => startHoldRepeat(event, onDecrease, () => stepBet(-1, { playSound: false }))}
 					onpointerup={clearHoldRepeat}
@@ -315,13 +312,12 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 					onpointerleave={clearHoldRepeat}
 					onclick={(event) => maybeRunClickAction(event, onDecrease)}
 					disabled={disableDecrease}
+					aria-label="Decrease bet"
 				>
-					<span class="btn-face btn-face--icon">
-						<img src={iconMinus} class="btn-icon btn-icon--wide" alt="minus" />
-					</span>
+					<img src={navMinus} alt="minus" />
 				</button>
 				<button
-					class="circle-btn circle-btn--small"
+					class="nav-btn"
 					type="button"
 					onpointerdown={(event) => startHoldRepeat(event, onIncrease, () => stepBet(1, { playSound: false }))}
 					onpointerup={clearHoldRepeat}
@@ -329,50 +325,41 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 					onpointerleave={clearHoldRepeat}
 					onclick={(event) => maybeRunClickAction(event, onIncrease)}
 					disabled={disableIncrease}
+					aria-label="Increase bet"
 				>
-					<span class="btn-face btn-face--icon">
-						<img src={iconPlus} class="btn-icon btn-icon--wide" alt="plus" />
-					</span>
+					<img src={navPlus} alt="plus" />
 				</button>
 			</div>
 
 			<div class="play-cluster">
 				<button class="spin-btn" type="button" onclick={onSpinButton} aria-label="Spin" disabled={canInteract && !hasAuto && !canAffordBet}>
-					<span class="spin-btn__inner">
-						{#if hasAuto}
-							<span class="spin-btn__glyph spin-btn__glyph--stop" aria-hidden="true">■</span>
-							<span class="spin-btn__count" aria-label={`Remaining auto spins ${autoSpinsRemainingText}`}>{autoSpinsRemainingText}</span>
-						{:else if isSpinStop}
-							<span class="spin-btn__glyph spin-btn__glyph--stop" aria-hidden="true">■</span>
-						{:else}
-							<img src={iconPlay} class="btn-icon btn-icon--play" alt="" />
-						{/if}
-					</span>
+					<img src={navSpin} alt="" class="spin-btn__img" />
+					{#if hasAuto}
+						<span class="spin-btn__count" aria-label={`Remaining auto spins ${autoSpinsRemainingText}`}>{autoSpinsRemainingText}</span>
+					{:else if isSpinStop}
+						<span class="spin-btn__glyph" aria-hidden="true">■</span>
+					{/if}
 				</button>
 			</div>
 
 			<div class="action-cluster">
 				<button
+					class="nav-btn nav-btn--turbo"
 					class:turbo-fast={stateBet.isTurbo && !stateBet.isSuperTurbo}
 					class:turbo-super={stateBet.isSuperTurbo}
-					class="circle-btn circle-btn--small circle-btn--icon circle-btn--turbo"
 					type="button" onclick={onTurbo} aria-label={i18nDerived.turboLabel()}
 				>
-					<span class="btn-face btn-face--icon">
-						<img src={iconLightning} class="btn-icon btn-icon--lightning" alt="turbo" />
-					</span>
+					<img src={turboImg} alt="turbo" />
 				</button>
 				<button
+					class="nav-btn"
 					class:active={hasAuto}
-					class="circle-btn circle-btn--small circle-btn--icon"
 					type="button"
 					onclick={onAuto}
 					disabled={disableAuto}
 					aria-label={i18nDerived.autoplayLabel()}
 				>
-					<span class="btn-face btn-face--icon">
-						<img src={iconAutoplay} class="btn-icon btn-icon--auto" alt="auto" />
-					</span>
+					<img src={navAuto} alt="auto" />
 				</button>
 			</div>
 		</div>
@@ -404,20 +391,29 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		font-family: 'Cinzel', serif;
 	}
 
-	.hud-top,
+	/* Dark shelf behind the bottom bar — masks the gray full-width element that
+	   sits below the HUD (proven by diagnostic that a z5 layer fully covers it),
+	   blending up into the forest. The bar (z6) renders on top. */
+	.hud-shell::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 120px;
+		z-index: 5;
+		pointer-events: none;
+		background: linear-gradient(
+			to top,
+			#070b06 0%,
+			#070b06 78%,
+			rgba(7, 11, 6, 0) 100%
+		);
+	}
+
 	.hud-bottom,
 	.scatter-card {
 		pointer-events: auto;
-	}
-
-	.hud-top {
-		display: flex;
-		gap: 4px;
-		max-width: min(100%, 1280px);
-		width: 100%;
-		align-self: center;
-		padding-left: 6px;
-		padding-top: 8px;
 	}
 
 	.stage-overlay {
@@ -477,18 +473,52 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	}
 
 	.hud-bottom {
+		position: relative;
+		z-index: 6;
 		align-self: center;
+		margin-top: auto;
 		width: min(calc(100% - 16px), 1180px);
 		height: auto;
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
-		justify-content: space-evenly;
-		gap: 4px;
-		padding: 0;
-		border-radius: 28px;
-		background: var(--hud-frame-bg) center / 100% 100% no-repeat;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 8px 74px;
+		/* Dark stadium base fills the whole box so no white bleeds through
+		   the transparent areas around the 9-sliced wooden pill on top. */
+		background: #0f0b06;
+		border-radius: 999px;
 		box-shadow: none;
+	}
+
+	/* Wooden bar background, 9-sliced so the rounded caps stay crisp */
+	.hud-bottom::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		box-sizing: border-box;
+		border-style: solid;
+		border-color: transparent;
+		border-width: 26px 70px;
+		border-image-source: var(--menu-bar-bg);
+		border-image-slice: 120 380 fill;
+		border-image-width: 26px 70px;
+		border-image-repeat: stretch;
+		pointer-events: none;
+	}
+
+	.hud-bottom > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.hud-left {
+		display: flex;
+		align-items: center;
+		gap: 18px;
+		flex: 0 0 auto;
 	}
 
 	.hud-buy {
@@ -512,7 +542,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 30px;
+		gap: 22px;
 		flex: 0 0 auto;
 		padding-top: 0;
 	}
@@ -573,16 +603,18 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 
 	.bet-coin {
 		pointer-events: none;
+		width: 44px;
+		height: 44px;
+		display: grid;
+		place-items: center;
+		flex: 0 0 auto;
 	}
 
-	.value-pill--bet .bet-coin {
-		width: 40px;
-		height: 40px;
-	}
-
-	.bet-coin .pill-icon {
-		width: 18px;
-		height: 18px;
+	.bet-coin img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		display: block;
 	}
 
 	.bet-pill {
@@ -641,6 +673,22 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		border-radius: 50%;
 		font-size: 1.1rem;
 		font-weight: 800;
+		transition: transform 0.12s ease, filter 0.12s ease;
+	}
+
+	.circle-btn:not(:disabled):hover,
+	.buy-btn:hover {
+		transform: translateY(-1px);
+		filter: brightness(1.1);
+	}
+
+	.circle-btn:not(:disabled):active,
+	.buy-btn:active {
+		transform: translateY(1px) scale(0.95);
+	}
+
+	.buy-btn {
+		transition: transform 0.12s ease, filter 0.12s ease;
 	}
 
 	.circle-btn,
@@ -656,12 +704,65 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		outline: none;
 	}
 
-	/* Top two buttons get their own distinct frames */
-	.hud-top .circle-btn:nth-child(1) {
-		background: var(--menu-btn-bg) center / cover no-repeat;
+	/* Image buttons — full pre-rendered PNG artwork from the Figma UI kit */
+	.nav-btn {
+		width: 60px;
+		height: 60px;
+		border: none;
+		background: none;
+		padding: 0;
+		outline: none;
+		cursor: pointer;
+		flex: 0 0 auto;
+		display: grid;
+		place-items: center;
+		transition: transform 0.12s ease, filter 0.12s ease;
 	}
-	.hud-top .circle-btn:nth-child(2) {
-		background: var(--sound-btn-bg) center / cover no-repeat;
+
+	.nav-btn img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		display: block;
+		pointer-events: none;
+	}
+
+	.nav-btn:not(:disabled):hover {
+		transform: translateY(-1px);
+		filter: brightness(1.12);
+	}
+
+	.nav-btn:not(:disabled):active {
+		transform: translateY(1px) scale(0.94);
+	}
+
+	.nav-btn:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
+
+	.nav-btn img.is-muted {
+		opacity: 0.4;
+	}
+
+	.nav-btn.active {
+		filter: drop-shadow(0 0 7px rgba(255, 216, 74, 0.9));
+	}
+
+	.nav-btn--turbo.turbo-fast {
+		filter: drop-shadow(0 0 4px rgba(255, 200, 80, 0.6));
+	}
+
+	.nav-btn--turbo.turbo-super {
+		filter: drop-shadow(0 0 6px #ffd84a) drop-shadow(0 0 12px rgba(255, 216, 74, 0.5));
+	}
+
+	/* Menu + sound buttons, docked at the left of the bottom bar */
+	.hud-system {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex: 0 0 auto;
 	}
 
 	.btn-icon {
@@ -786,84 +887,115 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 
 
 	.spin-btn {
-		width: 110px;
-		height: 110px;
-		border-radius: 50%;
-		font-weight: 900;
-		background: var(--play-btn-bg) center / cover no-repeat;
+		width: 122px;
+		height: 122px;
+		/* Negative margins keep the big button from inflating the bar height;
+		   it protrudes above the wooden bar as the focal control. */
+		margin: -22px 0;
+		border: none;
+		background: none;
+		padding: 0;
+		outline: none;
+		cursor: pointer;
 		display: grid;
 		place-items: center;
-		line-height: 1;
-		padding: 0;
-		transform: translateY(-12px);
+		transform: translateY(-10px);
 		position: relative;
 		z-index: 3;
+		transition: transform 0.12s ease, filter 0.12s ease;
 	}
 
-
-
-	.spin-btn__inner {
-		display: grid;
-		place-items: center;
+	.spin-btn__img {
 		width: 100%;
 		height: 100%;
-		transform: none;
+		object-fit: contain;
+		display: block;
+		pointer-events: none;
 	}
 
-	.spin-btn__glyph {
-		display: inline-block;
-		line-height: 1;
-		transform: translateY(-1px);
+	.spin-btn:not(:disabled):hover {
+		transform: translateY(-12px);
+		filter: brightness(1.08);
 	}
 
-	.spin-btn__glyph--stop {
-		font-size: 2.2rem;
-		font-weight: 900;
-		transform: translateY(-2px);
+	.spin-btn:not(:disabled):active {
+		transform: translateY(-8px) scale(0.96);
 	}
+
+	.spin-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	/* Stop / autospin-count overlays sit on the green disc, masking the baked icon */
+	.spin-btn__glyph,
 	.spin-btn__count {
 		position: absolute;
-		inset: 0;
+		top: 50%;
+		left: 50%;
+		width: 56%;
+		height: 56%;
+		transform: translate(-50%, -50%);
 		display: grid;
 		place-items: center;
-		font-family: Cinzel, serif;
-		font-size: 0.95rem;
-		font-weight: 900;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba(20, 48, 8, 0.96) 60%, rgba(20, 48, 8, 0) 100%);
 		color: #fff;
+		font-family: Cinzel, serif;
+		font-weight: 900;
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 		pointer-events: none;
 	}
 
-	.buy-btn {
-		--buy-w: 128px;
-		width: var(--buy-w);
-		min-width: var(--buy-w);
-		max-width: none;
-		aspect-ratio: 3065 / 1084;
-		height: auto;
-		border: 0;
-		border-radius: 14px;
-		background: var(--buy-btn-bg) center / 100% 100% no-repeat;
-		cursor: pointer;
-		position: relative;
-		color: #fff;
-		font-family: 'Cinzel', serif;
-		font-size: 0.58rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+	.spin-btn__glyph {
+		font-size: 2rem;
 	}
 
-	.buy-btn__text {
+	.spin-btn__count {
+		font-size: 1.5rem;
+	}
+
+	.buy-btn {
+		width: 152px;
+		height: auto;
+		aspect-ratio: 730 / 267;
+		border: 0;
+		background: none;
+		padding: 0;
+		outline: none;
+		cursor: pointer;
+		position: relative;
 		display: grid;
 		place-items: center;
+		flex: 0 0 auto;
+		transition: transform 0.12s ease, filter 0.12s ease;
+	}
+
+	.buy-btn__img {
 		width: 100%;
 		height: 100%;
-		transform: translateY(-2px);
-		font-size: inherit;
+		object-fit: contain;
+		display: block;
+		pointer-events: none;
+	}
+
+	/* "FEATURE ON" state: patch over the baked "BUY BONUS" text */
+	.buy-btn__text {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 78%;
+		padding: 6px 0;
+		text-align: center;
+		background: rgba(18, 38, 8, 0.94);
+		border-radius: 10px;
 		color: #ffd84a;
-		font-size: calc(0.58rem * 1.5);
+		font-family: 'Cinzel', serif;
+		font-weight: 900;
+		font-size: 0.95rem;
+		letter-spacing: 0.05em;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
 	@media (max-width: 1100px) {
@@ -975,11 +1107,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	}
 
 	.hud-shell[data-layout='landscape'] .hud-buy .buy-btn {
-		--buy-w: 144px;
-		min-width: var(--buy-w);
-		max-width: none;
-		border-radius: 50%;
-		box-shadow: 0 12px 24px rgba(0, 0, 0, 0.34);
+		width: clamp(110px, 15vw, 150px);
 		align-self: center;
 	}
 
@@ -1024,13 +1152,13 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		gap: 2px;
 	}
 
-	.hud-shell[data-layout='landscape'] .stepper .circle-btn--small {
+	.hud-shell[data-layout='landscape'] .stepper .nav-btn {
 		width: clamp(44px, 6.4vh, 56px);
 		height: clamp(44px, 6.4vh, 56px);
-		font-size: clamp(1.25rem, 2.8vh, 1.7rem);
 	}
 
-	.hud-shell[data-layout='landscape'] .hud-top {
+	/* Landscape mobile keeps its own menu/sound inside the stepper column */
+	.hud-shell[data-layout='landscape'] .hud-system {
 		display: none;
 	}
 
@@ -1043,7 +1171,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		max-height: 100%;
 	}
 
-	.hud-shell[data-layout='landscape'] .action-cluster .circle-btn--small {
+	.hud-shell[data-layout='landscape'] .action-cluster .nav-btn {
 		width: clamp(42px, 6vh, 50px);
 		height: clamp(42px, 6vh, 50px);
 	}
