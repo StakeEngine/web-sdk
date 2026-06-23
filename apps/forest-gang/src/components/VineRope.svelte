@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { MeshRope, Graphics, Container, Point } from 'pixi.js';
+	import { Graphics, Container } from 'pixi.js';
+	import { getContextParent } from 'pixi-svelte';
+	import { onDestroy } from 'svelte';
 	import { GlowFilter } from 'pixi-filters';
-	import { getContextParent, getContextApp } from 'pixi-svelte';
 
 	type Props = {
 		waypoints: Array<{ x: number; y: number }>;
@@ -12,36 +13,39 @@
 
 	const props: Props = $props();
 	const parentContext = getContextParent();
-	const appContext = getContextApp();
 
-	const texture = appContext.stateApp.loadedAssets?.['vineLineTexture'];
-	if (!texture) {
-		console.error('VineRope: vineLineTexture not loaded');
-	}
-	const ropePoints = props.waypoints.map((p) => new Point(p.x, p.y));
-
+	const line = new Graphics();
 	const maskGraphics = new Graphics();
-	const rope = texture ? new MeshRope({ texture, points: ropePoints }) : null;
 	const container = new Container();
+	container.addChild(line);
+	line.mask = maskGraphics;
 	container.addChild(maskGraphics);
-	if (rope) {
-		rope.mask = maskGraphics;
-		container.addChild(rope);
-		container.filters = [
-			new GlowFilter({ color: props.color, distance: 6, outerStrength: 2, innerStrength: 0, quality: 0.5 }),
-		];
-	}
+	container.alpha = 0.75;
+	container.filters = [new GlowFilter({ distance: 10, outerStrength: 3, innerStrength: 0, color: props.color, alpha: 0.9, quality: 0.3 })];
 
 	parentContext.addToParent(container);
 
-	const minX = Math.min(...props.waypoints.map((p) => p.x));
-	const maxX = Math.max(...props.waypoints.map((p) => p.x));
-	const minY = Math.min(...props.waypoints.map((p) => p.y));
-	const maxY = Math.max(...props.waypoints.map((p) => p.y));
-	const pad = props.vineH * 2;
+	onDestroy(() => {
+		container.parent?.removeChild(container);
+		container.destroy({ children: true });
+	});
 
-	// Reveal mask grows left → right as progress increases
 	$effect(() => {
+		// Recompute extents inside effect so mask stays correct when waypoints change (cycling paylines)
+		const minX = Math.min(...props.waypoints.map((p) => p.x));
+		const maxX = Math.max(...props.waypoints.map((p) => p.x));
+		const minY = Math.min(...props.waypoints.map((p) => p.y));
+		const maxY = Math.max(...props.waypoints.map((p) => p.y));
+		const pad = props.vineH * 2;
+
+		line.clear();
+		line.setStrokeStyle({ width: 3, color: props.color, alpha: 1 });
+		line.moveTo(props.waypoints[0].x, props.waypoints[0].y);
+		for (let i = 1; i < props.waypoints.length; i++) {
+			line.lineTo(props.waypoints[i].x, props.waypoints[i].y);
+		}
+		line.stroke();
+
 		maskGraphics.clear();
 		maskGraphics.beginFill(0xffffff);
 		maskGraphics.rect(

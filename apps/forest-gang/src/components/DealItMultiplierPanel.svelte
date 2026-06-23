@@ -15,6 +15,7 @@
 	import {
 		BitmapText,
 		Container,
+		Sprite,
 		SpineEventEmitterProvider,
 		SpineProvider,
 		SpineSlot,
@@ -26,7 +27,7 @@
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE } from '../game/constants';
+	import { SYMBOL_SIZE, SYMBOL_W } from '../game/constants';
 
 	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
 
@@ -35,14 +36,24 @@
 	const REEL_SLIDE = SYMBOL_SIZE * 3.5;
 	const FONT_SIZE = SYMBOL_SIZE * 5.2;
 
+	// Mirror BonusSymbolPanel geometry so DealIt panel sits directly below it
+	const _symPadW = SYMBOL_W * 1.1;
+	const _symPadH = _symPadW * (420 / 624);
+
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
-	const BONUS_PANEL_W = SYMBOL_SIZE * 0.92;
-	const multiY = SYMBOL_SIZE * 0.3 - BONUS_PANEL_W * 0.25 + BONUS_PANEL_W * 0.72 + 30 + 40;
-	const position = $derived({
-		x: context.stateGameDerived.boardLayout().width - BONUS_PANEL_W * 0.12 - 50,
-		y: multiY,
+	const boardW = $derived(context.stateGameDerived.boardLayout().width);
+	const desktopPosition = $derived({
+		x: boardW + 40,
+		y: SYMBOL_SIZE * 0.3 + _symPadH * 0.5 + 18 + 30,
 	});
+	const portraitPosition = $derived({
+		x: boardW - _symPadW * 0.5 - 10,
+		y: -SYMBOL_SIZE * 0.6 + _symPadH * 0.5 + 18 + 30,
+	});
+	const position = $derived(
+		context.stateLayoutDerived.isStacked() ? portraitPosition : desktopPosition,
+	);
 	const pivot = { x: PANEL_WIDTH * 0.5, y: PANEL_WIDTH * 0.25 };
 
 	let show = $state(false);
@@ -162,6 +173,12 @@
 					timeScale={stateBetDerived.timeScale()}
 					listener={{ complete: () => { oncomplete(); } }}
 				/>
+				<!-- <SpineSlot slotName="Frame_Multiplier">
+					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
+				</SpineSlot> -->
+				<SpineSlot slotName="Frame_Multiplier2">
+					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
+				</SpineSlot>
 				<SpineEventEmitterProvider>
 					<SpineSlot slotName="slot_multi">
 						{#if isCycling}

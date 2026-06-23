@@ -16,9 +16,11 @@
 
 	type Props = {
 		children: Snippet<[{ sizes: Sizes }]>;
+		xOffset?: number;
 	};
 
 	const props: Props = $props();
+	const xOffset = $derived(props.xOffset ?? 0);
 
 	type AnimationName = 'intro' | 'idle';
 
@@ -39,8 +41,8 @@
 
 <MainContainer>
 	<Container
-		x={context.stateGameDerived.boardLayout().x}
-		y={context.stateGameDerived.boardLayout().y}
+		x={main.width / 2}
+		y={main.height / 2}
 		pivot={anchorToPivot({ anchor: 0.5, sizes: scaledBackground })}
 	>
 		<SpineProvider

@@ -15,16 +15,18 @@
 	const ANCHOR_X = 0.5;
 	const ANCHOR_Y = 0.45; // inner panel centre sits slightly above image centre
 	const MARGIN = 1.04; // inner panel a touch larger than the board grid
+	// Frame scales to 130% while grid scales to 115% — extra factor covers the difference
+	const FRAME_EXTRA_SCALE = 1.30 / 1.15;
 
-	const frameW = $derived((board.width * board.boardScale * MARGIN) / INNER_W_FRAC);
+	const frameW = $derived((board.width * board.boardScale * MARGIN * FRAME_EXTRA_SCALE) / INNER_W_FRAC);
 	const frameH = $derived(frameW / FRAME_ASPECT);
 </script>
 
 <Sprite
 	key="slotPad"
-	anchor={{ x: ANCHOR_X, y: ANCHOR_Y }}
+	anchor={{ x: ANCHOR_X, y: 0 }}
 	x={board.x}
-	y={board.y}
+	y={0}
 	width={frameW}
 	height={frameH}
 />

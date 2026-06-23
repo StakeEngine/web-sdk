@@ -67,6 +67,8 @@
 		}
 	});
 	const isFeatureActive = $derived(stateBet.activeBetModeKey === 'FEATURE');
+	const isChanceActive = $derived(stateBet.activeBetModeKey === 'CHANCE');
+	const isAnyModeActive = $derived(isFeatureActive || isChanceActive);
 	const turboImg = $derived(
 		stateBet.isSuperTurbo ? navTurbo3 : stateBet.isTurbo ? navTurbo2 : navTurbo1,
 	);
@@ -76,7 +78,11 @@
 	const biggestBet = $derived(stateConfig.betAmountOptions[stateConfig.betAmountOptions.length - 1]);
 	const currentBetIndex = $derived(Math.max(0, betOptions.indexOf(stateBet.betAmount)));
 const formattedBalance = $derived(forestStakeDerived.formatCurrencyAmount(stateBet.balanceAmount));
-const formattedBet = $derived(forestStakeDerived.formatCurrencyAmount(stateBet.betAmount));
+const formattedBet = $derived(
+	isFeatureActive ? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 20) :
+	isChanceActive  ? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 2) :
+	forestStakeDerived.formatCurrencyAmount(stateBet.betAmount)
+);
 const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ? '∞' : `${stateBet.autoSpinsCounter}`);
 	const disableDecrease = $derived(!canInteract || stateBet.betAmount === smallestBet);
 	const disableIncrease = $derived(!canInteract || stateBet.betAmount === biggestBet);
@@ -165,6 +171,16 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	const handleToggleFeature = () => {
 		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
 		stateBet.activeBetModeKey = isFeatureActive ? 'BASE' : 'FEATURE';
+	};
+
+	const handleToggleChance = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
+		stateBet.activeBetModeKey = isChanceActive ? 'BASE' : 'CHANCE';
+	};
+
+	const handleDeactivate = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
+		stateBet.activeBetModeKey = 'BASE';
 	};
 
 	const onSpinButton = () => {
@@ -264,11 +280,13 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 			</div>
 
 			<div class="hud-buy">
-				<button class="buy-btn" class:buy-btn--feature-on={isFeatureActive} type="button" onclick={openBuyBonus} aria-label={i18nDerived.buyBonus()}>
-					<img src={navBuyBonus} alt="" class="buy-btn__img" />
-					{#if isFeatureActive}
-						<span class="buy-btn__text">FEATURE ON</span>
-					{/if}
+				<button
+					class="buy-btn"
+					type="button"
+					onclick={isAnyModeActive ? handleDeactivate : openBuyBonus}
+					aria-label={isAnyModeActive ? 'Deactivate' : i18nDerived.buyBonus()}
+				>
+					<span class="buy-btn__label">{isAnyModeActive ? 'DEACTIVATE' : 'BUY BONUS'}</span>
 				</button>
 			</div>
 		</div>
@@ -288,7 +306,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 				</span>
 				<div class="bet-values">
 					<span class="label">{i18nDerived.betLabel()}</span>
-					<span class="value">{formattedBet}</span>
+					<span class="value" class:value--feature={isAnyModeActive}>{formattedBet}</span>
 				</div>
 			</div>
 		</div>
@@ -370,7 +388,9 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	<CustomBuyBonusModal
 		onclose={() => (showBuyModal = false)}
 		{isFeatureActive}
+		{isChanceActive}
 		onToggleFeature={handleToggleFeature}
+		onToggleChance={handleToggleChance}
 	/>
 {/if}
 
@@ -647,6 +667,10 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		font-size: 1.25rem;
 		font-weight: 700;
 		color: #fff;
+	}
+
+	.value--feature {
+		color: #ffd84a;
 	}
 
 	.stepper,
@@ -956,46 +980,33 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	}
 
 	.buy-btn {
-		width: 152px;
+		width: 130px;
 		height: auto;
-		aspect-ratio: 730 / 267;
+		aspect-ratio: 3065 / 1084;
 		border: 0;
-		background: none;
-		padding: 0;
+		background: var(--buy-btn-bg) center / 100% 100% no-repeat;
+		padding: 0 14px;
 		outline: none;
 		cursor: pointer;
 		position: relative;
-		display: grid;
-		place-items: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1px;
 		flex: 0 0 auto;
 		transition: transform 0.12s ease, filter 0.12s ease;
 	}
 
-	.buy-btn__img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		display: block;
-		pointer-events: none;
-	}
-
-	/* "FEATURE ON" state: patch over the baked "BUY BONUS" text */
-	.buy-btn__text {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 78%;
-		padding: 6px 0;
-		text-align: center;
-		background: rgba(18, 38, 8, 0.94);
-		border-radius: 10px;
-		color: #ffd84a;
+	.buy-btn__label {
 		font-family: 'Cinzel', serif;
+		font-size: 0.82rem;
 		font-weight: 900;
-		font-size: 0.95rem;
-		letter-spacing: 0.05em;
-		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+		color: #ffd84a;
+		letter-spacing: 0.08em;
+		text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+		line-height: 1;
+		pointer-events: none;
 	}
 
 	@media (max-width: 1100px) {
@@ -1111,8 +1122,12 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		align-self: center;
 	}
 
-	.hud-shell[data-layout='landscape'] .buy-btn__text {
+	.hud-shell[data-layout='landscape'] .buy-btn__label {
 		font-size: 0.52rem;
+	}
+
+	.hud-shell[data-layout='landscape'] .buy-btn__amount {
+		font-size: 0.65rem;
 	}
 
 	.hud-shell[data-layout='landscape'] .hud-stats {

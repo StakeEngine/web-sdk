@@ -17,21 +17,16 @@
 	import { stateUrlDerived } from 'state-shared';
 
 	import { getContext } from '../game/context';
-	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
 	import PressToContinue from './PressToContinue.svelte';
 	import WinCoins from './WinCoins.svelte';
-
-	type AnimationName = 'intro' | 'idle';
+	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
 
 	const context = getContext();
-	const bs = $derived(context.stateGameDerived.boardLayout().boardScale);
 
 	let show = $state(true);
-	let animationName = $state<AnimationName>('intro');
 	let amount = $state(0);
 	let winLevelData = $state<WinLevelData>();
 	let oncomplete = $state(() => {});
-	let onCountUpComplete = $state(() => {});
 
 	context.eventEmitter.subscribeOnMount({
 		freeSpinOutroShow: () => (show = true),
@@ -47,8 +42,7 @@
 <FadeContainer {show}>
 	{#if winLevelData}
 		{@const duration = winLevelData.presentDuration}
-		{@const isBigWin = winLevelData.type === 'big'}
-		<WinCountUpProvider {amount} {duration} oncomplete={() => onCountUpComplete()}>
+		<WinCountUpProvider {amount} {duration} oncomplete={() => {}}>
 			{#snippet children({ countUpAmount, startCountUp, finishCountUp, countUpCompleted })}
 				<OnMount onmount={() => startCountUp()} />
 
@@ -56,45 +50,41 @@
 
 				<FreeSpinAnimation>
 					{#snippet children({ sizes })}
-						{@const BW = sizes.width}
-						<!-- YOU WON / freespins text — proportional to slot width like intro -->
-						{#if isBigWin}
-							<Sprite
-								anchor={{ x: 0.5, y: 0.5 }}
-								width={Math.round(BW * 0.55)}
-								height={Math.round(BW * 0.55 * (156 / 500))}
-								key="freespins_{stateUrlDerived.lang()}.png"
-								y={Math.round(-BW * 0.28)}
-							/>
-						{:else}
-							<Sprite
-								anchor={{ x: 0.5, y: 0.5 }}
-								width={Math.round(BW * 0.55)}
-								height={Math.round(BW * 0.55 * (80 / 500))}
-								key="winsmall_{stateUrlDerived.lang()}.png"
-								y={Math.round(-BW * 0.28)}
-							/>
-						{/if}
+						{@const BW = sizes.width * 1.5}
 
-						<!-- TOTAL WIN label -->
+						<Sprite key="fsBoardBg" anchor={{ x: 0.5, y: 0.5 }} width={BW} height={BW} />
+
+						<!-- CONGRATULATIONS! YOU WON banner -->
 						<Sprite
+							key="freespins_{stateUrlDerived.lang()}.png"
 							anchor={{ x: 0.5, y: 0.5 }}
-							width={Math.round(BW * 0.38)}
-							height={Math.round(BW * 0.38 * (42 / 177))}
-							key="totalwin.png"
-							y={Math.round(BW * 0.08)}
+							width={Math.round(BW * 0.53)}
+							height={Math.round(BW * 0.53 * (128 / 486))}
+							y={Math.round(-BW * 0.279)}
+						/>
+
+						<!-- Scatter medallion -->
+						<Sprite
+							key="fsMedallion"
+							anchor={{ x: 0.5, y: 0.5 }}
+							width={Math.round(BW * 0.28)}
+							height={Math.round(BW * 0.28 * (273 / 300))}
+							y={Math.round(-BW * 0.051)}
 						/>
 
 						<!-- Win amount -->
 						<ResponsiveBitmapText
 							anchor={0.5}
-							y={Math.round(BW * 0.24)}
+							y={Math.round(BW * 0.220)}
+							maxWidth={Math.round(BW * 0.60)}
+							text={bookEventAmountToCurrencyString(countUpAmount)}
 							style={{
 								fontFamily: 'gold',
-								fontSize: Math.round(BW * 0.20),
+								fontSize: Math.round(BW * 0.065),
+								align: 'center',
+								fontWeight: 'bold',
+								letterSpacing: 0,
 							}}
-							text={bookEventAmountToCurrencyString(countUpAmount)}
-							maxWidth={Math.round(BW * 0.82)}
 						/>
 					{/snippet}
 				</FreeSpinAnimation>

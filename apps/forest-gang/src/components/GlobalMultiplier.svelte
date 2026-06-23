@@ -11,6 +11,7 @@
 	import {
 		BitmapText,
 		Container,
+		Sprite,
 		SpineEventEmitterProvider,
 		SpineProvider,
 		SpineSlot,
@@ -22,22 +23,24 @@
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE } from '../game/constants';
+	import { SYMBOL_SIZE, SYMBOL_W } from '../game/constants';
 
 	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
 
-	const PANEL_WIDTH = SYMBOL_SIZE * 0.641 * 0.75;
+	const PANEL_WIDTH = SYMBOL_SIZE * 0.641;
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
-	const BONUS_PANEL_W = SYMBOL_SIZE * 0.92;
-	// BonusSymbolPanel visual center x (pivot.x = BONUS_PANEL_W*0.5 maps position.x to center)
-	const multiX = $derived(context.stateGameDerived.boardLayout().width - BONUS_PANEL_W * 0.12 - 50);
-	// BonusSymbolPanel bottom = pos.y - pivot.y + height = SYMBOL_SIZE*0.3 - BONUS_PANEL_W*0.25 + BONUS_PANEL_W*0.72
-	const multiY = SYMBOL_SIZE * 0.3 - BONUS_PANEL_W * 0.25 + BONUS_PANEL_W * 0.72 + 30 + 40;
-	const desktopPosition = $derived({ x: multiX, y: multiY });
+	// Mirror BonusSymbolPanel geometry to place multiplier directly below it
+	const _symPadW = SYMBOL_W * 1.1;
+	const _symPadH = _symPadW * (420 / 624);
+	// Desktop: symbol pad center is at boardW + 40
+	const desktopPosition = $derived({
+		x: context.stateGameDerived.boardLayout().width + 40,
+		y: SYMBOL_SIZE * 0.3 + _symPadH * 0.5 + 18 + 30,
+	});
 	const portraitPosition = $derived({
-		x: context.stateGameDerived.boardLayout().width - PANEL_WIDTH * 0.8,
-		y: SYMBOL_SIZE * 0.2,
+		x: context.stateGameDerived.boardLayout().width - _symPadW * 0.5 - 10,
+		y: -SYMBOL_SIZE * 0.6 + _symPadH * 0.5 + 18 + 30,
 	});
 	const position = $derived(
 		context.stateLayoutDerived.isStacked() ? portraitPosition : desktopPosition,
@@ -94,6 +97,12 @@
 						},
 					}}
 				/>
+				<!-- <SpineSlot slotName="Frame_Multiplier">
+					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
+				</SpineSlot> -->
+				<SpineSlot slotName="Frame_Multiplier2">
+					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
+				</SpineSlot>
 				<SpineEventEmitterProvider>
 					<SpineSlot slotName="slot_multi">
 						<BitmapText

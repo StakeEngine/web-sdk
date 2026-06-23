@@ -14,8 +14,8 @@
 	import { anchorToPivot, BitmapText, Container, Sprite, type Sizes } from 'pixi-svelte';
 
 	const context = getContext();
-	const PANEL_KEY_DESKTOP = 'Frame_FSCounter.png';
-	const PANEL_RATIO_DESKTOP = 824 / 622;
+	const PANEL_KEY_DESKTOP = 'symbolPad';
+	const PANEL_RATIO_DESKTOP = 624 / 420;
 	const panelKey = PANEL_KEY_DESKTOP;
 	const panelWidth = $derived(SYMBOL_SIZE * 2 * 0.8);
 	const panelSizes = $derived({
@@ -32,7 +32,7 @@
 		y:
 			context.stateGameDerived.boardLayout().y -
 			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale +
-			400,
+			80,
 	});
 
 	const fontSize = SYMBOL_SIZE * 0.275;

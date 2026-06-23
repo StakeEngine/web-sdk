@@ -95,6 +95,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	bonusSymbolSelected: async (bookEvent: BookEventOfType<'bonusSymbolSelected'>) => {
 		stateGame.selectedBonusSymbol = bookEvent.symbol;
 		stateGame.bonusMode = bookEvent.mode;
+		await eventEmitter.broadcastAsync({ type: 'bonusSymbolRollAwait' });
 	},
 	expandedSymbolReveal: async (bookEvent: BookEventOfType<'expandedSymbolReveal'>) => {
 		// Clear any win states from the previous spin before expanding starts
@@ -159,19 +160,29 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
 			eventEmitter.broadcast({ type: 'dealItMultiplierStart' });
 		}
-		// When expanding symbol is active, only highlight its positions — never mislead with other payline wins
-		const wins = stateGame.expandedSymbol
+		// Only filter to expanded symbol wins when the overlay is actually showing (reels.length > 0)
+		// A cleared expandedSymbol {reels:[]} means a non-expanding spin — show all payline wins normally
+		const isExpandedOverlayShowing = (stateGame.expandedSymbol?.reels.length ?? 0) > 0;
+		const wins = isExpandedOverlayShowing
 			? bookEvent.wins.filter((w) => w.symbol === stateGame.expandedSymbol!.symbol)
 			: bookEvent.wins;
 		// Store full 5-reel payline paths for vine animation using lineIndex lookup
 		const paylines = config.paylines as Record<string, number[]>;
-		stateGame.paylineWins = wins
-			.map((w) => {
-				const rows = paylines[String(w.meta.lineIndex)];
-				if (!rows) return null;
-				return { lineIndex: w.meta.lineIndex, path: rows.map((row, reel) => ({ reel, row })) };
-			})
-			.filter((p): p is { lineIndex: number; path: Array<{ reel: number; row: number }> } => p !== null);
+		if (isExpandedOverlayShowing && wins.length > 0) {
+			// Expanding symbol wins all 20 paylines — show all
+			stateGame.paylineWins = Object.entries(paylines).map(([key, rows]) => ({
+				lineIndex: Number(key),
+				path: rows.map((row, reel) => ({ reel, row })),
+			}));
+		} else {
+			stateGame.paylineWins = wins
+				.map((w) => {
+					const rows = paylines[String(w.meta.lineIndex)];
+					if (!rows) return null;
+					return { lineIndex: w.meta.lineIndex, path: rows.map((row, reel) => ({ reel, row })) };
+				})
+				.filter((p): p is { lineIndex: number; path: Array<{ reel: number; row: number }> } => p !== null);
+		}
 		// Deduplicate positions across all wins and animate once — prevents 5-10s freeze
 		const seen = new Set<string>();
 		const allPositions = wins.flatMap((win) => win.positions).filter((pos) => {
@@ -217,6 +228,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 			stateUi.freeSpinCounterTotal = bookEvent.totalFs;
 		}
 		if (bonusMode === 'superspin') {
+			eventEmitter.broadcast({ type: 'dealItMultiplierHide' });
 			eventEmitter.broadcast({ type: 'globalMultiplierShow' });
 		}
 		if (!isFeatureSpin) {
@@ -242,9 +254,11 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		const isFeatureSpin = stateGame.bonusMode === 'feature';
 		// Clear expanding symbol overlay before total board shows
 		stateGame.expandedSymbol = null;
+		stateGame.paylineWins = [];
 		stateGame.gameType = isFeatureSpin ? 'feature' : 'basegame';
 		eventEmitter.broadcast({ type: 'boardFrameGlowHide' });
 		eventEmitter.broadcast({ type: 'globalMultiplierHide' });
+		eventEmitter.broadcast({ type: 'dealItMultiplierHide' });
 		if (isFeatureSpin) {
 			// Feature spin: no outro panel, just let the win animate naturally
 			stateUi.freeSpinCounterShow = false;

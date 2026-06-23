@@ -5,16 +5,17 @@
 	import { forestStakeDerived } from '../state/forestStake.svelte';
 
 	const ap = (p: string) => `./${p.startsWith('/') ? p.slice(1) : p}`;
-	const bonusMenuFrame  = ap('/assets/components/frames/bonus_menu_frame.webp');
-	const dealItIcon      = ap('/assets/components/ui/bonus_deal_it_icon.webp');
-	const allInIcon       = ap('/assets/components/ui/bonus_all_in_icon.webp');
-	const featureSpinIcon = ap('/assets/components/ui/bonus_feature_spin_icon.webp');
-	const spinBtnFrame    = ap('/assets/components/frames/play_button-frame.png?v=20260616');
-	const iconPlay        = ap('/assets/hud/icon-play.svg');
+	const cardFrame      = ap('/assets/components/frames/bonus_menu_frame.webp');
+	const dealItIcon     = ap('/assets/components/ui/bonus_deal_it_icon.webp');
+	const allInIcon      = ap('/assets/components/ui/bonus_all_in_icon.webp');
+	const featureIcon    = ap('/assets/components/ui/bonus_feature_spin_icon.webp');
+	const iconPlay       = ap('/assets/hud/icon-play.svg');
 
 	type Props = {
 		onclose: () => void;
+		isChanceActive: boolean;
 		isFeatureActive: boolean;
+		onToggleChance: () => void;
 		onToggleFeature: () => void;
 	};
 
@@ -22,8 +23,9 @@
 	const context = getContext();
 
 	const betAmount   = $derived(stateBet.betAmount);
+	const chanceCost  = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 2));
 	const dealItCost  = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 100));
-	const allInCost   = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 200));
+	const allInCost   = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 400));
 	const featureCost = $derived(forestStakeDerived.formatCurrencyAmount(betAmount * 20));
 	const canBuy      = $derived(stateBetDerived.isBetCostAvailable());
 
@@ -32,6 +34,7 @@
 	const buyMode      = (mode: 'BONUS' | 'SUPER') => { stateBet.activeBetModeKey = mode; props.onclose(); context.eventEmitter.broadcast({ type: 'bet' }); };
 	const openConfirm  = (mode: 'BONUS' | 'SUPER') => { confirmMode = mode; };
 	const closeConfirm = () => { confirmMode = null; };
+	const toggleActivateMode = (toggle: () => void) => { toggle(); props.onclose(); };
 
 	const confirmLabel = $derived(confirmMode === 'SUPER' ? 'ALL IN' : 'DEAL IT');
 	const confirmCost  = $derived(confirmMode === 'SUPER' ? allInCost : dealItCost);
@@ -50,58 +53,64 @@
 <button class="backdrop" type="button" aria-label="Close" tabindex="-1" onclick={props.onclose}></button>
 
 <!-- Panel -->
-<div class="panel" role="dialog" aria-modal="true" style="--board-bg:url('{bonusMenuFrame}')">
+<div class="panel" role="dialog" aria-modal="true">
 
 	<button class="close-btn" type="button" onclick={props.onclose}>✕</button>
 
-	<div class="header">
-		<h2 class="title">BONUS MENU</h2>
-	</div>
+	<h2 class="title">BUY BONUS</h2>
 
-	<div class="body">
+	<div class="grid">
 
 		<!-- DEAL IT -->
-		<button class="card" type="button" onclick={() => openConfirm('BONUS')} disabled={!canBuy}>
-			<img class="icon" src={dealItIcon} alt="" />
-			<div class="info">
-				<span class="name name--gold">DEAL IT</span>
-				<span class="desc">10 FREE SPINS · RANDOM EXPANDING SYMBOL · UP TO 250× MULTIPLIER</span>
-			</div>
-			<div class="badge badge--gold"><span>{dealItCost}</span></div>
-		</button>
+		<div class="card" style="--frame:url('{cardFrame}')">
+			<span class="card-title">DEAL IT</span>
+			<span class="card-desc">10 FREE SPINS · RANDOM EXPANDING SYMBOL · UP TO 250× MULTIPLIER</span>
+			<img class="card-icon" src={dealItIcon} alt="" />
+			<span class="card-price">{dealItCost}</span>
+			<button class="card-btn card-btn--buy" type="button" disabled={!canBuy} onclick={() => openConfirm('BONUS')}>BUY</button>
+		</div>
 
-		<!-- ALL IN -->
-		<button class="card" type="button" onclick={() => openConfirm('SUPER')} disabled={!canBuy}>
-			<img class="icon" src={allInIcon} alt="" />
-			<div class="info">
-				<span class="name name--purple">ALL IN</span>
-				<span class="desc">5 FREE SPINS · PROFILE-DRIVEN MULTIPLIER · MAX 25,000×</span>
+		<!-- CHANCE SPIN -->
+		<div class="card" style="--frame:url('{cardFrame}')">
+			<span class="card-title">CHANCE SPIN</span>
+			<span class="card-desc">2× BET · 3× DEAL IT / ALL IN TRIGGER CHANCE · {chanceCost} / SPIN</span>
+			<div class="card-icon-wrap">
+				<img class="card-icon" src={featureIcon} alt="" />
+				<img class="card-icon-overlay" src={iconPlay} alt="" />
 			</div>
-			<div class="badge badge--purple"><span>{allInCost}</span></div>
-		</button>
+			<span class="card-price">{chanceCost} / spin</span>
+			<button
+				class="card-btn"
+				class:card-btn--active={props.isChanceActive}
+				type="button"
+				onclick={() => toggleActivateMode(props.onToggleChance)}
+			>{props.isChanceActive ? 'DEACTIVATE' : 'ACTIVATE'}</button>
+		</div>
 
 		<!-- FEATURE SPIN -->
-		<div class="card card--static">
-			<div class="icon feature-spin-icon">
-				<img src={spinBtnFrame} alt="" />
-				<img class="play-arrow" src={iconPlay} alt="" />
+		<div class="card" style="--frame:url('{cardFrame}')">
+			<span class="card-title">FEATURE SPIN</span>
+			<span class="card-desc">EVERY SPIN IS A 1-SPIN DEAL IT · {featureCost} / SPIN</span>
+			<div class="card-icon-wrap">
+				<img class="card-icon" src={featureIcon} alt="" />
+				<img class="card-icon-overlay" src={iconPlay} alt="" />
 			</div>
-			<div class="info">
-				<span class="name">FEATURE SPIN</span>
-				<span class="desc">Every spin is a 1-spin Deal It · {featureCost} / spin</span>
-			</div>
-			<div class="toggle-wrap">
-				<button
-					class="toggle"
-					class:toggle--on={props.isFeatureActive}
-					type="button"
-					onclick={props.onToggleFeature}
-					aria-label="Toggle Feature Spin"
-					aria-pressed={props.isFeatureActive}
-				>
-					<span class="toggle-thumb"></span>
-				</button>
-			</div>
+			<span class="card-price">{featureCost} / spin</span>
+			<button
+				class="card-btn"
+				class:card-btn--active={props.isFeatureActive}
+				type="button"
+				onclick={() => toggleActivateMode(props.onToggleFeature)}
+			>{props.isFeatureActive ? 'DEACTIVATE' : 'ACTIVATE'}</button>
+		</div>
+
+		<!-- ALL IN -->
+		<div class="card" style="--frame:url('{cardFrame}')">
+			<span class="card-title">ALL IN</span>
+			<span class="card-desc">10 FREE SPINS · 2× START MULTIPLIER · DOUBLES ON EVERY WIN</span>
+			<img class="card-icon" src={allInIcon} alt="" />
+			<span class="card-price">{allInCost}</span>
+			<button class="card-btn card-btn--buy" type="button" disabled={!canBuy} onclick={() => openConfirm('SUPER')}>BUY</button>
 		</div>
 
 	</div>
@@ -135,23 +144,13 @@
 		position: fixed; left: 50%; top: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 61;
-		width: min(540px, 94vw);
-		background-image: var(--board-bg);
-		background-size: 100% 100%;
-		border-radius: 18px;
-		box-shadow: 0 32px 64px rgba(0,0,0,0.8);
-	}
-
-	/* Header */
-	.header {
-		display: flex; align-items: center; justify-content: center;
-		padding: 38px 60px 14px;
-		border-bottom: 1px solid rgba(200,158,40,0.3);
+		width: min(680px, 96vw);
+		padding: 28px 24px 28px;
 	}
 
 	.title {
-		margin: 0;
-		font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 900; letter-spacing: 0.1em;
+		margin: 0 0 20px;
+		font-family: 'Cinzel', serif; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.12em;
 		text-align: center;
 		background: linear-gradient(180deg, #e2d981 8.6%, #fbc503 60.4%, #d98503 129.3%);
 		-webkit-background-clip: text; background-clip: text;
@@ -160,174 +159,107 @@
 
 	.close-btn {
 		position: absolute; top: 10px; right: 14px;
-		width: 50px; height: 50px; border-radius: 50%;
+		width: 44px; height: 44px; border-radius: 50%;
 		background: rgba(12,8,3,0.93);
 		border: 2px solid #9a7018;
 		box-shadow: 0 0 0 1px rgba(210,175,55,0.25), 0 4px 14px rgba(0,0,0,0.75);
-		color: rgba(255,255,255,0.85); font-size: 1.05rem;
+		color: rgba(255,255,255,0.85); font-size: 1rem;
 		display: flex; align-items: center; justify-content: center;
 		cursor: pointer; padding: 0;
-		transition: background 0.2s, color 0.2s;
+		transition: background 0.2s;
 	}
-	.close-btn:hover {
-		background: rgba(30,20,8,0.97);
-		color: #fff;
-	}
+	.close-btn:hover { background: rgba(30,20,8,0.97); color: #fff; }
 
-	/* Body */
-	.body {
-		display: flex; flex-direction: column; gap: 9px;
-		padding: 14px 60px 65px;
+	/* 2×2 grid */
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
 	}
 
 	/* Card */
 	.card {
-		box-sizing: border-box;
-		display: flex; align-items: center; gap: 12px;
-		width: 100%; text-align: left;
-		background: rgba(9,9,9,0.2);
-		border: 1px solid rgba(255,218,170,0.59);
-		border-radius: 12px;
-		padding: 12px;
-		cursor: pointer;
-		transition: background 0.2s, border-color 0.2s;
-	}
-	.card:not(:disabled):not(.card--static):hover {
-		background: rgba(9,9,9,0.45);
-		border-color: rgba(255,218,170,0.9);
-	}
-	.card:disabled { opacity: 0.4; cursor: default; }
-	.card--static  { cursor: default; }
-
-	/* Feature spin stacked icon */
-	.feature-spin-icon {
-		width: 44px;
-		height: 44px;
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-	}
-	.feature-spin-icon img:first-child {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-	}
-	.feature-spin-icon .play-arrow {
-		position: absolute;
-		width: 36%;
-		height: 36%;
-		object-fit: contain;
-		top: 52%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+		display: flex; flex-direction: column; align-items: center;
+		text-align: center;
+		padding: 22px 18px 18px;
+		background-image: var(--frame);
+		background-size: 100% 100%;
+		border-radius: 4px;
+		gap: 8px;
 	}
 
-	/* Icon */
-	.spin-icon {
-		width: 1.2em;
-		height: 1.2em;
-		vertical-align: middle;
-		margin-right: 0.3em;
-		object-fit: contain;
-	}
-
-	.icon {
-		width: 60px; height: 60px;
-		object-fit: contain; flex-shrink: 0;
-	}
-
-	/* Info block */
-	.info {
-		display: flex; flex-direction: column; gap: 5px;
-		flex: 1; min-width: 0;
-	}
-
-	.name {
+	.card-title {
 		font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900;
-		letter-spacing: 0.04em; color: #fff; display: block;
-	}
-	.name--gold {
+		letter-spacing: 0.06em;
 		background: linear-gradient(180deg, #e2d981 8.6%, #fbc503 60.4%, #d98503 129.3%);
 		-webkit-background-clip: text; background-clip: text;
 		-webkit-text-fill-color: transparent; color: transparent;
-	}
-	.name--purple {
-		background: linear-gradient(90deg, #c090ff 0%, #8053bc 28%);
-		-webkit-background-clip: text; background-clip: text;
-		-webkit-text-fill-color: transparent; color: transparent;
-	}
-
-	.desc {
-		font-family: 'Cinzel', serif; font-size: 0.58rem;
-		color: #a8a8a8; letter-spacing: 0.03em; line-height: 1.4; display: block;
-	}
-
-	/* Price badge — box bg on div, gradient text on inner span */
-	.badge {
-		flex-shrink: 0; min-width: 106px; height: 36px;
-		border-radius: 10px;
-		display: flex; align-items: center; justify-content: center;
-		padding: 0 10px;
-	}
-	.badge span {
-		font-family: 'Cinzel', serif; font-size: 0.88rem; font-weight: 900;
-		white-space: nowrap;
-	}
-	.badge--gold {
-		background: rgba(15,40,5,0.35);
-		border: 1px solid #8d690c;
-		box-shadow: 0 0 10px rgba(251,197,3,0.4);
-	}
-	.badge--gold span {
-		background: linear-gradient(180deg, #e2d981 8.6%, #fbc503 60.4%, #d98503 129.3%);
-		-webkit-background-clip: text; background-clip: text;
-		-webkit-text-fill-color: transparent; color: transparent;
-	}
-	.badge--purple {
-		background: rgba(20,5,40,0.35);
-		border: 1px solid rgba(130,70,210,0.8);
-		box-shadow: 0 0 10px rgba(160,100,255,0.3);
-	}
-	.badge--purple span {
-		background: linear-gradient(90deg, #c090ff 0%, #8053bc 28%);
-		-webkit-background-clip: text; background-clip: text;
-		-webkit-text-fill-color: transparent; color: transparent;
-	}
-
-	/* Toggle */
-	.toggle-wrap {
-		flex-shrink: 0; min-width: 106px;
-		display: flex; align-items: center; justify-content: center;
-	}
-	.toggle {
-		flex-shrink: 0;
-		position: relative;
-		width: 56px; height: 30px;
-		border-radius: 30px;
-		border: 1px solid rgba(255,255,255,0.18);
-		background: rgba(20,20,20,0.65);
-		cursor: pointer;
-		transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
-		padding: 0;
-	}
-	.toggle--on {
-		background: linear-gradient(180deg, #3db81a 0%, #1d7a0a 100%);
-		border-color: rgba(70,190,40,0.6);
-		box-shadow: 0 0 10px rgba(50,180,20,0.4);
-	}
-	.toggle-thumb {
-		position: absolute; top: 3px; left: 3px;
-		width: 22px; height: 22px; border-radius: 50%;
-		background: rgba(210,210,210,0.9);
-		box-shadow: 0 1px 5px rgba(0,0,0,0.5);
-		transition: transform 0.25s, background 0.25s;
 		display: block;
 	}
-	.toggle--on .toggle-thumb {
-		transform: translateX(26px);
-		background: #fff;
+
+	.card-desc {
+		font-family: 'Cinzel', serif; font-size: 0.52rem;
+		color: rgba(255,255,255,0.75); letter-spacing: 0.02em;
+		line-height: 1.45; display: block;
+		min-height: 2.9em;
+	}
+
+	.card-icon-wrap {
+		position: relative;
+		width: 80px; height: 80px;
+		margin: 4px 0;
+		flex-shrink: 0;
+	}
+	.card-icon {
+		width: 80px; height: 80px;
+		object-fit: contain;
+	}
+	.card-icon-overlay {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		width: 30px; height: 30px;
+		filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+	}
+
+	.card-price {
+		font-family: 'Cinzel', serif; font-size: 0.88rem; font-weight: 700;
+		color: rgba(255,255,255,0.9); letter-spacing: 0.04em;
+		display: block;
+	}
+
+	/* Buttons */
+	.card-btn {
+		width: 100%; padding: 9px 0;
+		border-radius: 8px;
+		font-family: 'Cinzel', serif; font-size: 0.78rem; font-weight: 900;
+		letter-spacing: 0.1em; cursor: pointer;
+		border: 2px solid rgba(200,158,80,0.6);
+		background: transparent;
+		color: rgba(210,170,60,0.9);
+		transition: background 0.2s, border-color 0.2s, color 0.2s;
+		margin-top: 4px;
+	}
+	.card-btn:hover:not(:disabled) {
+		border-color: rgba(220,175,90,0.9);
+		color: #ffd84a;
+	}
+	.card-btn--buy {
+		background: linear-gradient(180deg, #4ecb2e 0%, #2a8a10 100%);
+		border-color: rgba(80,200,50,0.5);
+		color: #fff;
+		box-shadow: 0 0 12px rgba(60,180,30,0.35);
+	}
+	.card-btn--buy:hover:not(:disabled) {
+		background: linear-gradient(180deg, #5fd93e 0%, #348f18 100%);
+		color: #fff;
+	}
+	.card-btn--buy:disabled { opacity: 0.4; cursor: default; }
+	.card-btn--active {
+		background: linear-gradient(180deg, #4ecb2e 0%, #2a8a10 100%);
+		border-color: rgba(80,200,50,0.5);
+		color: #fff;
+		box-shadow: 0 0 12px rgba(60,180,30,0.35);
 	}
 
 	/* Confirm */
@@ -342,7 +274,6 @@
 		box-shadow: 0 24px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,100,0.1);
 		padding: 22px 22px 18px; text-align: center;
 	}
-
 	.confirm-title {
 		font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900;
 		letter-spacing: 0.08em; margin-bottom: 10px;
@@ -350,14 +281,11 @@
 		-webkit-background-clip: text; background-clip: text;
 		-webkit-text-fill-color: transparent; color: transparent;
 	}
-
 	.confirm-text {
 		font-family: 'Cinzel', serif; font-size: 0.85rem;
 		color: rgba(255,255,255,0.88); line-height: 1.45; margin-bottom: 18px;
 	}
-
 	.confirm-row { display: flex; gap: 10px; justify-content: center; }
-
 	.confirm-btn {
 		border-radius: 12px; padding: 10px 20px;
 		font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 900;
