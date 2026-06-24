@@ -34,7 +34,7 @@
 	// Size the intro popup relative to the screen, not the board — otherwise it
 	// shrinks whenever the board scale is reduced.
 	const main = $derived(context.stateLayoutDerived.mainLayout());
-	const bs = $derived((Math.min(main.width, main.height) * 0.55) / LAYOUT_WIDTH);
+	const bs = $derived((Math.min(main.width, main.height) * 0.72) / LAYOUT_WIDTH);
 	const scaledBackground = $derived({ width: LAYOUT_WIDTH * bs, height: (LAYOUT_WIDTH / BACKGROUND_RATIO) * bs });
 	const scaledPanel = $derived({ width: PANEL_WIDTH * bs, height: LAYOUT_WIDTH * bs });
 </script>

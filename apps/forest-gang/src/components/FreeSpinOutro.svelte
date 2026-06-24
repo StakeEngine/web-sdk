@@ -50,7 +50,7 @@
 
 				<FreeSpinAnimation>
 					{#snippet children({ sizes })}
-						{@const BW = sizes.width * 1.5}
+						{@const BW = sizes.width * 1.8}
 
 						<Sprite key="fsBoardBg" anchor={{ x: 0.5, y: 0.5 }} width={BW} height={BW} />
 

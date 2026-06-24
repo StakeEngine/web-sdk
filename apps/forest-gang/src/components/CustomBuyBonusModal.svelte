@@ -10,6 +10,7 @@
 	const allInIcon      = ap('/assets/components/ui/bonus_all_in_icon.webp');
 	const featureIcon    = ap('/assets/components/ui/bonus_feature_spin_icon.webp');
 	const iconPlay       = ap('/assets/hud/icon-play.svg');
+	const confirmPanelBg = ap('/assets/components/ui/confirm_frame.png?v=20260624');
 
 	type Props = {
 		onclose: () => void;
@@ -119,12 +120,17 @@
 <!-- Confirm -->
 {#if confirmMode}
 	<button class="backdrop backdrop--z2" type="button" aria-label="Close" tabindex="-1" onclick={closeConfirm}></button>
+	<button class="confirm-close" type="button" onclick={closeConfirm} aria-label="Close">✕</button>
 	<div class="confirm" role="dialog" aria-modal="true">
-		<div class="confirm-title">CONFIRM {confirmLabel}</div>
-		<div class="confirm-text">Buy {confirmLabel} for {confirmCost}?</div>
-		<div class="confirm-row">
-			<button class="confirm-btn confirm-btn--cancel" type="button" onclick={closeConfirm}>CANCEL</button>
-			<button class="confirm-btn confirm-btn--ok" type="button" onclick={() => buyMode(confirmMode!)}>CONFIRM</button>
+		<div class="confirm-panel" style={`background-image:url('${confirmPanelBg}')`}>
+			<div class="confirm-content">
+				<div class="confirm-title">CONFIRM {confirmLabel}</div>
+				<div class="confirm-text">Buy {confirmLabel} for {confirmCost}?</div>
+				<div class="confirm-row">
+					<button class="confirm-btn confirm-btn--cancel" type="button" onclick={closeConfirm}>CANCEL</button>
+					<button class="confirm-btn confirm-btn--ok" type="button" onclick={() => buyMode(confirmMode!)}>CONFIRM</button>
+				</div>
+			</div>
 		</div>
 	</div>
 {/if}
@@ -263,40 +269,73 @@
 	}
 
 	/* Confirm */
+	/* Round wood close button, pinned to the top-right end of the screen */
+	.confirm-close {
+		position: fixed; top: 22px; right: 22px; z-index: 73;
+		width: 52px; height: 52px; border-radius: 50%;
+		border: 2px solid rgba(217, 133, 3, 0.7);
+		background: radial-gradient(circle at 50% 35%, #3a2a16, #140d06);
+		color: #e8c878; font-size: 1.1rem; font-weight: 700;
+		cursor: pointer; display: grid; place-items: center;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+		transition: filter 0.12s ease;
+	}
+	.confirm-close:hover { filter: brightness(1.2); }
+
 	.confirm {
 		position: fixed; left: 50%; top: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 71;
-		width: min(340px, 88vw);
-		border-radius: 18px;
-		background: linear-gradient(160deg, rgba(30,20,8,0.97), rgba(12,8,2,0.98));
-		border: 1px solid rgba(200,155,40,0.5);
-		box-shadow: 0 24px 48px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,220,100,0.1);
-		padding: 22px 22px 18px; text-align: center;
+		width: min(680px, 94vw);
+		font-family: 'Cinzel', serif;
 	}
+
+	/* Wooden panel background (shared with the autoplay dialog) */
+	.confirm-panel {
+		aspect-ratio: 505 / 301;
+		background-size: 100% 100%;
+		background-repeat: no-repeat;
+		display: flex; align-items: center; justify-content: center;
+		padding: 15% 13%;
+		box-sizing: border-box;
+	}
+
+	.confirm-content {
+		width: 100%;
+		display: flex; flex-direction: column; align-items: center;
+		gap: clamp(14px, 2.6vw, 26px);
+		text-align: center;
+	}
+
 	.confirm-title {
-		font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 900;
-		letter-spacing: 0.08em; margin-bottom: 10px;
-		background: linear-gradient(180deg, #e2d981 8.6%, #fbc503 60.4%, #d98503 129.3%);
+		font-weight: 900; font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+		letter-spacing: 0.06em;
+		background: linear-gradient(180deg, #ffd84a 10%, #ffa90e 60%, #d18005 95%);
 		-webkit-background-clip: text; background-clip: text;
 		-webkit-text-fill-color: transparent; color: transparent;
+		text-shadow: 0 2px 6px rgba(0,0,0,0.5);
 	}
 	.confirm-text {
-		font-family: 'Cinzel', serif; font-size: 0.85rem;
-		color: rgba(255,255,255,0.88); line-height: 1.45; margin-bottom: 18px;
+		font-size: clamp(0.95rem, 2vw, 1.25rem); font-weight: 700;
+		color: #fff; line-height: 1.45;
+		text-shadow: 0 2px 4px rgba(0,0,0,0.7);
 	}
-	.confirm-row { display: flex; gap: 10px; justify-content: center; }
+	.confirm-row { display: flex; gap: 16px; justify-content: center; width: 100%; }
 	.confirm-btn {
-		border-radius: 12px; padding: 10px 20px;
-		font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 900;
-		letter-spacing: 0.08em; cursor: pointer;
+		flex: 1 1 0; border-radius: 11px; padding: clamp(11px, 2vw, 16px);
+		font-family: 'Cinzel', serif; font-size: clamp(0.85rem, 1.7vw, 1.05rem); font-weight: 900;
+		letter-spacing: 0.06em; cursor: pointer;
+		transition: filter 0.12s ease;
 	}
+	.confirm-btn:hover { filter: brightness(1.08); }
 	.confirm-btn--cancel {
-		border: 1px solid rgba(200,155,40,0.35);
-		background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.82);
+		border: 1px solid rgba(217,133,3,0.5);
+		background: rgba(20, 14, 6, 0.6); color: #e8c878;
 	}
 	.confirm-btn--ok {
-		border: 1px solid rgba(220,170,40,0.6);
-		background: linear-gradient(180deg, #f5cc50, #c08a10); color: #1f1000;
+		border: 0;
+		background: linear-gradient(180deg, #ffa90e 15%, #ee960b 70%, #d18005 93%);
+		color: #452b01;
+		box-shadow: 0 0 4px #d98503;
 	}
 </style>

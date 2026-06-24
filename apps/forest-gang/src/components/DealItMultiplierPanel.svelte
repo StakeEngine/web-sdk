@@ -12,18 +12,10 @@
 	import { Tween } from 'svelte/motion';
 	import { cubicOut, backOut } from 'svelte/easing';
 
-	import {
-		BitmapText,
-		Container,
-		Sprite,
-		SpineEventEmitterProvider,
-		SpineProvider,
-		SpineSlot,
-		SpineTrack,
-	} from 'pixi-svelte';
+	import { BitmapText, Container, Sprite } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
 	import { stateBetDerived } from 'state-shared';
-	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
+	import { waitForTimeout } from 'utils-shared/wait';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
@@ -31,10 +23,15 @@
 
 	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
 
-	const PANEL_WIDTH = SYMBOL_SIZE * 0.641;
-	// Slide distance for reel effect — one "row" height in Spine space
-	const REEL_SLIDE = SYMBOL_SIZE * 3.5;
-	const FONT_SIZE = SYMBOL_SIZE * 5.2;
+	// Bear-hand board sizing — multiplier_hand.png is 944×708 with the board panel
+	// (centre 0.368/0.458) ≈ 58% of the width; render so the board ≈ BOARD_W.
+	// Match the top symbol board (BonusSymbolPanel uses SYMBOL_W * 1.1).
+	// The hand image is 944×708; its board region is 592px wide, centred at (368,324).
+	const BOARD_W = SYMBOL_W * 1.1;
+	const HAND_W = BOARD_W * (944 / 592);
+	const HAND_H = HAND_W * (708 / 944);
+	const NUM_FONT = BOARD_W * 0.19;
+	const REEL_SLIDE = BOARD_W * 0.5;
 
 	// Mirror BonusSymbolPanel geometry so DealIt panel sits directly below it
 	const _symPadW = SYMBOL_W * 1.1;
@@ -54,8 +51,6 @@
 	const position = $derived(
 		context.stateLayoutDerived.isStacked() ? portraitPosition : desktopPosition,
 	);
-	const pivot = { x: PANEL_WIDTH * 0.5, y: PANEL_WIDTH * 0.25 };
-
 	let show = $state(false);
 	let animationName = $state<AnimationName>('static');
 	let multiplier = $state(1);
@@ -67,7 +62,7 @@
 	let fastForward = $state(false);
 
 	// Single text slides in from top — no overlap, no artifacts
-	let reelText = $state('1×');
+	let reelText = $state('1X');
 	let reelY = new Tween(0);
 
 	const tickReel = async (newVal: number, duration: number) => {
@@ -76,7 +71,7 @@
 		reelY.set(REEL_SLIDE * 0.5, { duration: scaledDuration * 0.25, easing: cubicOut });
 		await waitForTimeout(scaledDuration * 0.25);
 		// Swap text while offscreen above, then slide in with slight bounce
-		reelText = `${newVal}×`;
+		reelText = `${newVal}X`;
 		reelY.set(-REEL_SLIDE, { duration: 0 });
 		reelY.set(0, { duration: scaledDuration * 0.6, easing: backOut });
 		await waitForTimeout(scaledDuration * 0.75);
@@ -96,7 +91,7 @@
 			multiplier = 1;
 			previousMultiplier.set(1, { duration: 0 });
 			animationName = 'static';
-			reelText = '1×';
+			reelText = '1X';
 			reelY.set(0, { duration: 0 });
 			fastForward = false;
 
@@ -109,7 +104,7 @@
 					previousMultiplier.set(1, { duration: 0 });
 					multiplier = target;
 					animationName = 'increment';
-					await waitForResolve((resolve) => (oncomplete = resolve));
+					await waitForTimeout(450);
 					animationName = 'static';
 					previousMultiplier.set(multiplier, { duration: 0 });
 				}
@@ -141,7 +136,7 @@
 				previousMultiplier.set(1, { duration: 0 });
 				multiplier = target;
 				animationName = 'increment';
-				await waitForResolve((resolve) => (oncomplete = resolve));
+				await waitForTimeout(450);
 				animationName = 'static';
 				previousMultiplier.set(multiplier, { duration: 0 });
 			}
@@ -166,33 +161,15 @@
 <FadeContainer {show}>
 	<BoardContainer>
 		<Container {...position} {scale}>
-			<SpineProvider key="globalMultiplier" width={PANEL_WIDTH}>
-				<SpineTrack
-					trackIndex={0}
-					{animationName}
-					timeScale={stateBetDerived.timeScale()}
-					listener={{ complete: () => { oncomplete(); } }}
-				/>
-				<!-- <SpineSlot slotName="Frame_Multiplier">
-					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
-				</SpineSlot> -->
-				<SpineSlot slotName="Frame_Multiplier2">
-					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
-				</SpineSlot>
-				<SpineEventEmitterProvider>
-					<SpineSlot slotName="slot_multi">
-						{#if isCycling}
-							<!-- Single text slides in from top — clean, no overlap -->
-							<BitmapText anchor={0.5} y={reelY.current} text={reelText} style={{ fontFamily: 'gold', fontSize: FONT_SIZE }} />
-						{:else}
-							<BitmapText anchor={0.5} text={`${Math.round(previousMultiplier.current)}×`} style={{ fontFamily: 'gold', fontSize: FONT_SIZE }} />
-						{/if}
-					</SpineSlot>
-					<SpineSlot slotName="slot_multi_next">
-						<BitmapText anchor={0.5} text={`${multiplier}×`} style={{ fontFamily: 'gold', fontSize: FONT_SIZE }} />
-					</SpineSlot>
-				</SpineEventEmitterProvider>
-			</SpineProvider>
+			<!-- Bear-hand board: panel centre (0.368/0.458) at the container origin, paw extends right -->
+			<Sprite key="multiplierHand" anchor={{ x: 0.39, y: 0.458 }} width={HAND_W} height={HAND_H} />
+
+			<!-- Multiplier number, gold, on the board -->
+			{#if isCycling}
+				<BitmapText anchor={0.5} y={reelY.current} text={reelText} style={{ fontFamily: 'silver', fontSize: NUM_FONT }} />
+			{:else}
+				<BitmapText anchor={0.5} text={`${Math.round(previousMultiplier.current)}X`} style={{ fontFamily: 'silver', fontSize: NUM_FONT }} />
+			{/if}
 		</Container>
 	</BoardContainer>
 </FadeContainer>
