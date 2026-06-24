@@ -1,0 +1,165 @@
+{"frames": {
+
+"explodedW.png":
+{
+	"frame": {"x":203,"y":587,"w":188,"h":159},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":9,"y":22,"w":188,"h":159},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"h1.webp":
+{
+	"frame": {"x":1,"y":1,"w":200,"h":200},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":200,"h":200},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"h2.webp":
+{
+	"frame": {"x":1,"y":203,"w":200,"h":199},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":200,"h":199},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"h3.webp":
+{
+	"frame": {"x":1,"y":1185,"w":200,"h":188},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":6,"w":200,"h":188},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"h4.webp":
+{
+	"frame": {"x":191,"y":1263,"w":190,"h":194},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":5,"y":3,"w":190,"h":194},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"h5.webp":
+{
+	"frame": {"x":1,"y":1455,"w":189,"h":192},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":5,"y":4,"w":189,"h":192},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"l1.webp":
+{
+	"frame": {"x":203,"y":1,"w":200,"h":175},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":20,"w":200,"h":175},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"l2.webp":
+{
+	"frame": {"x":203,"y":945,"w":172,"h":159},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":14,"y":20,"w":172,"h":159},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"l3.webp":
+{
+	"frame": {"x":203,"y":777,"w":166,"h":171},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":17,"y":14,"w":166,"h":171},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"l4.webp":
+{
+	"frame": {"x":198,"y":1106,"w":155,"h":173},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":24,"y":15,"w":155,"h":173},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"m1_2x.png":
+{
+	"frame": {"x":203,"y":203,"w":182,"h":190},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":9,"y":8,"w":182,"h":190},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"m1_4x.png":
+{
+	"frame": {"x":203,"y":395,"w":182,"h":190},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":9,"y":8,"w":182,"h":190},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"m2_5x.png":
+{
+	"frame": {"x":1,"y":404,"w":200,"h":193},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":7,"w":200,"h":193},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"m2_7x.png":
+{
+	"frame": {"x":1,"y":599,"w":200,"h":193},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":7,"w":200,"h":193},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"m3_10x.png":
+{
+	"frame": {"x":1,"y":794,"w":200,"h":192},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":8,"w":200,"h":192},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"s.png":
+{
+	"frame": {"x":195,"y":1455,"w":189,"h":190},
+	"rotated": true,
+	"trimmed": true,
+	"spriteSourceSize": {"x":5,"y":0,"w":189,"h":190},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"w.png":
+{
+	"frame": {"x":1,"y":988,"w":195,"h":195},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":195,"h":195},
+	"sourceSize": {"w":200,"h":200},
+	"pivot": {"x":0.5,"y":0.5}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "symbolsStatic.webp",
+	"format": "RGBA8888",
+	"size": {"w":386,"h":1645},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:0ff48a67e4b8c4043f8a36bdb30c4f0d:6b0920109719b2fdd635678740941f98:75cc8653d893635852f340d7770212f2$"
+}
+}

@@ -1,0 +1,202 @@
+{
+  "skeleton": {
+    "hash": "rabbit_10_anim",
+    "spine": "4.2.0",
+    "x": 0,
+    "y": 0,
+    "width": 128,
+    "height": 384,
+    "images": "./"
+  },
+  "bones": [
+    {
+      "name": "root"
+    }
+  ],
+  "slots": [
+    {
+      "name": "frame",
+      "bone": "root",
+      "attachment": "frame00"
+    }
+  ],
+  "skins": [
+    {
+      "name": "default",
+      "attachments": {
+        "frame": {
+          "frame00": {
+            "type": "region",
+            "name": "frame00",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame01": {
+            "type": "region",
+            "name": "frame01",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame02": {
+            "type": "region",
+            "name": "frame02",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame03": {
+            "type": "region",
+            "name": "frame03",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame04": {
+            "type": "region",
+            "name": "frame04",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame05": {
+            "type": "region",
+            "name": "frame05",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame06": {
+            "type": "region",
+            "name": "frame06",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          },
+          "frame07": {
+            "type": "region",
+            "name": "frame07",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 384
+          }
+        }
+      }
+    }
+  ],
+  "animations": {
+    "intro_to_win": {
+      "slots": {
+        "frame": {
+          "attachment": [
+            {
+              "time": 0.0,
+              "name": "frame00"
+            },
+            {
+              "time": 0.08,
+              "name": "frame01"
+            },
+            {
+              "time": 0.16,
+              "name": "frame02"
+            },
+            {
+              "time": 0.25,
+              "name": "frame03"
+            },
+            {
+              "time": 0.35,
+              "name": "frame04"
+            },
+            {
+              "time": 0.46,
+              "name": "frame05"
+            },
+            {
+              "time": 0.58,
+              "name": "frame06"
+            },
+            {
+              "time": 0.72,
+              "name": "frame07"
+            },
+            {
+              "time": 0.84,
+              "name": "frame07"
+            }
+          ]
+        }
+      }
+    },
+    "win_loop": {
+      "slots": {
+        "frame": {
+          "attachment": [
+            {
+              "time": 0.0,
+              "name": "frame04"
+            },
+            {
+              "time": 0.08,
+              "name": "frame05"
+            },
+            {
+              "time": 0.16,
+              "name": "frame06"
+            },
+            {
+              "time": 0.24,
+              "name": "frame07"
+            },
+            {
+              "time": 0.32,
+              "name": "frame06"
+            },
+            {
+              "time": 0.4,
+              "name": "frame05"
+            },
+            {
+              "time": 0.48,
+              "name": "frame04"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

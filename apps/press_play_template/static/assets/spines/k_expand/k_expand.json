@@ -1,0 +1,149 @@
+{
+  "skeleton": {
+    "hash": "k-expand-anim",
+    "spine": "4.2.0",
+    "x": -64,
+    "y": 0,
+    "width": 128,
+    "height": 359,
+    "images": "./"
+  },
+  "bones": [
+    {
+      "name": "root"
+    },
+    {
+      "name": "symbol",
+      "parent": "root",
+      "x": 0,
+      "y": 179.5
+    }
+  ],
+  "slots": [
+    {
+      "name": "symbol",
+      "bone": "symbol",
+      "attachment": "k_f1_normal"
+    }
+  ],
+  "skins": [
+    {
+      "name": "default",
+      "attachments": {
+        "symbol": {
+          "k_f1_normal": {
+            "x": 0,
+            "y": 0,
+            "width": 128,
+            "height": 359
+          },
+          "k_f2_energy": {
+            "x": 0,
+            "y": 0,
+            "width": 128,
+            "height": 359
+          },
+          "k_f3_flash": {
+            "x": 0,
+            "y": 0,
+            "width": 128,
+            "height": 359
+          },
+          "k_f4_win_glow": {
+            "x": 0,
+            "y": 0,
+            "width": 128,
+            "height": 359
+          },
+          "k_f5_win": {
+            "x": 0,
+            "y": 0,
+            "width": 128,
+            "height": 359
+          }
+        }
+      }
+    }
+  ],
+  "animations": {
+    "idle": {
+      "slots": {
+        "symbol": {
+          "attachment": [
+            {
+              "time": 0,
+              "name": "k_f1_normal"
+            }
+          ]
+        }
+      }
+    },
+    "win": {
+      "bones": {
+        "symbol": {
+          "scale": [
+            {
+              "time": 0.0,
+              "x": 1.0,
+              "y": 1.0,
+              "curve": "stepped"
+            },
+            {
+              "time": 0.08,
+              "x": 1.0,
+              "y": 1.0,
+              "curve": [
+                0.25,
+                0,
+                0.75,
+                1
+              ]
+            },
+            {
+              "time": 0.13,
+              "x": 1.06,
+              "y": 1.06,
+              "curve": [
+                0.25,
+                0,
+                0.75,
+                1
+              ]
+            },
+            {
+              "time": 0.22,
+              "x": 1.0,
+              "y": 1.0
+            }
+          ]
+        }
+      },
+      "slots": {
+        "symbol": {
+          "attachment": [
+            {
+              "time": 0.0,
+              "name": "k_f1_normal"
+            },
+            {
+              "time": 0.07,
+              "name": "k_f2_energy"
+            },
+            {
+              "time": 0.12,
+              "name": "k_f3_flash"
+            },
+            {
+              "time": 0.16,
+              "name": "k_f4_win_glow"
+            },
+            {
+              "time": 0.26,
+              "name": "k_f5_win"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

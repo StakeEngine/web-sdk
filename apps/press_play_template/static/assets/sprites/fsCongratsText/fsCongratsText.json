@@ -1,0 +1,335 @@
+{
+	"frames": {
+		"fsCongratsText_ar.png": {
+			"frame": {
+				"x": 0,
+				"y": 1,
+				"w": 244,
+				"h": 82
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 244,
+				"h": 82
+			},
+			"sourceSize": {
+				"w": 244,
+				"h": 82
+			}
+		},
+		"fsCongratsText_de.png": {
+			"frame": {
+				"x": 0,
+				"y": 85,
+				"w": 380,
+				"h": 72
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 380,
+				"h": 72
+			},
+			"sourceSize": {
+				"w": 380,
+				"h": 72
+			}
+		},
+		"fsCongratsText_en.png": {
+			"frame": {
+				"x": 0,
+				"y": 159,
+				"w": 486,
+				"h": 59
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 486,
+				"h": 59
+			},
+			"sourceSize": {
+				"w": 486,
+				"h": 59
+			}
+		},
+		"fsCongratsText_es.png": {
+			"frame": {
+				"x": 0,
+				"y": 220,
+				"w": 459,
+				"h": 66
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 459,
+				"h": 66
+			},
+			"sourceSize": {
+				"w": 459,
+				"h": 66
+			}
+		},
+		"fsCongratsText_fi.png": {
+			"frame": {
+				"x": 0,
+				"y": 288,
+				"w": 375,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 375,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 375,
+				"h": 64
+			}
+		},
+		"fsCongratsText_fr.png": {
+			"frame": {
+				"x": 0,
+				"y": 354,
+				"w": 450,
+				"h": 73
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 450,
+				"h": 73
+			},
+			"sourceSize": {
+				"w": 450,
+				"h": 73
+			}
+		},
+		"fsCongratsText_hi.png": {
+			"frame": {
+				"x": 0,
+				"y": 429,
+				"w": 234,
+				"h": 62
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 234,
+				"h": 62
+			},
+			"sourceSize": {
+				"w": 234,
+				"h": 62
+			}
+		},
+		"fsCongratsText_id.png": {
+			"frame": {
+				"x": 0,
+				"y": 493,
+				"w": 307,
+				"h": 67
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 307,
+				"h": 67
+			},
+			"sourceSize": {
+				"w": 307,
+				"h": 67
+			}
+		},
+		"fsCongratsText_ja.png": {
+			"frame": {
+				"x": 0,
+				"y": 562,
+				"w": 331,
+				"h": 68
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 331,
+				"h": 68
+			},
+			"sourceSize": {
+				"w": 331,
+				"h": 68
+			}
+		},
+		"fsCongratsText_ko.png": {
+			"frame": {
+				"x": 0,
+				"y": 632,
+				"w": 492,
+				"h": 68
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 492,
+				"h": 68
+			},
+			"sourceSize": {
+				"w": 492,
+				"h": 68
+			}
+		},
+		"fsCongratsText_pl.png": {
+			"frame": {
+				"x": 0,
+				"y": 702,
+				"w": 398,
+				"h": 68
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 398,
+				"h": 68
+			},
+			"sourceSize": {
+				"w": 398,
+				"h": 68
+			}
+		},
+		"fsCongratsText_pt.png": {
+			"frame": {
+				"x": 0,
+				"y": 772,
+				"w": 348,
+				"h": 80
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 348,
+				"h": 80
+			},
+			"sourceSize": {
+				"w": 348,
+				"h": 80
+			}
+		},
+		"fsCongratsText_ru.png": {
+			"frame": {
+				"x": 0,
+				"y": 854,
+				"w": 513,
+				"h": 64
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 513,
+				"h": 64
+			},
+			"sourceSize": {
+				"w": 513,
+				"h": 64
+			}
+		},
+		"fsCongratsText_tr.png": {
+			"frame": {
+				"x": 0,
+				"y": 920,
+				"w": 371,
+				"h": 84
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 371,
+				"h": 84
+			},
+			"sourceSize": {
+				"w": 371,
+				"h": 84
+			}
+		},
+		"fsCongratsText_vi.png": {
+			"frame": {
+				"x": 0,
+				"y": 1006,
+				"w": 391,
+				"h": 74
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 391,
+				"h": 74
+			},
+			"sourceSize": {
+				"w": 391,
+				"h": 74
+			}
+		},
+		"fsCongratsText_zh.png": {
+			"frame": {
+				"x": 0,
+				"y": 1082,
+				"w": 216,
+				"h": 74
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 216,
+				"h": 74
+			},
+			"sourceSize": {
+				"w": 216,
+				"h": 74
+			}
+		}
+	},
+	"meta": {
+		"app": "custom",
+		"version": "1.0",
+		"image": "fsCongratsText.webp",
+		"format": "RGBA8888",
+		"size": {
+			"w": 513,
+			"h": 1159
+		},
+		"scale": "1"
+	}
+}
