@@ -6,7 +6,7 @@
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
-	import { SYMBOL_SIZE } from '../game/constants';
+	import { BOARD_GRID_OFFSET_Y, SYMBOL_SIZE } from '../game/constants';
 
 	const context = getContext();
 
@@ -40,7 +40,7 @@
 </script>
 
 {#if visible}
-	<BoardContainer>
+	<BoardContainer offsetY={BOARD_GRID_OFFSET_Y}>
 		{#each lines as line (line.color)}
 			<Graphics
 				draw={(g) => {

@@ -137,6 +137,3 @@ export const winBoardByAlias: Record<string, string> = {
 export const getSymbolInfo = ({ rawSymbol, state }: { rawSymbol: RawSymbol; state: SymbolState }) => {
 	return SYMBOL_INFO_MAP[rawSymbol.name][state];
 };
-
-// Temp test anim for all expanded symbols
-export const EXPANDED_TEST_ANIM_ASSET_KEY = 'rabbitExpAnimTestSheet';

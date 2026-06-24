@@ -50,7 +50,8 @@ const board = _.range(BOARD_DIMENSIONS.x).map((reelIndex) => {
 	});
 
 	reel.reelState.spinOptions = () => {
-		if (stateBet.isTurbo || stateBet.isSuperTurbo) return SPIN_OPTIONS_TURBO;
+		if ((stateBet.isTurbo || stateBet.isSuperTurbo) && !stateGame.bonusMode)
+			return SPIN_OPTIONS_TURBO;
 
 		if (reel.reelState.spinType === 'fast') {
 			return stateGame.bonusMode ? SPIN_OPTIONS_DEFAULT : SPIN_OPTIONS_FAST;
@@ -149,14 +150,28 @@ const getBoardOffset = () => {
 	};
 };
 
-const boardLayout = () => ({
-	x: stateLayoutDerived.mainLayout().width * 0.5 + getBoardOffset().x,
-	y: stateLayoutDerived.mainLayout().height * 0.5 + getBoardOffset().y,
-	boardScale: getBoardScale() * 0.72,
-	anchor: { x: 0.5, y: 0.5 },
-	pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
-	...BOARD_SIZES,
-});
+// Mirror BoardFrame.svelte constants — keep in sync if BoardFrame changes
+const _FRAME_MARGIN = 1.04;
+const _FRAME_INNER_W_FRAC = 0.64;
+const _FRAME_ASPECT_H_W = 2528 / 3616;
+const _FRAME_ANCHOR_Y = 0.45; // inner panel centre sits at 45% of frame height
+const _FRAME_EXTRA_SCALE = 1.35 / 1.15; // frame 130%, grid 115% — must match BoardFrame.svelte
+
+const boardLayout = () => {
+	const boardScale = getBoardScale() * 0.72 * 1.15;
+	// Frame top is pinned to canvas y=0; inner panel centre is at ANCHOR_Y × frameH
+	const frameW =
+		(BOARD_SIZES.width * boardScale * _FRAME_MARGIN * _FRAME_EXTRA_SCALE) / _FRAME_INNER_W_FRAC;
+	const frameH = frameW * _FRAME_ASPECT_H_W;
+	return {
+		x: stateLayoutDerived.mainLayout().width * 0.5 + getBoardOffset().x,
+		y: frameH * _FRAME_ANCHOR_Y,
+		boardScale,
+		anchor: { x: 0.5, y: 0.5 },
+		pivot: { x: BOARD_SIZES.width / 2, y: BOARD_SIZES.height / 2 },
+		...BOARD_SIZES,
+	};
+};
 
 const boardRaw = () =>
 	board.map((reel) => reel.reelState.symbols.map((reelSymbol) => reelSymbol.rawSymbol));
@@ -174,6 +189,7 @@ const resetBonusState = () => {
 	stateGame.expandedSymbol = null;
 	stateGame.expandedSymbolWon = false;
 	stateGame.tempMultiplier = null;
+	stateGame.paylineWins = [];
 };
 
 const { enhanceBoard } = createEnhanceBoard();

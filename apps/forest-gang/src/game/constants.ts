@@ -6,6 +6,7 @@ import type { RawSymbol, SymbolState } from './types';
 export const SYMBOL_W = 121;   // cell width  (121/91 ≈ 1.33)
 export const SYMBOL_H = 91;    // cell height
 export const SYMBOL_SIZE = SYMBOL_H; // kept as alias for height-based calculations
+export const BOARD_GRID_OFFSET_Y = 0;
 export const REEL_PADDING = 0.53;
 
 const _BASE_SYMBOLS: RawSymbol[] = [
@@ -93,10 +94,10 @@ export const SPIN_OPTIONS_FAST = {
 
 export const SPIN_OPTIONS_TURBO = {
 	...SPIN_OPTIONS_SHARED,
-	reelPreSpinSpeed: 12,
-	reelSpinSpeed: 14,
-	reelBounceSizeMulti: 0.01,
-	reelSpinDelay: 30,
+	reelPreSpinSpeed: 6,
+	reelSpinSpeed: 7,
+	reelBounceSizeMulti: 0.1,
+	reelSpinDelay: 60,
 };
 
 export const SPIN_OPTIONS_ANTICIPATED = {

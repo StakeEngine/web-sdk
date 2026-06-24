@@ -647,6 +647,15 @@
 				<img class="menu-info-inline-icon" src="./assets/rules/goal.png" alt="Finish gate symbol" />
 				<p>The round ends when the penguin hits the goal gate and you collect your current win.</p>
 			</div>
+			<div class="menu-info-section">
+				<h4>MATH OVERVIEW</h4>
+				<p>Penguin Slide has 3 difficulty options: hard, very hard and extreme.</p>
+				<ul>
+					<li>Hard: Volatility LOW, RTP 96.01%, hit rate 39.99%, max win 1,000x.</li>
+					<li>Very Hard: Volatility LOW, RTP 96.01%, hit rate 29.99%, max win 5,000x.</li>
+					<li>Extreme: Volatility MEDIUM, RTP 96.01%, hit rate 19.99%, max win 10,000x.</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 {/if}

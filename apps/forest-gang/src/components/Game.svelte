@@ -5,7 +5,7 @@
 	import { EnablePixiExtension } from 'components-pixi';
 	import { EnableHotkey } from 'components-shared';
 	import { MainContainer } from 'components-layout';
-	import { App } from 'pixi-svelte';
+	import { App, Container } from 'pixi-svelte';
 	import { stateMeta } from 'state-shared';
 
 	import { Modals } from 'components-ui-html';
@@ -32,21 +32,23 @@
 	import ExpandedSymbolOverlay from './ExpandedSymbolOverlay.svelte';
 	import DealItMultiplierPanel from './DealItMultiplierPanel.svelte';
 	import GameLogoFrame from './GameLogoFrame.svelte';
+	import PaylineVine from './PaylineVine.svelte';
 	import HudHtml from './HudHtml.svelte';
 	import StakeSync from './StakeSync.svelte';
 	import ReplayHud from './replay/ReplayHud.svelte';
 	import SplashIntro from './SplashIntro.svelte';
+	import { BOARD_GRID_OFFSET_Y } from '../game/constants';
 
 	const context = getContext();
 
 	let splashIntroVisible = $state(false);
 	let splashPressHandler = $state<(() => void) | undefined>(undefined);
-	const heroArt = './assets/components/backgrounds/visual_v2.jpg';
+	const heroArt = './assets/components/backgrounds/visual_v2.png';
 	const bonusArt = './assets/components/backgrounds/visual_v1.jpg';
 	const scatterArt = './assets/components/symbols/scatter.png';
 	const uiRefArt = './assets/components/reference/ui-reference-1.png';
 	const paylinesArt = './assets/components/reference/paylines_reference.png';
-	const heroArtBackdrop = new URL('../../static/assets/components/backgrounds/visual_v2.jpg', import.meta.url).href;
+	const heroArtBackdrop = new URL('../../static/assets/components/backgrounds/visual_v2.png', import.meta.url).href;
 
 	$effect(() => {
 		stateMeta.betModeMeta = {
@@ -66,10 +68,44 @@
 				},
 				maxWin: 25000,
 			},
+			CHANCE: {
+				mode: 'CHANCE',
+				costMultiplier: 2,
+				type: 'activate',
+				parent: '',
+				children: '',
+				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
+				text: {
+					title: forestStakeTitle('BET MODE CHANCE TITLE'),
+					dialog: forestStakeTitle('BET MODE CHANCE DIALOG'),
+					description: forestStakeTitle('BET MODE CHANCE DESCRIPTION'),
+					button: forestStakeTitle('BET MODE CHANCE BUTTON'),
+					tickerIdle: forestStakeTitle('BET MODE CHANCE TICKER IDLE'),
+					tickerSpin: forestStakeTitle('BET MODE CHANCE TICKER SPIN'),
+				},
+				maxWin: 25000,
+			},
+			FEATURE: {
+				mode: 'FEATURE',
+				costMultiplier: 20,
+				type: 'activate',
+				parent: '',
+				children: '',
+				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
+				text: {
+					title: forestStakeTitle('BET MODE FEATURE TITLE'),
+					dialog: forestStakeTitle('BET MODE FEATURE DIALOG'),
+					description: forestStakeTitle('BET MODE FEATURE DESCRIPTION'),
+					button: forestStakeTitle('BET MODE FEATURE BUTTON'),
+					tickerIdle: forestStakeTitle('BET MODE FEATURE TICKER IDLE'),
+					tickerSpin: forestStakeTitle('BET MODE FEATURE TICKER SPIN'),
+				},
+				maxWin: 25000,
+			},
 			BONUS: {
 				mode: 'BONUS',
 				costMultiplier: 100,
-				type: 'default',
+				type: 'buy',
 				parent: '',
 				children: '',
 				assets: { icon: '', volatility: '', button: '', dialogImage: bonusArt, dialogVolatility: uiRefArt },
@@ -85,8 +121,8 @@
 			},
 			SUPER: {
 				mode: 'SUPER',
-				costMultiplier: 200,
-				type: 'default',
+				costMultiplier: 400,
+				type: 'buy',
 				parent: '',
 				children: '',
 				assets: { icon: '', volatility: '', button: '', dialogImage: heroArt, dialogVolatility: scatterArt },
@@ -207,8 +243,15 @@
 					<Anticipations />
 				</MainContainer>
 
-				<GameLogoFrame />
 				<ExpandedSymbolOverlay />
+				{#if context.stateGame.paylineWins.length > 0}
+				<MainContainer>
+					{@const bl = context.stateGameDerived.boardLayout()}
+					<Container x={bl.x} y={bl.y + BOARD_GRID_OFFSET_Y} pivot={bl.pivot} scale={bl.boardScale}>
+						<PaylineVine wins={context.stateGame.paylineWins} />
+					</Container>
+				</MainContainer>
+				{/if}
 				<BonusSymbolPanel />
 				<GlobalMultiplier />
 				<DealItMultiplierPanel />

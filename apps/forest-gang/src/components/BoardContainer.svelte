@@ -7,6 +7,7 @@
 
 	type Props = {
 		children: Snippet;
+		offsetY?: number;
 	};
 
 	const props: Props = $props();
@@ -16,7 +17,7 @@
 
 <Container
 	x={context.stateGameDerived.boardLayout().x}
-	y={context.stateGameDerived.boardLayout().y}
+	y={context.stateGameDerived.boardLayout().y + (props.offsetY ?? 0)}
 	pivot={context.stateGameDerived.boardLayout().pivot}
 	scale={context.stateGameDerived.boardLayout().boardScale}
 >

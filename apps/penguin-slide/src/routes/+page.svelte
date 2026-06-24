@@ -5054,12 +5054,14 @@ function stepDebugGuides(): StepDebugGuide[] {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.code !== 'Space') return;
 			if ((event.target as HTMLElement | null)?.tagName === 'INPUT') return;
+			if (event.repeat) return;
 			event.preventDefault();
 			if (replayMode) {
 				startReplayRound();
 				return;
 			}
-			if (pendingRound) return;
+			if (autoplay) return;
+			if (pendingRound || (animationStatus === 'running' && !autoplay)) return;
 			handleBetClick();
 		};
 		window.addEventListener('keydown', onKeyDown);

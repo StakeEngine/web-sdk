@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Container, SpineProvider, SpineTrack } from 'pixi-svelte';
 	import type { Reel } from '../game/stateGame.svelte';
-	import { SYMBOL_W, SYMBOL_SIZE, BOARD_SIZES } from '../game/constants';
+	import { SYMBOL_W, SYMBOL_SIZE, BOARD_SIZES, BOARD_GRID_OFFSET_Y } from '../game/constants';
 	import { getContext } from '../game/context';
 
 	type Props = {
@@ -24,19 +24,17 @@
 	});
 
 	context.eventEmitter.subscribeOnMount({
-		// Press during anticipation: stop reel immediately AND start the out animation
+		// Press during anticipation: stop reel and skip out animation entirely
 		stopButtonClick: () => {
-			if (animationName === 'anticipation_out') return;
-			speedUp = true;
-			animationName = 'anticipation_out';
-			props.reel.stop(); // stop reel immediately, not waiting for animation
+			props.reel.stop();
+			props.oncomplete();
 		},
 	});
 </script>
 
 <Container
 	x={context.stateGameDerived.boardLayout().x + ((props.reel.reelIndex + 0.5) * SYMBOL_W - BOARD_SIZES.width * 0.5) * context.stateGameDerived.boardLayout().boardScale}
-	y={context.stateGameDerived.boardLayout().y}
+	y={context.stateGameDerived.boardLayout().y + BOARD_GRID_OFFSET_Y}
 >
 <SpineProvider
 	key="anticipation"

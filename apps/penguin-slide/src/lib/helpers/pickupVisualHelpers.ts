@@ -59,9 +59,6 @@ export function accumulatedAmountYForViewport(viewport: Size, renderSize: Size, 
 		const targetScreenY = renderSize.h <= 380 ? renderSize.h * 0.27 : renderSize.h * 0.24;
 		return Math.max(0, (targetScreenY - rootOffset.y) / Math.max(rootScale, 0.0001));
 	}
-	const desktopAccumulatedOffset =
-		renderSize.w >= 1024 && renderSize.h >= 600 && renderSize.w > renderSize.h
-			? viewport.h * 0.022
-			: 0;
-	return viewport.h * 0.11 + desktopAccumulatedOffset;
+	const targetScreenY = renderSize.h * 0.125;
+	return Math.max(0, (targetScreenY - rootOffset.y) / Math.max(rootScale, 0.0001));
 }

@@ -93,7 +93,7 @@ const replayCostAmount = () => {
 			stateUrlDerived.mode() ||
 			'BASE',
 	).toUpperCase();
-	const multiplier = replayMode === 'FEATURE' ? 20 : replayMode === 'BONUS' ? 100 : replayMode === 'SUPER' ? 400 : 1;
+	const multiplier = replayMode === 'CHANCE' ? 2 : replayMode === 'FEATURE' ? 20 : replayMode === 'BONUS' ? 100 : replayMode === 'SUPER' ? 400 : 1;
 	return replayBetAmount() * multiplier;
 };
 

@@ -41,6 +41,20 @@ export default {
 			rtp: 0.961,
 			max_win: 25000,
 		},
+		CHANCE: {
+			cost: 2.0,
+			feature: true,
+			buyBonus: false,
+			rtp: 0.961,
+			max_win: 25000,
+		},
+		FEATURE: {
+			cost: 20.0,
+			feature: true,
+			buyBonus: false,
+			rtp: 0.961,
+			max_win: 25000,
+		},
 		BONUS: {
 			cost: 100.0,
 			feature: false,
@@ -49,7 +63,7 @@ export default {
 			max_win: 25000,
 		},
 		SUPER: {
-			cost: 200.0,
+			cost: 400.0,
 			feature: false,
 			buyBonus: true,
 			rtp: 0.961,
