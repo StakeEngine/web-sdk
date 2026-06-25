@@ -14,43 +14,38 @@
 	// Converts absolute /path to ./path so it resolves relative to the page URL at any deploy sub-path
 	const ap = (p: string) => `./${p.startsWith('/') ? p.slice(1) : p}`;
 
-	const heroCardBg    = ap('/assets/components/backgrounds/visual_v2.jpg');
-	const controlsBg    = ap('/assets/components/reference/controls_reference.png');
-	const buyBonusBg    = ap('/assets/components/reference/buy_bonus_reference.png');
+	const heroCardBg = ap('/assets/components/backgrounds/visual_v2.jpg');
+	const controlsBg = ap('/assets/components/reference/controls_reference.png');
+	const buyBonusBg = ap('/assets/components/reference/buy_bonus_reference.png');
 
 	// Frame backgrounds — passed as CSS vars because url() in style blocks can't use runtime paths
-	const menuBtnFrame   = ap('/assets/components/frames/top_menu-button_frame.png');
-	const soundBtnFrame  = ap('/assets/components/frames/top_sound_button_frame.png');
-	const menuBarFrame   = ap('/assets/components/navbar/bar.png');
+	const menuBtnFrame = ap('/assets/components/frames/top_menu-button_frame.png');
+	const soundBtnFrame = ap('/assets/components/frames/top_sound_button_frame.png');
+	const menuBarFrame = ap('/assets/components/navbar/bar.png');
 
-	// Navbar button artwork (full pre-rendered PNGs from the Figma UI kit)
-	const navMenu     = ap('/assets/components/navbar/menu.png');
-	const navSound    = ap('/assets/components/navbar/sound.png');
-	const navMinus    = ap('/assets/components/navbar/minus.png');
-	const navPlus     = ap('/assets/components/navbar/plus.png');
-	const navAuto     = ap('/assets/components/navbar/auto.png');
-	const navTurbo1   = ap('/assets/components/navbar/turbo_1.png');
-	const navTurbo2   = ap('/assets/components/navbar/turbo_2.png');
-	const navTurbo3   = ap('/assets/components/navbar/turbo_3.png');
-	const navSpin     = ap('/assets/components/navbar/spin.png');
-	const navBuyBonus = ap('/assets/components/navbar/buy_bonus.png');
-	const navCoins    = ap('/assets/components/navbar/coins.png');
-	const scatterFrame   = ap('/assets/components/frames/scatter_frame.png');
-	const hudFrame       = ap('/assets/components/frames/hud_frame.png');
-	const buyBtnFrame    = ap('/assets/components/frames/bonus_buy_button_frame.png');
-	const smallBtnFrame  = ap('/assets/components/frames/lower_hud_button_frame.png');
-	const playBtnFrame   = ap('/assets/components/frames/play_button-frame.png');
+	// Button backgrounds (icon-less frames) — icons are layered on top in markup
+	const btnRoundBg = ap('/assets/components/navbar/btn_bg_round.png'); // wooden round — utility buttons
+	const btnSpinBg = ap('/assets/components/navbar/btn_bg_spin.png'); // green round — spin
+	const btnWideBg = ap('/assets/components/navbar/btn_bg_wide.png'); // wide green — buy bonus
 
-	// Icon paths — relative so they work at any deploy sub-path
-	const iconMenu     = ap('/assets/hud/icon-menu.svg');
-	const iconVolume   = ap('/assets/hud/icon-volume.svg');
-	const iconLightning = ap('/assets/hud/icon-lightning.svg');
-	const iconAutoplay = ap('/assets/hud/icon-autoplay.svg');
-	const iconCoins    = ap('/assets/hud/icon-coins.svg');
-	const iconMinus    = ap('/assets/hud/icon-minus.svg');
-	const iconPlus     = ap('/assets/hud/icon-plus.svg');
-	const iconPlay     = ap('/assets/hud/icon-play.svg');
-	const scatterImg   = ap('/assets/components/ui/scatter-panel-image.png');
+	// Gold icons layered over the button backgrounds
+	const iconMenu = ap('/assets/hud/icon-menu.png');
+	const iconSound = ap('/assets/hud/icon-volume.png');
+	const iconMinus = ap('/assets/hud/icon-minus.png');
+	const iconPlus = ap('/assets/hud/icon-plus.png');
+	const iconAuto = ap('/assets/hud/icon-autoplay.png');
+	const iconSpin = ap('/assets/hud/icon-spin.png');
+	const iconTurbo1 = ap('/assets/hud/icon-lightning-1.png');
+	const iconTurbo2 = ap('/assets/hud/icon-lightning-2.png');
+	const iconTurbo3 = ap('/assets/hud/icon-lightning-3.png');
+	const iconCoins = ap('/assets/hud/icon-coins.png');
+
+	const scatterFrame = ap('/assets/components/frames/scatter_frame.png');
+	const hudFrame = ap('/assets/components/frames/hud_frame.png');
+	const smallBtnFrame = ap('/assets/components/frames/lower_hud_button_frame.png');
+	const playBtnFrame = ap('/assets/components/frames/play_button-frame.png');
+
+	const scatterImg = ap('/assets/components/ui/scatter-panel-image.png');
 
 	const layoutType = $derived(context.stateLayoutDerived.layoutType());
 	const isPortrait = $derived(layoutType === 'portrait');
@@ -69,21 +64,29 @@
 	const isFeatureActive = $derived(stateBet.activeBetModeKey === 'FEATURE');
 	const isChanceActive = $derived(stateBet.activeBetModeKey === 'CHANCE');
 	const isAnyModeActive = $derived(isFeatureActive || isChanceActive);
-	const turboImg = $derived(
-		stateBet.isSuperTurbo ? navTurbo3 : stateBet.isTurbo ? navTurbo2 : navTurbo1,
+	const turboIcon = $derived(
+		stateBet.isSuperTurbo ? iconTurbo3 : stateBet.isTurbo ? iconTurbo2 : iconTurbo1,
 	);
 	const isMuted = $derived(stateSound.volumeValueMaster === 0);
 	const betOptions = $derived(stateConfig.betAmountOptions);
 	const smallestBet = $derived(stateConfig.betAmountOptions[0]);
-	const biggestBet = $derived(stateConfig.betAmountOptions[stateConfig.betAmountOptions.length - 1]);
+	const biggestBet = $derived(
+		stateConfig.betAmountOptions[stateConfig.betAmountOptions.length - 1],
+	);
 	const currentBetIndex = $derived(Math.max(0, betOptions.indexOf(stateBet.betAmount)));
-const formattedBalance = $derived(forestStakeDerived.formatCurrencyAmount(stateBet.balanceAmount));
-const formattedBet = $derived(
-	isFeatureActive ? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 20) :
-	isChanceActive  ? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 2) :
-	forestStakeDerived.formatCurrencyAmount(stateBet.betAmount)
-);
-const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ? '∞' : `${stateBet.autoSpinsCounter}`);
+	const formattedBalance = $derived(
+		forestStakeDerived.formatCurrencyAmount(stateBet.balanceAmount),
+	);
+	const formattedBet = $derived(
+		isFeatureActive
+			? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 20)
+			: isChanceActive
+				? forestStakeDerived.formatCurrencyAmount(stateBet.betAmount * 2)
+				: forestStakeDerived.formatCurrencyAmount(stateBet.betAmount),
+	);
+	const autoSpinsRemainingText = $derived(
+		stateBet.autoSpinsCounter === Infinity ? '∞' : `${stateBet.autoSpinsCounter}`,
+	);
 	const disableDecrease = $derived(!canInteract || stateBet.betAmount === smallestBet);
 	const disableIncrease = $derived(!canInteract || stateBet.betAmount === biggestBet);
 	const disableAuto = $derived.by(() => {
@@ -192,7 +195,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		}
 
 		if (context.stateXstateDerived.isIdle()) {
-				// Always reset to BASE before a new spin (unless feature toggle is on)
+			// Always reset to BASE before a new spin (unless feature toggle is on)
 			stateBet.activeBetModeKey = isFeatureActive ? 'FEATURE' : 'BASE';
 			context.eventEmitter.broadcast({ type: 'bet' });
 			return;
@@ -260,22 +263,35 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	});
 </script>
 
-<OnHotkey hotkey="Space" disabled={!stateConfig.jurisdiction ? false : stateConfig.jurisdiction.disabledSpacebar} onpress={onSpinHotkey} />
+<OnHotkey
+	hotkey="Space"
+	disabled={!stateConfig.jurisdiction ? false : stateConfig.jurisdiction.disabledSpacebar}
+	onpress={onSpinHotkey}
+/>
 
 <div
 	class="hud-shell"
 	data-layout={layoutType}
-	style={`--forest-card-bg:url('${heroCardBg}');--forest-controls-bg:url('${controlsBg}');--forest-buy-bg:url('${buyBonusBg}');--menu-btn-bg:url('${menuBtnFrame}');--sound-btn-bg:url('${soundBtnFrame}');--menu-bar-bg:url('${menuBarFrame}');--scatter-frame-bg:url('${scatterFrame}');--hud-frame-bg:url('${hudFrame}');--buy-btn-bg:url('${buyBtnFrame}');--small-btn-bg:url('${smallBtnFrame}');--play-btn-bg:url('${playBtnFrame}')`}
+	style={`--forest-card-bg:url('${heroCardBg}');--forest-controls-bg:url('${controlsBg}');--forest-buy-bg:url('${buyBonusBg}');--menu-btn-bg:url('${menuBtnFrame}');--sound-btn-bg:url('${soundBtnFrame}');--menu-bar-bg:url('${menuBarFrame}');--scatter-frame-bg:url('${scatterFrame}');--hud-frame-bg:url('${hudFrame}');--buy-btn-bg:url('${btnWideBg}');--small-btn-bg:url('${smallBtnFrame}');--play-btn-bg:url('${playBtnFrame}');--btn-round-bg:url('${btnRoundBg}');--btn-spin-bg:url('${btnSpinBg}')`}
 >
-
 	<div class="hud-bottom">
 		<div class="hud-left">
 			<div class="hud-system">
-				<button class="nav-btn" type="button" onclick={openRules} aria-label="Game rules">
-					<img src={navMenu} alt="menu" />
+				<button
+					class="nav-btn nav-btn--framed"
+					type="button"
+					onclick={openRules}
+					aria-label="Game rules"
+				>
+					<img class="nav-icon" src={iconMenu} alt="menu" />
 				</button>
-				<button class="nav-btn" type="button" onclick={toggleSound} aria-label="Sound">
-					<img src={navSound} alt="sound" class:is-muted={isMuted} />
+				<button
+					class="nav-btn nav-btn--framed"
+					type="button"
+					onclick={toggleSound}
+					aria-label="Sound"
+				>
+					<img class="nav-icon" src={iconSound} alt="sound" class:is-muted={isMuted} />
 				</button>
 			</div>
 
@@ -291,7 +307,6 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 			</div>
 		</div>
 
-
 		<div class="hud-stats">
 			<div class="value-pill value-pill--balance">
 				<div class="label label--balance">
@@ -300,9 +315,15 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 				<span class="value">{formattedBalance}</span>
 			</div>
 
-			<div class="value-pill value-pill--bet bet-pill" role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (stateModal.modal = { name: 'betAmountMenu' })} onclick={() => (stateModal.modal = { name: 'betAmountMenu' })}>
+			<div
+				class="value-pill value-pill--bet bet-pill"
+				role="button"
+				tabindex="0"
+				onkeydown={(e) => e.key === 'Enter' && (stateModal.modal = { name: 'betAmountMenu' })}
+				onclick={() => (stateModal.modal = { name: 'betAmountMenu' })}
+			>
 				<span class="bet-coin" aria-hidden="true">
-					<img src={navCoins} alt="" />
+					<img src={iconCoins} alt="" />
 				</span>
 				<div class="bet-values">
 					<span class="label">{i18nDerived.betLabel()}</span>
@@ -314,17 +335,28 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		<div class="hud-controls">
 			<div class="stepper">
 				{#if isLandscapeMobile}
-					<button class="nav-btn" type="button" onclick={openRules} aria-label="Game rules">
-						<img src={navMenu} alt="menu" />
+					<button
+						class="nav-btn nav-btn--framed"
+						type="button"
+						onclick={openRules}
+						aria-label="Game rules"
+					>
+						<img class="nav-icon" src={iconMenu} alt="menu" />
 					</button>
-					<button class="nav-btn" type="button" onclick={toggleSound} aria-label="Sound">
-						<img src={navSound} alt="sound" class:is-muted={isMuted} />
+					<button
+						class="nav-btn nav-btn--framed"
+						type="button"
+						onclick={toggleSound}
+						aria-label="Sound"
+					>
+						<img class="nav-icon" src={iconSound} alt="sound" class:is-muted={isMuted} />
 					</button>
 				{/if}
 				<button
-					class="nav-btn"
+					class="nav-btn nav-btn--framed"
 					type="button"
-					onpointerdown={(event) => startHoldRepeat(event, onDecrease, () => stepBet(-1, { playSound: false }))}
+					onpointerdown={(event) =>
+						startHoldRepeat(event, onDecrease, () => stepBet(-1, { playSound: false }))}
 					onpointerup={clearHoldRepeat}
 					onpointercancel={clearHoldRepeat}
 					onpointerleave={clearHoldRepeat}
@@ -332,12 +364,13 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 					disabled={disableDecrease}
 					aria-label="Decrease bet"
 				>
-					<img src={navMinus} alt="minus" />
+					<img class="nav-icon" src={iconMinus} alt="minus" />
 				</button>
 				<button
-					class="nav-btn"
+					class="nav-btn nav-btn--framed"
 					type="button"
-					onpointerdown={(event) => startHoldRepeat(event, onIncrease, () => stepBet(1, { playSound: false }))}
+					onpointerdown={(event) =>
+						startHoldRepeat(event, onIncrease, () => stepBet(1, { playSound: false }))}
 					onpointerup={clearHoldRepeat}
 					onpointercancel={clearHoldRepeat}
 					onpointerleave={clearHoldRepeat}
@@ -345,15 +378,25 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 					disabled={disableIncrease}
 					aria-label="Increase bet"
 				>
-					<img src={navPlus} alt="plus" />
+					<img class="nav-icon" src={iconPlus} alt="plus" />
 				</button>
 			</div>
 
 			<div class="play-cluster">
-				<button class="spin-btn" type="button" onclick={onSpinButton} aria-label="Spin" disabled={canInteract && !hasAuto && !canAffordBet}>
-					<img src={navSpin} alt="" class="spin-btn__img" />
+				<button
+					class="spin-btn"
+					type="button"
+					onclick={onSpinButton}
+					aria-label="Spin"
+					disabled={canInteract && !hasAuto && !canAffordBet}
+				>
+					<img src={iconSpin} alt="" class="spin-btn__icon" />
 					{#if hasAuto}
-						<span class="spin-btn__count" aria-label={`Remaining auto spins ${autoSpinsRemainingText}`}>{autoSpinsRemainingText}</span>
+						<span
+							class="spin-btn__count"
+							aria-label={`Remaining auto spins ${autoSpinsRemainingText}`}
+							>{autoSpinsRemainingText}</span
+						>
 					{:else if isSpinStop}
 						<span class="spin-btn__glyph" aria-hidden="true">■</span>
 					{/if}
@@ -362,22 +405,24 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 
 			<div class="action-cluster">
 				<button
-					class="nav-btn nav-btn--turbo"
+					class="nav-btn nav-btn--framed nav-btn--turbo"
 					class:turbo-fast={stateBet.isTurbo && !stateBet.isSuperTurbo}
 					class:turbo-super={stateBet.isSuperTurbo}
-					type="button" onclick={onTurbo} aria-label={i18nDerived.turboLabel()}
+					type="button"
+					onclick={onTurbo}
+					aria-label={i18nDerived.turboLabel()}
 				>
-					<img src={turboImg} alt="turbo" />
+					<img class="nav-icon" src={turboIcon} alt="turbo" />
 				</button>
 				<button
-					class="nav-btn"
+					class="nav-btn nav-btn--framed"
 					class:active={hasAuto}
 					type="button"
 					onclick={onAuto}
 					disabled={disableAuto}
 					aria-label={i18nDerived.autoplayLabel()}
 				>
-					<img src={navAuto} alt="auto" />
+					<img class="nav-icon" src={iconAuto} alt="auto" />
 				</button>
 			</div>
 		</div>
@@ -423,12 +468,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		height: 120px;
 		z-index: 5;
 		pointer-events: none;
-		background: linear-gradient(
-			to top,
-			#070b06 0%,
-			#070b06 78%,
-			rgba(7, 11, 6, 0) 100%
-		);
+		background: linear-gradient(to top, #070b06 0%, #070b06 78%, rgba(7, 11, 6, 0) 100%);
 	}
 
 	.hud-bottom,
@@ -481,7 +521,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		font-size: 0.8rem;
 		font-weight: 700;
 		line-height: 1.3;
-		text-shadow: 0 2px 8px rgba(0,0,0,0.65);
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
 	}
 
 	.scatter-card__text--hot {
@@ -570,7 +610,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	.value-pill {
 		min-width: 0;
 		padding: 0 5px;
-		border-left: 1px solid rgba(255,255,255,0.15);
+		border-left: 1px solid rgba(255, 255, 255, 0.15);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -602,7 +642,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		align-items: center;
 		gap: 6px;
 		padding: 0 16px;
-		border-left: 1px solid rgba(255,255,255,0.30);
+		border-left: 1px solid rgba(255, 255, 255, 0.3);
 		flex: 0 0 auto;
 	}
 
@@ -697,7 +737,9 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		border-radius: 50%;
 		font-size: 1.1rem;
 		font-weight: 800;
-		transition: transform 0.12s ease, filter 0.12s ease;
+		transition:
+			transform 0.12s ease,
+			filter 0.12s ease;
 	}
 
 	.circle-btn:not(:disabled):hover,
@@ -712,7 +754,9 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	}
 
 	.buy-btn {
-		transition: transform 0.12s ease, filter 0.12s ease;
+		transition:
+			transform 0.12s ease,
+			filter 0.12s ease;
 	}
 
 	.circle-btn,
@@ -728,7 +772,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		outline: none;
 	}
 
-	/* Image buttons — full pre-rendered PNG artwork from the Figma UI kit */
+	/* Image buttons — icon-less frame background + gold icon layered on top */
 	.nav-btn {
 		width: 60px;
 		height: 60px;
@@ -740,7 +784,9 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		flex: 0 0 auto;
 		display: grid;
 		place-items: center;
-		transition: transform 0.12s ease, filter 0.12s ease;
+		transition:
+			transform 0.12s ease,
+			filter 0.12s ease;
 	}
 
 	.nav-btn img {
@@ -749,6 +795,17 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		object-fit: contain;
 		display: block;
 		pointer-events: none;
+	}
+
+	/* Round wooden frame behind utility buttons */
+	.nav-btn--framed {
+		background: var(--btn-round-bg) center / contain no-repeat;
+	}
+
+	/* Gold icon sized to sit inside the frame */
+	.nav-btn--framed .nav-icon {
+		width: 46%;
+		height: 46%;
 	}
 
 	.nav-btn:not(:disabled):hover {
@@ -862,7 +919,6 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		opacity: 1;
 	}
 
-
 	.pill-icon {
 		width: 16px;
 		height: 16px;
@@ -909,7 +965,6 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		filter: brightness(1.5) sepia(0.3) saturate(2.5) hue-rotate(5deg);
 	}
 
-
 	.spin-btn {
 		width: 122px;
 		height: 122px;
@@ -917,7 +972,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		   it protrudes above the wooden bar as the focal control. */
 		margin: -22px 0;
 		border: none;
-		background: none;
+		background: var(--btn-spin-bg) center / contain no-repeat;
 		padding: 0;
 		outline: none;
 		cursor: pointer;
@@ -926,15 +981,20 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		transform: translateY(-10px);
 		position: relative;
 		z-index: 3;
-		transition: transform 0.12s ease, filter 0.12s ease;
+		transition:
+			transform 0.12s ease,
+			filter 0.12s ease;
 	}
 
-	.spin-btn__img {
-		width: 100%;
-		height: 100%;
+	.spin-btn__icon {
+		width: 42%;
+		height: 42%;
 		object-fit: contain;
 		display: block;
 		pointer-events: none;
+		/* The green frame's disc sits ~2% below the asset's box center (leaves are
+		   heavier at the bottom), so nudge the icon down to center it on the disc. */
+		transform: translateY(7%);
 	}
 
 	.spin-btn:not(:disabled):hover {
@@ -951,10 +1011,11 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		cursor: default;
 	}
 
-	/* Stop / autospin-count overlays sit on the green disc, masking the baked icon */
+	/* Stop / autospin-count overlays sit on the green disc, over the spin icon */
 	.spin-btn__glyph,
 	.spin-btn__count {
 		position: absolute;
+		/* match the disc center (slightly below box center) like .spin-btn__icon */
 		top: 50%;
 		left: 50%;
 		width: 56%;
@@ -982,7 +1043,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 	.buy-btn {
 		width: 130px;
 		height: auto;
-		aspect-ratio: 3065 / 1084;
+		aspect-ratio: 730 / 267;
 		border: 0;
 		background: var(--buy-btn-bg) center / 100% 100% no-repeat;
 		padding: 0 14px;
@@ -995,7 +1056,9 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		justify-content: center;
 		gap: 1px;
 		flex: 0 0 auto;
-		transition: transform 0.12s ease, filter 0.12s ease;
+		transition:
+			transform 0.12s ease,
+			filter 0.12s ease;
 	}
 
 	.buy-btn__label {
@@ -1004,7 +1067,7 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		font-weight: 900;
 		color: #ffd84a;
 		letter-spacing: 0.08em;
-		text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 		line-height: 1;
 		pointer-events: none;
 	}
@@ -1059,8 +1122,13 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 			padding: 12px;
 		}
 
-		.stepper { grid-area: stepper; }
-		.action-cluster { grid-area: actions; justify-content: flex-end; }
+		.stepper {
+			grid-area: stepper;
+		}
+		.action-cluster {
+			grid-area: actions;
+			justify-content: flex-end;
+		}
 
 		.label {
 			font-size: 0.72rem;
@@ -1190,5 +1258,4 @@ const autoSpinsRemainingText = $derived(stateBet.autoSpinsCounter === Infinity ?
 		width: clamp(42px, 6vh, 50px);
 		height: clamp(42px, 6vh, 50px);
 	}
-
 </style>
