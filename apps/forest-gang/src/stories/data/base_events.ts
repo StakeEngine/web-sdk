@@ -42,5 +42,5 @@ export default {
 		],
 	},
 	setWin: { type: 'setWin', amount: 300, winLevel: 3 },
-	freeSpinEnd: { type: 'freeSpinEnd', amount: 2300, winLevel: 5 },
+	freeSpinEnd: { type: 'freeSpinEnd', amount: 2300, winLevel: 6 },
 };

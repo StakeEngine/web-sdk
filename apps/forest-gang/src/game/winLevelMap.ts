@@ -46,6 +46,12 @@ export const winLevelMap = {
 		sound: { sfx: undefined, bgm: undefined },
 		animation: undefined,
 	},
+	// Big win boards:
+	// 20x-<50x  => SWEET WIN
+	// 50x-<100x => WILD WIN
+	// 100x-<200x => EPIC WIN
+	// 200x-<500x => MYTHIC WIN
+	// 500x+ => LEGENDARY WIN
 	6: {
 		level: 6,
 		alias: 'big',
