@@ -17,7 +17,7 @@
 	const PAD_ASPECT = 624 / 420;
 	const PANEL_W = SYMBOL_W * 1.1;
 	const PANEL_H = PANEL_W / PAD_ASPECT;
-	const SYM_SIZE = PANEL_W * 0.40;
+	const SYM_SIZE = PANEL_W * 0.52;
 
 	const ALL_SYMBOLS: SymbolName[] = ['FOX', 'WOLF', 'BEAR', 'RABBIT', 'SQUIRREL', 'A', 'K', 'Q', 'J', 'T'];
 	const ROLL_DURATION_MS = 2000;
@@ -25,7 +25,9 @@
 	const context = getContext();
 	const selectedSymbol = $derived(context.stateGame.selectedBonusSymbol);
 	const mode = $derived(context.stateGame.bonusMode);
-	const show = $derived(!!selectedSymbol && !!mode);
+	// Hidden while the deer presenter is on screen; revealed once it finishes.
+	let presenterActive = $state(false);
+	const show = $derived(!!selectedSymbol && !!mode && !presenterActive);
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
 
 	const boardW = $derived(context.stateGameDerived.boardLayout().width);
@@ -90,6 +92,8 @@
 			if (rollDone) return;
 			await new Promise<void>((resolve) => { rollAwaitResolve = resolve; });
 		},
+		expandedPresenterShow: () => (presenterActive = true),
+		expandedPresenterHide: () => (presenterActive = false),
 	});
 
 	const spriteKey = $derived(displaySymbol ? (spriteKeyByName[displaySymbol] ?? 'aTile') : 'aTile');
@@ -106,22 +110,13 @@
 			<!-- Frame background -->
 			<Sprite key="symbolPad" anchor={{ x: 0.5, y: 0.5 }} x={PANEL_W * 0.5} y={PANEL_H * 0.5} width={PANEL_W} height={PANEL_H} />
 
-			<!-- Mode label -->
-			<BitmapText
-				anchor={{ x: 0.5, y: 0 }}
-				x={PANEL_W * 0.5}
-				y={PANEL_H * 0.18}
-				text={modeLabel}
-				style={{ fontFamily: 'gold', fontSize: 14 }}
-			/>
-
-			<!-- Symbol sprite -->
+			<!-- Symbol sprite, centred (no mode label) -->
 			{#if displaySymbol}
 				<Sprite
 					key={spriteKey}
 					anchor={{ x: 0.5, y: 0.5 }}
 					x={PANEL_W * 0.5}
-					y={PANEL_H * 0.58}
+					y={PANEL_H * 0.5}
 					width={SYM_SIZE}
 					height={SYM_SIZE * (SYMBOL_H / SYMBOL_W)}
 				/>

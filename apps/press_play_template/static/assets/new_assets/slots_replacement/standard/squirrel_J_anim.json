@@ -1,0 +1,350 @@
+{
+  "skeleton": {
+    "hash": "squirrel_J_anim",
+    "spine": "4.2.0",
+    "x": 0,
+    "y": 0,
+    "width": 128,
+    "height": 88,
+    "images": "./squirrel_J_anim/"
+  },
+  "bones": [
+    {
+      "name": "root"
+    }
+  ],
+  "slots": [
+    {
+      "name": "frame",
+      "bone": "root",
+      "attachment": "frame00"
+    }
+  ],
+  "skins": [
+    {
+      "name": "default",
+      "attachments": {
+        "frame": {
+          "frame00": {
+            "type": "region",
+            "name": "frame00",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame01": {
+            "type": "region",
+            "name": "frame01",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame02": {
+            "type": "region",
+            "name": "frame02",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame03": {
+            "type": "region",
+            "name": "frame03",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame04": {
+            "type": "region",
+            "name": "frame04",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame05": {
+            "type": "region",
+            "name": "frame05",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame06": {
+            "type": "region",
+            "name": "frame06",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame07": {
+            "type": "region",
+            "name": "frame07",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame08": {
+            "type": "region",
+            "name": "frame08",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame09": {
+            "type": "region",
+            "name": "frame09",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame10": {
+            "type": "region",
+            "name": "frame10",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame11": {
+            "type": "region",
+            "name": "frame11",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame12": {
+            "type": "region",
+            "name": "frame12",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame13": {
+            "type": "region",
+            "name": "frame13",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame14": {
+            "type": "region",
+            "name": "frame14",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame15": {
+            "type": "region",
+            "name": "frame15",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame16": {
+            "type": "region",
+            "name": "frame16",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          },
+          "frame17": {
+            "type": "region",
+            "name": "frame17",
+            "x": 0,
+            "y": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "rotation": 0,
+            "width": 128,
+            "height": 88
+          }
+        }
+      }
+    }
+  ],
+  "animations": {
+    "intro_to_win": {
+      "slots": {
+        "frame": {
+          "attachment": [
+            {
+              "time": 0.0,
+              "name": "frame00"
+            },
+            {
+              "time": 0.0417,
+              "name": "frame01"
+            },
+            {
+              "time": 0.0834,
+              "name": "frame02"
+            },
+            {
+              "time": 0.1251,
+              "name": "frame03"
+            },
+            {
+              "time": 0.1668,
+              "name": "frame04"
+            },
+            {
+              "time": 0.2085,
+              "name": "frame05"
+            },
+            {
+              "time": 0.2502,
+              "name": "frame06"
+            },
+            {
+              "time": 0.2919,
+              "name": "frame07"
+            },
+            {
+              "time": 0.3336,
+              "name": "frame08"
+            },
+            {
+              "time": 0.3753,
+              "name": "frame09"
+            },
+            {
+              "time": 0.417,
+              "name": "frame10"
+            },
+            {
+              "time": 0.4587,
+              "name": "frame11"
+            },
+            {
+              "time": 0.5004,
+              "name": "frame12"
+            },
+            {
+              "time": 0.5421,
+              "name": "frame13"
+            },
+            {
+              "time": 0.5838,
+              "name": "frame14"
+            },
+            {
+              "time": 0.6255,
+              "name": "frame15"
+            },
+            {
+              "time": 0.6672,
+              "name": "frame16"
+            },
+            {
+              "time": 0.7089,
+              "name": "frame17"
+            },
+            {
+              "time": 0.7506,
+              "name": "frame17"
+            }
+          ]
+        }
+      }
+    },
+    "win_loop": {
+      "slots": {
+        "frame": {
+          "attachment": [
+            {
+              "time": 0.0,
+              "name": "frame14"
+            },
+            {
+              "time": 0.0417,
+              "name": "frame15"
+            },
+            {
+              "time": 0.0834,
+              "name": "frame16"
+            },
+            {
+              "time": 0.1251,
+              "name": "frame17"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "_meta": {
+    "frameCount": 18,
+    "frameWidth": 128,
+    "frameHeight": 88,
+    "fps": 24,
+    "loopStartFrame": 17,
+    "sheetWidth": 2304,
+    "sheetHeight": 88,
+    "playback": "play intro_to_win once, then loop win_loop"
+  }
+}

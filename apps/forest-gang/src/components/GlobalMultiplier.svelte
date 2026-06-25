@@ -7,27 +7,26 @@
 
 <script lang="ts">
 	import { Tween } from 'svelte/motion';
+	import { cubicIn, backOut } from 'svelte/easing';
 
-	import {
-		BitmapText,
-		Container,
-		Sprite,
-		SpineEventEmitterProvider,
-		SpineProvider,
-		SpineSlot,
-		SpineTrack,
-	} from 'pixi-svelte';
+	import { BitmapText, Container, Sprite } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
-	import { stateBetDerived } from 'state-shared';
-	import { waitForResolve, waitForTimeout } from 'utils-shared/wait';
+	import { waitForTimeout } from 'utils-shared/wait';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE, SYMBOL_W } from '../game/constants';
 
-	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
-
-	const PANEL_WIDTH = SYMBOL_SIZE * 0.641;
+	// Bear-hand board sizing (board panel ≈ 58% of the 944×708 image width)
+	// Match the top symbol board (BonusSymbolPanel uses SYMBOL_W * 1.1).
+	// The hand image is 944×708; its board region is 592px wide, centred at (368,324).
+	const BOARD_W = SYMBOL_W * 1.1;
+	const HAND_W = BOARD_W * (944 / 592);
+	const HAND_H = HAND_W * (708 / 944);
+	const NUM_FONT = BOARD_W * 0.19;
+	// Vertical centre nudge so the number sits in the middle of the wood board.
+	const NUM_Y = -BOARD_W * 0.04;
+	const SLIDE = BOARD_W * 0.55;
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
 	// Mirror BonusSymbolPanel geometry to place multiplier directly below it
@@ -47,85 +46,63 @@
 	);
 
 	let show = $state(false);
-	let animationName = $state<AnimationName>('static');
 	let multiplier = $state(1);
-	let previousMultiplier = new Tween(1);
-	let oncomplete = $state(() => {});
+	// Swap animation: the whole hand+board+number group slides out to the right
+	// (fading), the number is swapped while hidden, then it slides back in from
+	// the left. The number itself never animates independently — it rides the group.
+	let groupX = new Tween(0);
+	let groupAlpha = new Tween(1);
+
+	const swapTo = async (next: number) => {
+		// pull the sign out to the right
+		groupX.set(SLIDE, { duration: 170, easing: cubicIn });
+		groupAlpha.set(0, { duration: 150 });
+		await waitForTimeout(170);
+		// swap while hidden, jump to the left
+		multiplier = next;
+		groupX.set(-SLIDE, { duration: 0 });
+		// bring the sign back in from the left with a slight overshoot
+		groupX.set(0, { duration: 280, easing: backOut });
+		groupAlpha.set(1, { duration: 190 });
+		await waitForTimeout(280);
+	};
 
 	context.eventEmitter.subscribeOnMount({
 		globalMultiplierShow: () => {
 			show = true;
 			multiplier = 1;
-			previousMultiplier.set(1, { duration: 0 });
-			animationName = 'static';
+			groupX.set(0, { duration: 0 });
+			groupAlpha.set(1, { duration: 0 });
 		},
 		globalMultiplierHide: () => (show = false),
 		globalMultiplierUpdate: async (emitterEvent) => {
-			if (emitterEvent.multiplier === 1 && multiplier !== 1) {
-				animationName = 'reset';
-				await waitForTimeout(300);
-				context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_reset' });
-				previousMultiplier.set(emitterEvent.multiplier);
-			}
+			const next = emitterEvent.multiplier;
+			if (next === multiplier) return;
 
-			if (emitterEvent.multiplier > multiplier) {
-				context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_update' });
-				animationName = 'increment';
-			}
+			context.eventEmitter.broadcast({
+				type: 'soundOnce',
+				name: next === 1 ? 'sfx_multiplier_reset' : 'sfx_multiplier_update',
+			});
 
-			if (animationName !== 'static') {
-				multiplier = emitterEvent.multiplier;
-				await waitForResolve((resolve) => (oncomplete = resolve));
-				animationName = 'static';
-				previousMultiplier.set(multiplier, { duration: 0 });
-			}
+			await swapTo(next);
 		},
 	});
 </script>
 
 <FadeContainer {show}>
 	<BoardContainer>
-		<Container {...position} {scale}>
-			<SpineProvider key="globalMultiplier" width={PANEL_WIDTH}>
-				<SpineTrack
-					trackIndex={0}
-					{animationName}
-					timeScale={stateBetDerived.timeScale()}
-					listener={{
-						complete: () => {
-							oncomplete();
-						},
-					}}
-				/>
-				<!-- <SpineSlot slotName="Frame_Multiplier">
-					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
-				</SpineSlot> -->
-				<SpineSlot slotName="Frame_Multiplier2">
-					<Sprite key="symbolPad" anchor={0.5} width={725} height={450} />
-				</SpineSlot>
-				<SpineEventEmitterProvider>
-					<SpineSlot slotName="slot_multi">
-						<BitmapText
-							anchor={0.5}
-							text={`${Math.round(previousMultiplier.current)}×`}
-							style={{
-								fontFamily: 'gold',
-								fontSize: SYMBOL_SIZE * 5.2,
-							}}
-						/>
-					</SpineSlot>
-					<SpineSlot slotName="slot_multi_next">
-						<BitmapText
-							anchor={0.5}
-							text={`${multiplier}×`}
-							style={{
-								fontFamily: 'gold',
-								fontSize: SYMBOL_SIZE * 5.2,
-							}}
-						/>
-					</SpineSlot>
-				</SpineEventEmitterProvider>
-			</SpineProvider>
+		<!-- The whole hand+board+number group slides + fades on a multiplier change -->
+		<Container x={position.x + groupX.current} y={position.y} alpha={groupAlpha.current} {scale}>
+			<!-- Bear-hand board: panel centre (0.39/0.458) at the container origin, paw extends right -->
+			<Sprite key="multiplierHand" anchor={{ x: 0.39, y: 0.458 }} width={HAND_W} height={HAND_H} />
+
+			<!-- Global multiplier number, gold, centred on the board (static) -->
+			<BitmapText
+				anchor={0.5}
+				y={NUM_Y}
+				text={`${multiplier}X`}
+				style={{ fontFamily: 'silver', fontSize: NUM_FONT }}
+			/>
 		</Container>
 	</BoardContainer>
 </FadeContainer>

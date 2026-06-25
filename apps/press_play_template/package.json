@@ -1,0 +1,50 @@
+{
+	"name": "press_play_template",
+	"version": "0.0.0",
+	"private": true,
+	"license": "MIT",
+	"scripts": {
+		"format": "prettier --write --ignore-path=../../.prettierignore .",
+		"lint": "eslint \"src\"",
+		"dev": "vite dev --host --port 3005",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"type": "module",
+	"devDependencies": {
+		"eslint": "9.21.0",
+		"eslint-config-custom": "workspace:*",
+		"config-ts": "workspace:*",
+		"config-vite": "workspace:*",
+		"config-svelte": "workspace:*",
+		"config-lingui": "workspace:*",
+		"@sveltejs/vite-plugin-svelte": "5.0.3"
+	},
+	"dependencies": {
+		"lodash": "4.17.16",
+		"@types/lodash": "4.17.16",
+		"svelte": "5.20.5",
+		"vite": "6.2.0",
+		"@sveltejs/kit": "2.17.3",
+		"@lingui/core": "5.2.0",
+		"envs": "workspace:*",
+		"rgs-requests": "workspace:*",
+		"pixi-svelte": "workspace:*",
+		"state-shared": "workspace:*",
+		"constants-shared": "workspace:*",
+		"components-shared": "workspace:*",
+		"components-layout": "workspace:*",
+		"components-ui-html": "workspace:*",
+		"components-pixi": "workspace:*",
+		"components-ui-pixi": "workspace:*",
+		"utils-event-emitter": "workspace:*",
+		"utils-shared": "workspace:*",
+		"utils-xstate": "workspace:*",
+		"utils-slots": "workspace:*",
+		"utils-book": "workspace:*",
+		"utils-bet": "workspace:*",
+		"utils-layout": "workspace:*",
+		"utils-sound": "workspace:*",
+		"pixi-filters": "6.1.0"
+	}
+}

@@ -14,13 +14,13 @@
 	import { anchorToPivot, BitmapText, Container, Sprite, type Sizes } from 'pixi-svelte';
 
 	const context = getContext();
-	const PANEL_KEY_DESKTOP = 'symbolPad';
-	const PANEL_RATIO_DESKTOP = 624 / 420;
-	const panelKey = PANEL_KEY_DESKTOP;
-	const panelWidth = $derived(SYMBOL_SIZE * 2 * 0.8);
+	// Leaf-corner wooden board (confirm_frame.png is 505×301; wood centre ≈ 0.507).
+	const PANEL_RATIO = 505 / 301;
+	const WOOD_CENTER_Y = 0.46;
+	const panelWidth = $derived(SYMBOL_SIZE * 2.0);
 	const panelSizes = $derived({
 		width: panelWidth,
-		height: panelWidth / PANEL_RATIO_DESKTOP,
+		height: panelWidth / PANEL_RATIO,
 	});
 	const scale = 1;
 	const position = $derived({
@@ -31,40 +31,39 @@
 		),
 		y:
 			context.stateGameDerived.boardLayout().y -
-			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale +
-			80,
+			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale -
+			20,
 	});
 
-	const fontSize = SYMBOL_SIZE * 0.275;
+	const titleFont = $derived(SYMBOL_SIZE * 0.115);
+	const counterFont = $derived(SYMBOL_SIZE * 0.25);
+	const GAP = $derived(SYMBOL_SIZE * 0.13);
 
 	let show = $state(false);
-	let hasCurrent = $state(false);
 	let current = $state(0);
 	let total = $state(0);
 	let titleSizes: Sizes = $state({ width: 0, height: 0 });
 	let counterSizes: Sizes = $state({ width: 0, height: 0 });
 
-	const textContainerSizes = $derived({
-		width: titleSizes.width,
-		height: titleSizes.height + counterSizes.height,
+	// Stack the two lines and centre the group on the board's wood centre.
+	const groupSizes = $derived({
+		width: Math.max(titleSizes.width, counterSizes.width),
+		height: titleSizes.height + GAP + counterSizes.height,
 	});
-	const counterPosition = $derived({ x: titleSizes.width / 2, y: titleSizes.height });
+
 	const visible = $derived(show && context.stateGame.bonusMode !== 'feature');
 
 	context.eventEmitter.subscribeOnMount({
 		freeSpinCounterShow: () => {
 			show = false;
-			hasCurrent = false;
 			current = 0;
 		},
 		freeSpinCounterHide: () => {
 			show = false;
-			hasCurrent = false;
 		},
 		freeSpinCounterUpdate: (emitterEvent) => {
 			if (emitterEvent.current !== undefined) {
 				current = emitterEvent.current;
-				hasCurrent = true;
 				show = true;
 			}
 			if (emitterEvent.total !== undefined) total = emitterEvent.total;
@@ -74,33 +73,38 @@
 
 <MainContainer>
 	<FadeContainer show={visible} {...position} {scale}>
-		<Sprite key={panelKey} {...panelSizes} />
+		<Sprite key="counterFrame" {...panelSizes} />
+
 		<Container
 			x={panelSizes.width * 0.5}
-			y={panelSizes.height * 0.44}
-			pivot={anchorToPivot({
-				sizes: textContainerSizes,
-				anchor: { x: 0.5, y: 0.5 },
-			})}
+			y={panelSizes.height * WOOD_CENTER_Y}
+			pivot={anchorToPivot({ sizes: groupSizes, anchor: { x: 0.5, y: 0.5 } })}
 		>
+			<!-- FREE SPINS title (gold) -->
 			<BitmapText
-				text={context.stateGame.bonusMode === 'superspin' ? 'ALL IN' : 'DEAL IT'}
+				x={groupSizes.width / 2}
+				y={0}
+				anchor={{ x: 0.5, y: 0 }}
+				text="FREE SPINS"
+				onresize={(sizes) => (titleSizes = sizes)}
 				style={{
-					fontFamily: 'gold',
-					fontSize: fontSize * 1.1,
+					fontFamily: 'silver',
+					fontSize: titleFont,
 					wordWrap: false,
 				}}
-				onresize={(sizes) => (titleSizes = sizes)}
 			/>
+
+			<!-- current / total counter (gold, large) -->
 			<BitmapText
-				text={`${current} OF ${total}`}
-				{...counterPosition}
+				x={groupSizes.width / 2}
+				y={titleSizes.height + GAP}
 				anchor={{ x: 0.5, y: 0 }}
-				style={{
-					fontFamily: 'gold',
-					fontSize: fontSize * 1.08,
-				}}
+				text={`${current}/${total}`}
 				onresize={(sizes) => (counterSizes = sizes)}
+				style={{
+					fontFamily: 'silver',
+					fontSize: counterFont,
+				}}
 			/>
 		</Container>
 	</FadeContainer>

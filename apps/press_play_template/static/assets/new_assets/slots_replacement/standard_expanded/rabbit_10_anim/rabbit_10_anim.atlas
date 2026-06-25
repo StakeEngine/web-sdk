@@ -1,0 +1,61 @@
+rabbit_10_anim.png
+size: 1024,384
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+frame00
+  rotate: false
+  xy: 0, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame01
+  rotate: false
+  xy: 128, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame02
+  rotate: false
+  xy: 256, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame03
+  rotate: false
+  xy: 384, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame04
+  rotate: false
+  xy: 512, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame05
+  rotate: false
+  xy: 640, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame06
+  rotate: false
+  xy: 768, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1
+frame07
+  rotate: false
+  xy: 896, 0
+  size: 128, 384
+  orig: 128, 384
+  offset: 0, 0
+  index: -1

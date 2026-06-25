@@ -6,12 +6,46 @@
 	const props: Props = $props();
 	const context = getContext();
 
-	const OPTIONS = [5, 10, 25, 50, 100, 200, 500];
-	let selected = $state(25);
-	let stopOnBonus = $state(context.stateGame.stopAutoOnBonus);
+	const ap = (p: string) => `./${p.startsWith('/') ? p.slice(1) : p}`;
+	const panelBg = ap('/assets/components/ui/autoplay_panel.png');
 
-	const start = (count: number | typeof Infinity) => {
-		context.stateGame.stopAutoOnBonus = stopOnBonus;
+	// Spin-count slider stops (last = unlimited)
+	const STOPS: Array<number> = [10, 25, 50, 100, 250, 500, Infinity];
+	let stopIndex = $state(3); // default 100
+	const count = $derived(STOPS[stopIndex]);
+	const countLabel = $derived(count === Infinity ? '∞' : `${count}`);
+	const fillPct = $derived((stopIndex / (STOPS.length - 1)) * 100);
+
+	// Live game-state toggles (mirror the HUD)
+	const isTurbo = $derived(stateBet.isTurbo && !stateBet.isSuperTurbo);
+	const isSuperTurbo = $derived(stateBet.isSuperTurbo);
+	const isFeature = $derived(stateBet.activeBetModeKey === 'FEATURE');
+
+	const toggleTurbo = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
+		if (isTurbo) {
+			stateBet.isTurbo = false;
+		} else {
+			stateBet.isTurbo = true;
+			stateBet.isSuperTurbo = false;
+		}
+	};
+	const toggleSuperTurbo = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
+		if (isSuperTurbo) {
+			stateBet.isSuperTurbo = false;
+		} else {
+			stateBet.isSuperTurbo = true;
+			stateBet.isTurbo = false;
+		}
+	};
+	const toggleFeature = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressGeneral' });
+		stateBet.activeBetModeKey = isFeature ? 'BASE' : 'FEATURE';
+	};
+
+	const start = () => {
+		context.eventEmitter.broadcast({ type: 'soundPressBet' });
 		stateBet.autoSpinsCounter = count;
 		props.onclose();
 		context.eventEmitter.broadcast({ type: 'autoBet' });
@@ -19,220 +53,266 @@
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="backdrop" onclick={props.onclose}></div>
-<div class="panel" role="dialog" aria-modal="true">
-	<div class="panel__header">
-		<span class="panel__title">AUTOPLAY</span>
-		<button class="panel__close" type="button" onclick={props.onclose}>✕</button>
-	</div>
+<div class="ap-backdrop" onclick={props.onclose}></div>
 
-	<div class="panel__body">
-		<p class="panel__label">NUMBER OF SPINS</p>
-		<div class="options-grid">
-			{#each OPTIONS as n}
-				<button
-					class="option-btn"
-					class:option-btn--selected={selected === n}
-					type="button"
-					onclick={() => (selected = n)}
-				>{n}</button>
-			{/each}
-		</div>
+<button class="ap-close" type="button" onclick={props.onclose} aria-label="Close">✕</button>
 
-		<div class="stop-on-bonus" class:sob--active={stopOnBonus}>
-				<span class="sob__label">STOP ON BONUS</span>
-				<button
-					class="sob__switch"
-					class:sob__switch--on={stopOnBonus}
-					type="button"
-					onclick={() => (stopOnBonus = !stopOnBonus)}
-					aria-pressed={stopOnBonus}
-					aria-label="Stop autoplay on bonus"
-				>
-					<span class="sob__track"><span class="sob__thumb"></span></span>
-				</button>
+<div class="ap-root" role="dialog" aria-modal="true">
+	<div class="ap-panel" style={`background-image:url('${panelBg}')`}>
+		<div class="ap-content">
+			<p class="ap-title">AUTO SPIN</p>
+
+			<div class="ap-toggles">
+				<div class="ap-row">
+					<span class="ap-row__label">TURBO SPIN</span>
+					<button class="ap-switch" class:on={isTurbo} type="button" onclick={toggleTurbo} aria-pressed={isTurbo}>
+						<span class="ap-switch__thumb"></span>
+					</button>
+				</div>
+				<div class="ap-row">
+					<span class="ap-row__label">SUPER TURBO SPIN</span>
+					<button class="ap-switch" class:on={isSuperTurbo} type="button" onclick={toggleSuperTurbo} aria-pressed={isSuperTurbo}>
+						<span class="ap-switch__thumb"></span>
+					</button>
+				</div>
+				<div class="ap-row">
+					<span class="ap-row__label">100 X BONUS FEATURE</span>
+					<button class="ap-switch" class:on={isFeature} type="button" onclick={toggleFeature} aria-pressed={isFeature}>
+						<span class="ap-switch__thumb"></span>
+					</button>
+				</div>
 			</div>
 
-			<div class="actions">
-			<button class="start-btn" type="button" onclick={() => start(selected)}>
-				START {selected} SPINS
-			</button>
-			<button class="infinite-btn" type="button" onclick={() => start(Infinity)}>
-				∞ UNLIMITED
+			<p class="ap-spins-label">NUMBER OF SPINS</p>
+
+			<div class="ap-slider">
+				<input
+					class="ap-range"
+					type="range"
+					min="0"
+					max={STOPS.length - 1}
+					step="1"
+					bind:value={stopIndex}
+					style={`--fill:${fillPct}%`}
+					aria-label="Number of spins"
+				/>
+				<span class="ap-slider__value">{countLabel}</span>
+			</div>
+
+			<button class="ap-start" type="button" onclick={start}>
+				START AUTOPLAY ({countLabel})
 			</button>
 		</div>
 	</div>
 </div>
 
-
-
 <style>
-	.backdrop {
+	.ap-backdrop {
 		position: fixed;
 		inset: 0;
 		z-index: 58;
-		background: rgba(0, 0, 0, 0.6);
+		background: rgba(0, 0, 0, 0.64);
 		backdrop-filter: blur(4px);
 	}
 
-	.panel {
+	.ap-root {
 		position: fixed;
-		bottom: 110px;
+		top: 50%;
 		left: 50%;
-		transform: translateX(-50%);
+		transform: translate(-50%, -50%);
 		z-index: 59;
-		width: min(360px, 90vw);
-		border-radius: 20px;
-		background: linear-gradient(180deg, rgba(28, 32, 18, 0.98), rgba(10, 12, 8, 0.99));
-		border: 1px solid rgba(231, 196, 112, 0.35);
-		box-shadow: 0 20px 44px rgba(0, 0, 0, 0.65);
-		overflow: hidden;
-	}
-
-	.panel__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 16px 20px 12px;
-		border-bottom: 1px solid rgba(231, 196, 112, 0.18);
-	}
-
-	.panel__title {
+		width: min(620px, 94vw);
 		font-family: 'Cinzel', serif;
-		font-size: 1rem;
-		font-weight: 900;
-		color: #ffd84a;
-		letter-spacing: 0.1em;
 	}
 
-	.panel__close {
-		border: none;
-		background: none;
-		color: rgba(255, 255, 255, 0.4);
-		font-size: 1rem;
-		cursor: pointer;
-		padding: 2px 6px;
-	}
-
-	.panel__body {
-		padding: 16px 18px 18px;
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
-	}
-
-	.panel__label {
-		font-family: 'Cinzel', serif;
-		font-size: 0.65rem;
+	/* Round wood close button, pinned to the top-right end of the screen */
+	.ap-close {
+		position: fixed;
+		top: 22px;
+		right: 22px;
+		z-index: 60;
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		border: 2px solid rgba(217, 133, 3, 0.7);
+		background: radial-gradient(circle at 50% 35%, #3a2a16, #140d06);
+		color: #e8c878;
+		font-size: 1.1rem;
 		font-weight: 700;
-		color: rgba(255, 255, 255, 0.45);
-		letter-spacing: 0.08em;
-		margin: 0;
-	}
-
-	.options-grid {
+		cursor: pointer;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 8px;
+		place-items: center;
+		transition: filter 0.12s ease;
+	}
+	.ap-close:hover { filter: brightness(1.2); }
+
+	/* Wooden panel background (Figma art), fixed aspect */
+	.ap-panel {
+		aspect-ratio: 1402 / 1122;
+		background-size: 100% 100%;
+		background-repeat: no-repeat;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 17% 19%;
+		box-sizing: border-box;
 	}
 
-	.option-btn {
-		border: 1px solid rgba(188, 141, 39, 0.35);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.03);
-		color: rgba(255, 255, 255, 0.65);
-		font-family: 'Cinzel', serif;
-		font-size: 0.9rem;
-		font-weight: 700;
-		padding: 10px 6px;
-		cursor: pointer;
-		transition: all 0.15s;
-	}
-
-	.option-btn:hover,
-	.option-btn--selected {
-		border-color: #ffd84a;
-		background: rgba(255, 216, 74, 0.1);
-		color: #ffd84a;
-	}
-
-	.actions {
+	.ap-content {
+		width: 100%;
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: clamp(8px, 1.6vw, 16px);
 	}
 
-	.start-btn {
-		width: 100%;
-		padding: 14px;
-		border: none;
-		border-radius: 14px;
-		background: linear-gradient(180deg, #f0d068 0%, #c09224 100%);
-		color: #17200f;
-		font-family: 'Cinzel', serif;
-		font-size: 0.9rem;
+	.ap-title {
+		margin: 0 0 clamp(2px, 0.6vw, 6px);
+		text-align: center;
 		font-weight: 900;
-		letter-spacing: 0.06em;
-		cursor: pointer;
-		transition: opacity 0.15s;
-	}
-
-	.start-btn:hover { opacity: 0.9; }
-
-	.infinite-btn {
-		width: 100%;
-		padding: 11px;
-		border: 1px solid rgba(188, 141, 39, 0.4);
-		border-radius: 14px;
-		background: rgba(255, 255, 255, 0.03);
-		color: rgba(255, 255, 255, 0.55);
-		font-family: 'Cinzel', serif;
-		font-size: 0.85rem;
-		font-weight: 700;
+		font-size: clamp(1.1rem, 2.4vw, 1.5rem);
 		letter-spacing: 0.08em;
-		cursor: pointer;
-		transition: all 0.15s;
+		background: linear-gradient(180deg, #ffd84a 10%, #ffa90e 60%, #d18005 95%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 	}
 
-	.infinite-btn:hover {
-		border-color: #ffd84a;
-		color: #ffd84a;
+	.ap-toggles {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(6px, 1.3vw, 14px);
 	}
 
-	.stop-on-bonus {
+	.ap-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 10px 12px;
-		border: 1px solid rgba(188, 141, 39, 0.25);
-		border-radius: 12px;
-		background: rgba(255,255,255,0.03);
-		transition: border-color 0.2s;
+		gap: 10px;
 	}
-	.sob--active { border-color: rgba(255, 216, 74, 0.5); }
 
-	.sob__label {
-		font-family: 'Cinzel', serif;
-		font-size: 0.72rem;
-		font-weight: 700;
-		color: rgba(255,255,255,0.6);
+	.ap-row__label {
+		color: #fff;
+		font-weight: 900;
+		font-size: clamp(0.72rem, 1.5vw, 0.95rem);
+		letter-spacing: 0.04em;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+	}
+
+	/* Green toggle switch */
+	.ap-switch {
+		flex: 0 0 auto;
+		position: relative;
+		width: 52px;
+		height: 27px;
+		border-radius: 999px;
+		border: 1px solid rgba(0, 0, 0, 0.4);
+		background: linear-gradient(180deg, #2c2c2c, #1a1a1a);
+		cursor: pointer;
+		padding: 0;
+		transition: background 0.2s ease;
+	}
+	.ap-switch.on {
+		background: linear-gradient(180deg, #7ec23a, #4e8f1d);
+	}
+	.ap-switch__thumb {
+		position: absolute;
+		top: 50%;
+		left: 3px;
+		transform: translateY(-50%);
+		width: 21px;
+		height: 21px;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+		transition: left 0.2s ease;
+	}
+	.ap-switch.on .ap-switch__thumb { left: calc(100% - 24px); }
+
+	.ap-spins-label {
+		margin: 0;
+		text-align: center;
+		font-weight: 900;
+		font-size: clamp(0.8rem, 1.7vw, 1.05rem);
 		letter-spacing: 0.06em;
+		background: linear-gradient(180deg, #ffa90e 15%, #ee960b 70%, #d18005 93%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
 	}
-	.sob--active .sob__label { color: #ffd84a; }
 
-	.sob__switch { border: none; background: none; padding: 0; cursor: pointer; }
-	.sob__track {
-		display: block; position: relative;
-		width: 38px; height: 20px; border-radius: 20px;
-		background: rgba(80,80,80,0.8); transition: background 0.25s;
+	/* Slider */
+	.ap-slider {
+		display: flex;
+		align-items: center;
+		gap: 12px;
 	}
-	.sob__switch--on .sob__track { background: #ffd84a; }
-	.sob__thumb {
-		display: block; position: absolute;
-		top: 3px; left: 3px;
-		width: 14px; height: 14px; border-radius: 50%;
-		background: #fff; transition: transform 0.25s;
-		box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+
+	.ap-range {
+		flex: 1 1 auto;
+		-webkit-appearance: none;
+		appearance: none;
+		height: 12px;
+		border-radius: 6px;
+		background: linear-gradient(
+			to right,
+			#6fb22f 0%,
+			#6fb22f var(--fill, 50%),
+			rgba(0, 0, 0, 0.55) var(--fill, 50%),
+			rgba(0, 0, 0, 0.55) 100%
+		);
+		border: 1px solid rgba(0, 0, 0, 0.5);
+		outline: none;
+		cursor: pointer;
 	}
-	.sob__switch--on .sob__thumb { transform: translateX(18px); }
+	.ap-range::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 26px;
+		height: 26px;
+		border-radius: 6px;
+		background: radial-gradient(circle at 50% 35%, #6b4a25, #3a2611);
+		border: 2px solid #d98503;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+		cursor: pointer;
+	}
+	.ap-range::-moz-range-thumb {
+		width: 26px;
+		height: 26px;
+		border-radius: 6px;
+		background: radial-gradient(circle at 50% 35%, #6b4a25, #3a2611);
+		border: 2px solid #d98503;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+		cursor: pointer;
+	}
+
+	.ap-slider__value {
+		flex: 0 0 auto;
+		min-width: 42px;
+		text-align: center;
+		color: #fff;
+		font-weight: 900;
+		font-size: clamp(0.85rem, 1.7vw, 1.05rem);
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+	}
+
+	/* Gold start button */
+	.ap-start {
+		width: 100%;
+		padding: clamp(8px, 1.6vw, 13px);
+		border: none;
+		border-radius: 9px;
+		background: linear-gradient(180deg, #ffa90e 15%, #ee960b 70%, #d18005 93%);
+		color: #452b01;
+		font-family: 'Cinzel', serif;
+		font-weight: 900;
+		font-size: clamp(0.78rem, 1.6vw, 1rem);
+		letter-spacing: 0.04em;
+		cursor: pointer;
+		box-shadow: 0 0 4px #d98503, 0 4px 10px rgba(0, 0, 0, 0.5);
+		transition: filter 0.12s ease;
+	}
+	.ap-start:hover { filter: brightness(1.06); }
+	.ap-start:active { filter: brightness(0.95); }
 </style>

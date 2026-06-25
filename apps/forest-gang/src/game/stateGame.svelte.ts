@@ -158,7 +158,7 @@ const _FRAME_ANCHOR_Y = 0.45; // inner panel centre sits at 45% of frame height
 const _FRAME_EXTRA_SCALE = 1.35 / 1.15; // frame 130%, grid 115% — must match BoardFrame.svelte
 
 const boardLayout = () => {
-	const boardScale = getBoardScale() * 0.72 * 1.15;
+	const boardScale = getBoardScale() * 0.81 * 1.15;
 	// Frame top is pinned to canvas y=0; inner panel centre is at ANCHOR_Y × frameH
 	const frameW =
 		(BOARD_SIZES.width * boardScale * _FRAME_MARGIN * _FRAME_EXTRA_SCALE) / _FRAME_INNER_W_FRAC;

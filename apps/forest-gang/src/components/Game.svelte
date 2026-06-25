@@ -30,6 +30,7 @@
 	import BonusSymbolPanel from './BonusSymbolPanel.svelte';
 	import GlobalMultiplier from './GlobalMultiplier.svelte';
 	import ExpandedSymbolOverlay from './ExpandedSymbolOverlay.svelte';
+	import ExpandedSymbolPresenter from './ExpandedSymbolPresenter.svelte';
 	import DealItMultiplierPanel from './DealItMultiplierPanel.svelte';
 	import GameLogoFrame from './GameLogoFrame.svelte';
 	import PaylineVine from './PaylineVine.svelte';
@@ -255,6 +256,7 @@
 				<BonusSymbolPanel />
 				<GlobalMultiplier />
 				<DealItMultiplierPanel />
+				<ExpandedSymbolPresenter />
 				<Win />
 				<FreeSpinIntro />
 				{#if ['desktop', 'landscape'].includes(context.stateLayoutDerived.layoutType())}
