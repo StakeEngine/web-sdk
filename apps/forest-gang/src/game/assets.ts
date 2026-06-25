@@ -41,6 +41,16 @@ export default {
 		src: './assets/components/frames/symbol_pad.png',
 		preload: true,
 	},
+	counterFrame: {
+		type: 'sprite',
+		src: './assets/components/ui/confirm_frame.png?v=20260625',
+		preload: true,
+	},
+	deerPresenter: {
+		type: 'sprite',
+		src: './assets/components/characters/deer_presenter.png?v=20260625',
+		preload: true,
+	},
 	multiplierHand: {
 		type: 'sprite',
 		src: './assets/components/ui/multiplier_hand.png?v=20260624',

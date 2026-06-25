@@ -95,7 +95,11 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	bonusSymbolSelected: async (bookEvent: BookEventOfType<'bonusSymbolSelected'>) => {
 		stateGame.selectedBonusSymbol = bookEvent.symbol;
 		stateGame.bonusMode = bookEvent.mode;
+		// Deer presenter reveals the chosen expanding symbol at the start of the round
+		eventEmitter.broadcast({ type: 'expandedPresenterShow', symbol: bookEvent.symbol });
 		await eventEmitter.broadcastAsync({ type: 'bonusSymbolRollAwait' });
+		await waitForTimeout(1100);
+		eventEmitter.broadcast({ type: 'expandedPresenterHide' });
 	},
 	expandedSymbolReveal: async (bookEvent: BookEventOfType<'expandedSymbolReveal'>) => {
 		// Clear any win states from the previous spin before expanding starts
