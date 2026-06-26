@@ -1,0 +1,14 @@
+reelhouse_glow.webp
+size:1913,977
+filter:Linear,Linear
+scale:0.8
+REEL_GLOW
+bounds:0,43,1074,934
+offsets:3,3,1081,940
+Red-Particle-1
+bounds:0,24,18,18
+offsets:4,4,26,25
+WW_Reelhouse-alpha
+bounds:1075,0,977,838
+offsets:52,51,1081,940
+rotate:90

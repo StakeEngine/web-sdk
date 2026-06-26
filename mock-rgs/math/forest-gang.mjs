@@ -241,8 +241,8 @@ const winLevelFromAmount = (amount) => {
   if (x < 20) return 5;
   if (x < 50) return 6;
   if (x < 100) return 7;
-  if (x < 250) return 8;
-  if (x < 1000) return 9;
+  if (x < 200) return 8;
+  if (x < 500) return 9;
   return 10;
 };
 

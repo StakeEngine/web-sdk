@@ -92,6 +92,11 @@
 			if (rollDone) return;
 			await new Promise<void>((resolve) => { rollAwaitResolve = resolve; });
 		},
+		stopButtonClick: () => {
+			// Space/stop during symbol roll: skip to result immediately
+			rollAwaitResolve?.();
+			rollAwaitResolve = null;
+		},
 		expandedPresenterShow: () => (presenterActive = true),
 		expandedPresenterHide: () => (presenterActive = false),
 	});

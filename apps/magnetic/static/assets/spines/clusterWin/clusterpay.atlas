@@ -1,0 +1,14 @@
+clusterpay.webp
+size:108,59
+filter:Linear,Linear
+scale:0.6
+MYSTERY_SPARKLE_1
+bounds:2,2,55,57
+offsets:2,2,59,60
+rotate:90
+MYSTERY_SPARKLE_2
+bounds:61,8,49,45
+offsets:2,2,53,48
+rotate:90
+total_win
+bounds:61,5,1,1

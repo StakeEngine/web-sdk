@@ -1,0 +1,42 @@
+{
+    "reveal": {
+        "type": "reveal",
+        "gameType": "basegame",
+        "board": "RawSymbol[][]",
+        "paddingPositions": "number[]",
+        "anticipation": "number[]"
+    },
+    "winInfo": {
+        "type": "winInfo"
+    },
+    "setTotalWin": {
+        "type": "setTotalWin"
+    },
+    "freeSpinTrigger": {
+        "type": "freeSpinTrigger"
+    },
+    "updateFreeSpin": {
+        "type": "updateFreeSpin"
+    },
+    "finalWin": {
+        "type": "finalWin"
+    },
+    "setWin": {
+        "type": "setWin"
+    },
+    "freeSpinEnd": {
+        "type": "freeSpinEnd"
+    },
+    "magnetActivated": {
+        "type": "magnetActivated"
+    },
+    "clusterSeriesUpdate": {
+        "type": "clusterSeriesUpdate"
+    },
+    "clusterSeriesResolved": {
+        "type": "clusterSeriesResolved"
+    },
+    "superSeriesCarry": {
+        "type": "superSeriesCarry"
+    }
+}

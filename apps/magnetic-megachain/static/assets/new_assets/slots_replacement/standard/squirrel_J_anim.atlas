@@ -1,0 +1,131 @@
+squirrel_J_anim.png
+size: 2304,88
+format: RGB888
+filter: Linear,Linear
+repeat: none
+frame00
+  rotate: false
+  xy: 0, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame01
+  rotate: false
+  xy: 128, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame02
+  rotate: false
+  xy: 256, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame03
+  rotate: false
+  xy: 384, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame04
+  rotate: false
+  xy: 512, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame05
+  rotate: false
+  xy: 640, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame06
+  rotate: false
+  xy: 768, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame07
+  rotate: false
+  xy: 896, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame08
+  rotate: false
+  xy: 1024, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame09
+  rotate: false
+  xy: 1152, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame10
+  rotate: false
+  xy: 1280, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame11
+  rotate: false
+  xy: 1408, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame12
+  rotate: false
+  xy: 1536, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame13
+  rotate: false
+  xy: 1664, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame14
+  rotate: false
+  xy: 1792, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame15
+  rotate: false
+  xy: 1920, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame16
+  rotate: false
+  xy: 2048, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1
+frame17
+  rotate: false
+  xy: 2176, 0
+  size: 128, 88
+  orig: 128, 88
+  offset: 0, 0
+  index: -1

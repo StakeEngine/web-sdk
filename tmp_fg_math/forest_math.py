@@ -314,9 +314,9 @@ def win_level_from_amount(amount: int):
         return 6
     if x < 100:
         return 7
-    if x < 250:
+    if x < 200:
         return 8
-    if x < 1000:
+    if x < 500:
         return 9
     return 10
 

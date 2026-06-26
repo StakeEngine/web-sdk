@@ -1,4 +1,26 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(set -e)",
+      "Bash(cp -f '__TRACKED_VAR__/Symbols/low symbols/symbol 10.png' __TRACKED_VAR__/card_t.png)",
+      "Bash(cp -f '__TRACKED_VAR__/Symbols/low symbols/symbol a.png' __TRACKED_VAR__/card_a.png)",
+      "Bash(cp -f '__TRACKED_VAR__/Symbols/low symbols/symbol j.png' __TRACKED_VAR__/card_j.png)",
+      "Bash(cp -f '__TRACKED_VAR__/Symbols/low symbols/symbol k.png' __TRACKED_VAR__/card_k.png)",
+      "Bash(perl -0pi -e 's{\\(components/symbols/[a-z_]+\\\\.png\\)\\\\?v=\\\\d{8}}{$1?v=20260625}g' src/game/assets.ts)",
+      "Bash(perl -0pi -e 's{\\(components/win_boards/[a-z_]+\\\\.png\\)\\\\?v=\\\\d{8}}{$1?v=20260625}g' src/game/assets.ts)",
+      "Bash(perl -0pi -e 's{\\(components/backgrounds/visual_v2\\\\.png\\)\\\\?v=\\\\d{8}}{$1?v=20260625}g' src/game/assets.ts)",
+      "Bash(perl -0pi -e 's{\\(components/frames/slot_pad\\\\.png\\)\\\\?v=\\\\d{8}}{$1?v=20260625}g' src/game/assets.ts)",
+      "Bash(awk '{print $6, $7, $9}')",
+      "Bash(find /private/tmp /var/folders /private/var/folders -type f -iname \"*.png\" -newermt \"2026-06-25 14:00:00\" 2>/dev/null | grep -iv node_modules | head -20; echo \"done\")",
+      "Read(//private/var/folders/**)",
+      "Bash(npx svelte-check *)",
+      "Bash(cp -f '/Users/admin/Downloads/Icons from Google Drive.png' '/Users/admin/Downloads/Forest Gang UI materials/icons/spin.png')",
+      "Bash(cp -f '/Users/admin/Downloads/Icons from Google Drive.png' /Users/admin/Documents/GitHub/web-sdk/apps/forest-gang/static/assets/hud/icon-spin.png)",
+      "Bash(python3 -)",
+      "Bash(pip3 install *)",
+      "Bash(python3 -c \"import PIL\")"
+    ]
+  },
   "skills": [
     ".claude/skills/spine-animator/SKILL.md"
   ]

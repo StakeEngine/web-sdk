@@ -1,0 +1,55 @@
+{
+	"frames": {
+		"progressBarBackground.png": {
+			"frame": {
+				"x": 1,
+				"y": 1,
+				"w": 492,
+				"h": 87
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 492,
+				"h": 87
+			},
+			"sourceSize": {
+				"w": 492,
+				"h": 87
+			}
+		},
+		"progressBarLeaf.png": {
+			"frame": {
+				"x": 495,
+				"y": 1,
+				"w": 100,
+				"h": 111
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 100,
+				"h": 111
+			},
+			"sourceSize": {
+				"w": 100,
+				"h": 111
+			}
+		}
+	},
+	"meta": {
+		"app": "custom",
+		"version": "1.0",
+		"image": "progressBar.webp",
+		"format": "RGBA8888",
+		"size": {
+			"w": 596,
+			"h": 113
+		},
+		"scale": "0.25"
+	}
+}
