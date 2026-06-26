@@ -5,7 +5,8 @@
 		| { type: 'boardSettle'; board: RawSymbol[][] }
 		| { type: 'boardShow' }
 		| { type: 'boardHide' }
-		| { type: 'boardWithAnimateSymbols'; symbolPositions: Position[] };
+		| { type: 'boardWithAnimateSymbols'; symbolPositions: Position[] }
+		| { type: 'skipToAnticipation' };
 </script>
 
 <script lang="ts">
@@ -60,6 +61,11 @@
 	context.eventEmitter.subscribeOnMount({
 		stopButtonClick: () => {
 			context.stateGameDerived.enhancedBoard.stop();
+		},
+		skipToAnticipation: () => {
+			context.stateGame.board.forEach((reel) => {
+				if (reel.reelState.spinType !== 'anticipated') reel.stop();
+			});
 		},
 		boardSettle: ({ board }) => context.stateGameDerived.enhancedBoard.settle(board),
 		boardShow: () => (show = true),

@@ -1,0 +1,68 @@
+{
+    "providerName": "sample_provider",
+    "gameName": "magnetic",
+    "gameID": "0_0_magnetic",
+    "rtp": 0.961,
+    "numReels": 7,
+    "numRows": [
+        7,
+        7,
+        7,
+        7,
+        7,
+        7,
+        7
+    ],
+    "betModes": {
+        "BASE": {
+            "cost": 1,
+            "feature": true,
+            "buyBonus": false,
+            "rtp": 0.961,
+            "max_win": 20000
+        },
+        "CHANCE": {
+            "cost": 2,
+            "feature": true,
+            "buyBonus": false,
+            "rtp": 0.961,
+            "max_win": 20000
+        },
+        "FEATURE": {
+            "cost": 50,
+            "feature": true,
+            "buyBonus": false,
+            "rtp": 0.961,
+            "max_win": 20000
+        },
+        "BONUS": {
+            "cost": 150,
+            "feature": false,
+            "buyBonus": true,
+            "rtp": 0.961,
+            "max_win": 20000
+        },
+        "SUPER": {
+            "cost": 400,
+            "feature": false,
+            "buyBonus": true,
+            "rtp": 0.961,
+            "max_win": 20000
+        }
+    },
+    "symbols": [
+        "FOX",
+        "WOLF",
+        "BEAR",
+        "RABBIT",
+        "SQUIRREL",
+        "A",
+        "K",
+        "Q",
+        "J",
+        "T",
+        "MAGNET",
+        "SCATTER"
+    ],
+    "paddingReels": {}
+}

@@ -96,6 +96,7 @@ export const stateGame = $state({
 	pendingStop: false,
 	awaitingFirstReveal: false,
 	stopAutoOnBonus: false,     // autoplay stops when a bonus triggers
+	hasAnticipationPending: false,  // true when current spin has unskipped anticipation reels
 });
 
 const getBoardViewportPadding = () => {

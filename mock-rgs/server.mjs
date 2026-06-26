@@ -2,20 +2,85 @@ import https from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getRoundForMode, getReplayRound } from './math/forest-gang.mjs';
+import { getRoundForMode as getForestRoundForMode, getReplayRound as getForestReplayRound } from './math/forest-gang.mjs';
+import { getRoundForMode as getMagneticRoundForMode, getReplayRound as getMagneticReplayRound } from './math/magnetic.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MATH_SDK_BOOKS_DIR = process.env.MATH_SDK_BOOKS_DIR || path.resolve(__dirname, '../apps/forest-gang/library/books');
-const MATH_SDK_LOOKUPS_DIR = process.env.MATH_SDK_LOOKUPS_DIR || path.resolve(__dirname, '../apps/forest-gang/library/publish_files');
-const generatedBooksCache = new Map();
-const generatedLookupCache = new Map();
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const API_AMOUNT_MULTIPLIER = 1_000_000;
 
+const generatedBooksCache = new Map();
+const generatedLookupCache = new Map();
 let nextBetId = 1;
 let balance = 1000 * API_AMOUNT_MULTIPLIER;
 const replayStore = new Map();
+
+const buildJurisdiction = () => ({
+  socialCasino: false,
+  disabledFullscreen: false,
+  disabledTurbo: false,
+  disabledSuperTurbo: false,
+  disabledAutoplay: false,
+  disabledSlamstop: false,
+  disabledSpacebar: false,
+  disabledBuyFeature: false,
+  displayNetPosition: false,
+  displayRTP: false,
+  displaySessionTimer: false,
+  minimumRoundDuration: 0,
+});
+
+const GAME_REGISTRY = {
+  forest: {
+    slug: 'forest-gang',
+    gameID: '0_0_forest_gang',
+    modeCostMultipliers: { BASE: 1, BONUS: 100, SUPER: 400, FEATURE: 20, CHANCE: 2 },
+    getRoundForMode: getForestRoundForMode,
+    getReplayRound: getForestReplayRound,
+    booksDir: process.env.MATH_SDK_BOOKS_DIR || path.resolve(__dirname, '../apps/forest-gang/library/books'),
+    lookupDir: process.env.MATH_SDK_LOOKUPS_DIR || path.resolve(__dirname, '../apps/forest-gang/library/publish_files'),
+    buildConfig: () => ({
+      gameID: '0_0_forest_gang',
+      minBet: 1 * API_AMOUNT_MULTIPLIER,
+      maxBet: 100 * API_AMOUNT_MULTIPLIER,
+      stepBet: 1 * API_AMOUNT_MULTIPLIER,
+      defaultBetLevel: 1 * API_AMOUNT_MULTIPLIER,
+      betLevels: [1, 2, 5, 10, 20, 50, 100].map((value) => value * API_AMOUNT_MULTIPLIER),
+      betModes: {
+        BASE: { type: 'default' },
+        BONUS: { type: 'buy' },
+        SUPER: { type: 'buy' },
+      },
+      jurisdiction: buildJurisdiction(),
+    }),
+  },
+  magnetic: {
+    slug: 'magnetic',
+    gameID: '0_0_magnetic',
+    modeCostMultipliers: { BASE: 1, CHANCE: 2, FEATURE: 50, BONUS: 150, SUPER: 400 },
+    getRoundForMode: getMagneticRoundForMode,
+    getReplayRound: getMagneticReplayRound,
+    booksDir: process.env.MAGNETIC_MATH_SDK_BOOKS_DIR || path.resolve(__dirname, '__disabled__/magnetic/books'),
+    lookupDir: process.env.MAGNETIC_MATH_SDK_LOOKUPS_DIR || path.resolve(__dirname, '__disabled__/magnetic/publish_files'),
+    buildConfig: () => ({
+      gameID: '0_0_magnetic',
+      minBet: 1 * API_AMOUNT_MULTIPLIER,
+      maxBet: 100 * API_AMOUNT_MULTIPLIER,
+      stepBet: 1 * API_AMOUNT_MULTIPLIER,
+      defaultBetLevel: 1 * API_AMOUNT_MULTIPLIER,
+      betLevels: [1, 2, 5, 10, 20, 50, 100].map((value) => value * API_AMOUNT_MULTIPLIER),
+      betModes: {
+        BASE: { type: 'default' },
+        CHANCE: { type: 'activate' },
+        FEATURE: { type: 'activate' },
+        BONUS: { type: 'buy' },
+        SUPER: { type: 'buy' },
+      },
+      jurisdiction: buildJurisdiction(),
+    }),
+  },
+};
 
 const send = (res, code, body) => {
   res.writeHead(code, {
@@ -41,41 +106,20 @@ const readJson = (req) =>
     req.on('error', reject);
   });
 
-const buildConfig = () => ({
-  gameID: '0_0_forest_gang',
-  minBet: 1 * API_AMOUNT_MULTIPLIER,
-  maxBet: 100 * API_AMOUNT_MULTIPLIER,
-  stepBet: 1 * API_AMOUNT_MULTIPLIER,
-  defaultBetLevel: 1 * API_AMOUNT_MULTIPLIER,
-  betLevels: [1, 2, 5, 10, 20, 50, 100].map((v) => v * API_AMOUNT_MULTIPLIER),
-  betModes: {
-    BASE: { type: 'default' },
-    BONUS: { type: 'buy' },
-    SUPER: { type: 'buy' },
-  },
-  jurisdiction: {
-    socialCasino: false,
-    disabledFullscreen: false,
-    disabledTurbo: false,
-    disabledSuperTurbo: false,
-    disabledAutoplay: false,
-    disabledSlamstop: false,
-    disabledSpacebar: false,
-    disabledBuyFeature: false,
-    displayNetPosition: false,
-    displayRTP: false,
-    displaySessionTimer: false,
-    minimumRoundDuration: 0,
-  },
-});
+const getRouteContext = (pathname) => {
+  if (pathname === '/magnetic' || pathname.startsWith('/magnetic/')) {
+    const stripped = pathname.replace(/^\/magnetic/, '') || '/';
+    return { game: GAME_REGISTRY.magnetic, pathname: stripped.startsWith('/') ? stripped : `/${stripped}` };
+  }
+  return { game: GAME_REGISTRY.forest, pathname };
+};
 
-const MODE_COST_MULTIPLIER = { BASE: 1, BONUS: 100, SUPER: 400 };
+const cacheKey = (game, mode) => `${game.slug}:${String(mode || 'BASE').toUpperCase()}`;
 
-
-const loadGeneratedBooks = (mode) => {
-  const key = String(mode || 'BASE').toUpperCase();
+const loadGeneratedBooks = (game, mode) => {
+  const key = cacheKey(game, mode);
   if (generatedBooksCache.has(key)) return generatedBooksCache.get(key);
-  const filePath = path.join(MATH_SDK_BOOKS_DIR, `books_${key}.jsonl`);
+  const filePath = path.join(game.booksDir, `books_${String(mode || 'BASE').toUpperCase()}.jsonl`);
   if (!fs.existsSync(filePath)) {
     generatedBooksCache.set(key, null);
     return null;
@@ -90,10 +134,10 @@ const loadGeneratedBooks = (mode) => {
   return rows;
 };
 
-const loadGeneratedLookup = (mode) => {
-  const key = String(mode || 'BASE').toUpperCase();
+const loadGeneratedLookup = (game, mode) => {
+  const key = cacheKey(game, mode);
   if (generatedLookupCache.has(key)) return generatedLookupCache.get(key);
-  const filePath = path.join(MATH_SDK_LOOKUPS_DIR, `lookUpTable_${key}_0.csv`);
+  const filePath = path.join(game.lookupDir, `lookUpTable_${String(mode || 'BASE').toUpperCase()}_0.csv`);
   if (!fs.existsSync(filePath)) {
     generatedLookupCache.set(key, null);
     return null;
@@ -113,8 +157,8 @@ const loadGeneratedLookup = (mode) => {
   return lookup;
 };
 
-const pickWeightedBookId = (mode = 'BASE', seed = Date.now()) => {
-  const lookup = loadGeneratedLookup(mode);
+const pickWeightedBookId = (game, mode = 'BASE', seed = Date.now()) => {
+  const lookup = loadGeneratedLookup(game, mode);
   if (!lookup || !lookup.rows.length || !lookup.totalWeight) return null;
   const normalizedSeed = Math.abs(Number(seed) || Date.now());
   let roll = normalizedSeed % lookup.totalWeight;
@@ -125,10 +169,10 @@ const pickWeightedBookId = (mode = 'BASE', seed = Date.now()) => {
   return lookup.rows[lookup.rows.length - 1]?.id ?? null;
 };
 
-const getRoundFromGeneratedBooks = (mode = 'BASE', seed = Date.now()) => {
-  const books = loadGeneratedBooks(mode);
+const getRoundFromGeneratedBooks = (game, mode = 'BASE', seed = Date.now()) => {
+  const books = loadGeneratedBooks(game, mode);
   if (!books || books.length === 0) return null;
-  const weightedBookId = pickWeightedBookId(mode, seed);
+  const weightedBookId = pickWeightedBookId(game, mode, seed);
   const normalizedSeed = Math.abs(Number(seed) || Date.now());
   const book = (weightedBookId != null ? books.find((entry) => Number(entry.id) === Number(weightedBookId)) : null)
     || books[normalizedSeed % books.length];
@@ -141,11 +185,10 @@ const getRoundFromGeneratedBooks = (mode = 'BASE', seed = Date.now()) => {
   };
 };
 
-
-const buildRound = ({ amountMicro, mode, seed }) => {
-  const roundData = getRoundFromGeneratedBooks(mode, seed) || getRoundForMode(mode, seed);
+const buildRound = ({ game, amountMicro, mode, seed }) => {
+  const roundData = getRoundFromGeneratedBooks(game, mode, seed) || game.getRoundForMode(mode, seed);
   const payoutMultiplier = roundData.payoutMultiplier;
-  const stakeMultiplier = MODE_COST_MULTIPLIER[mode] || 1;
+  const stakeMultiplier = game.modeCostMultipliers[mode] || 1;
   const stakeAmount = amountMicro * stakeMultiplier;
   const payout = Math.round(amountMicro * payoutMultiplier);
   const round = {
@@ -157,9 +200,11 @@ const buildRound = ({ amountMicro, mode, seed }) => {
     state: roundData.events,
     mode,
     event: roundData.bookId ?? null,
-    meta: roundData.criteria ? { criteria: roundData.criteria, source: roundData.bookId != null ? 'math-sdk-books' : 'proto-math' } : { source: roundData.bookId != null ? 'math-sdk-books' : 'proto-math' },
+    meta: roundData.criteria
+      ? { criteria: roundData.criteria, source: roundData.bookId != null ? 'math-sdk-books' : 'proto-math', gameID: game.gameID }
+      : { source: roundData.bookId != null ? 'math-sdk-books' : 'proto-math', gameID: game.gameID },
   };
-  replayStore.set(String(round.betID), round);
+  replayStore.set(`${game.slug}:${round.betID}`, round);
   return round;
 };
 
@@ -170,6 +215,9 @@ const server = https.createServer(
   },
   async (req, res) => {
     const url = new URL(req.url, `https://localhost:${PORT}`);
+    const route = getRouteContext(url.pathname);
+    const pathname = route.pathname;
+    const game = route.game;
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
@@ -181,30 +229,30 @@ const server = https.createServer(
       return;
     }
 
-    if (req.method === 'GET' && url.pathname === '/health') {
-      send(res, 200, { ok: true, service: 'mock-rgs', port: PORT });
+    if (req.method === 'GET' && pathname === '/health') {
+      send(res, 200, { ok: true, service: 'mock-rgs', port: PORT, game: game.slug });
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/wallet/authenticate') {
+    if (req.method === 'POST' && pathname === '/wallet/authenticate') {
       const body = await readJson(req).catch(() => ({}));
       send(res, 200, {
         balance: { amount: balance, currency: 'USD' },
-        config: buildConfig(),
+        config: game.buildConfig(),
         round: null,
-        meta: { sessionID: body.sessionID || 'test' },
+        meta: { sessionID: body.sessionID || 'test', gameID: game.gameID },
       });
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/wallet/play') {
+    if (req.method === 'POST' && pathname === '/wallet/play') {
       const body = await readJson(req).catch(() => ({}));
       const amountMicro = Number(body.amount || API_AMOUNT_MULTIPLIER);
-      const mode = body.mode || 'BASE';
+      const mode = String(body.mode || 'BASE').toUpperCase();
       const seed = Number(body.seed || url.searchParams.get('seed') || Date.now());
-      const stakeMultiplier = MODE_COST_MULTIPLIER[mode] || 1;
+      const stakeMultiplier = game.modeCostMultipliers[mode] || 1;
       const stakeAmount = amountMicro * stakeMultiplier;
-      const round = buildRound({ amountMicro, mode, seed });
+      const round = buildRound({ game, amountMicro, mode, seed });
       balance = balance - stakeAmount + round.payout;
       send(res, 200, {
         balance: { amount: balance, currency: 'USD' },
@@ -213,24 +261,23 @@ const server = https.createServer(
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/wallet/end-round') {
-      send(res, 200, {
-        balance: { amount: balance, currency: 'USD' },
-      });
+    if (req.method === 'POST' && pathname === '/wallet/end-round') {
+      send(res, 200, { balance: { amount: balance, currency: 'USD' } });
       return;
     }
 
-    if (req.method === 'POST' && url.pathname === '/bet/event') {
+    if (req.method === 'POST' && pathname === '/bet/event') {
       const body = await readJson(req).catch(() => ({}));
-      send(res, 200, { ok: true, event: body.event || null });
+      send(res, 200, { ok: true, event: body.event || null, gameID: game.gameID });
       return;
     }
 
-    if (req.method === 'GET' && url.pathname.startsWith('/bet/replay/')) {
-      const [, , , game, version, mode, event] = url.pathname.split('/');
-      const stored = replayStore.get(event);
+    if (req.method === 'GET' && pathname.startsWith('/bet/replay/')) {
+      const [, , , routeGame, version, mode, event] = pathname.split('/');
+      const replayGame = routeGame === '0_0_magnetic' ? GAME_REGISTRY.magnetic : game;
+      const stored = replayStore.get(`${replayGame.slug}:${event}`);
       const replaySeed = Number(url.searchParams.get('seed') || Date.now());
-      const fallback = getRoundFromGeneratedBooks(mode, replaySeed) || getReplayRound({ mode, seed: replaySeed });
+      const fallback = getRoundFromGeneratedBooks(replayGame, mode, replaySeed) || replayGame.getReplayRound({ mode, seed: replaySeed });
       const payload = stored || {
         betID: Number(event) || 999,
         amount: API_AMOUNT_MULTIPLIER,
@@ -241,19 +288,20 @@ const server = https.createServer(
         mode,
         event: fallback.bookId ?? null,
         meta: fallback.criteria
-          ? { criteria: fallback.criteria, source: fallback.bookId != null ? 'math-sdk-books' : 'proto-math' }
-          : { source: fallback.bookId != null ? 'math-sdk-books' : 'proto-math' },
+          ? { criteria: fallback.criteria, source: fallback.bookId != null ? 'math-sdk-books' : 'proto-math', gameID: replayGame.gameID, version }
+          : { source: fallback.bookId != null ? 'math-sdk-books' : 'proto-math', gameID: replayGame.gameID, version },
       };
       send(res, 200, payload);
       return;
     }
 
-    send(res, 404, { error: 'not_found', path: url.pathname });
+    send(res, 404, { error: 'not_found', path: url.pathname, game: game.slug });
   },
 );
 
 server.listen(PORT, HOST, () => {
   console.log(`mock-rgs https://localhost:${PORT}`);
   console.log(`health     https://localhost:${PORT}/health`);
+  console.log(`magnetic   https://localhost:${PORT}/magnetic/health`);
   console.log('accept self-signed cert in browser first');
 });

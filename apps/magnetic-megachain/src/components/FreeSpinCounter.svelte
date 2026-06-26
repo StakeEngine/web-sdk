@@ -1,0 +1,111 @@
+<script lang="ts" module>
+	export type EmitterEventFreeSpinCounter =
+		| { type: 'freeSpinCounterShow' }
+		| { type: 'freeSpinCounterHide' }
+		| { type: 'freeSpinCounterUpdate'; current?: number; total?: number };
+</script>
+
+<script lang="ts">
+	import { MainContainer } from 'components-layout';
+	import { FadeContainer } from 'components-pixi';
+
+	import { getContext } from '../game/context';
+	import { SYMBOL_SIZE } from '../game/constants';
+	import { anchorToPivot, BitmapText, Container, Sprite, type Sizes } from 'pixi-svelte';
+
+	const context = getContext();
+	// Leaf-corner wooden board (confirm_frame.png is 505×301; wood centre ≈ 0.507).
+	const PANEL_RATIO = 505 / 301;
+	const WOOD_CENTER_Y = 0.46;
+	const panelWidth = $derived(SYMBOL_SIZE * 2.0);
+	const panelSizes = $derived({
+		width: panelWidth,
+		height: panelWidth / PANEL_RATIO,
+	});
+	const scale = 1;
+	const position = $derived({
+		// Mirror the scatter card CSS: left: max(18px, calc(50% - 702px))
+		x: Math.max(
+			18 / context.stateLayoutDerived.mainLayout().scale,
+			context.stateLayoutDerived.mainLayout().width / 2 - 702 / context.stateLayoutDerived.mainLayout().scale,
+		),
+		y:
+			context.stateGameDerived.boardLayout().y -
+			context.stateGameDerived.boardLayout().height * 0.5 * context.stateGameDerived.boardLayout().boardScale -
+			20,
+	});
+
+	const titleFont = $derived(SYMBOL_SIZE * 0.115);
+	const counterFont = $derived(SYMBOL_SIZE * 0.25);
+	const GAP = $derived(SYMBOL_SIZE * 0.13);
+
+	let show = $state(false);
+	let current = $state(0);
+	let total = $state(0);
+	let titleSizes: Sizes = $state({ width: 0, height: 0 });
+	let counterSizes: Sizes = $state({ width: 0, height: 0 });
+
+	// Stack the two lines and centre the group on the board's wood centre.
+	const groupSizes = $derived({
+		width: Math.max(titleSizes.width, counterSizes.width),
+		height: titleSizes.height + GAP + counterSizes.height,
+	});
+
+	const visible = $derived(show && context.stateGame.bonusMode !== 'feature');
+
+	context.eventEmitter.subscribeOnMount({
+		freeSpinCounterShow: () => {
+			show = false;
+			current = 0;
+		},
+		freeSpinCounterHide: () => {
+			show = false;
+		},
+		freeSpinCounterUpdate: (emitterEvent) => {
+			if (emitterEvent.current !== undefined) {
+				current = emitterEvent.current;
+				show = true;
+			}
+			if (emitterEvent.total !== undefined) total = emitterEvent.total;
+		},
+	});
+</script>
+
+<MainContainer>
+	<FadeContainer show={visible} {...position} {scale}>
+		<Sprite key="counterFrame" {...panelSizes} />
+
+		<Container
+			x={panelSizes.width * 0.5}
+			y={panelSizes.height * WOOD_CENTER_Y}
+			pivot={anchorToPivot({ sizes: groupSizes, anchor: { x: 0.5, y: 0.5 } })}
+		>
+			<!-- FREE SPINS title (gold) -->
+			<BitmapText
+				x={groupSizes.width / 2}
+				y={0}
+				anchor={{ x: 0.5, y: 0 }}
+				text="FREE SPINS"
+				onresize={(sizes) => (titleSizes = sizes)}
+				style={{
+					fontFamily: 'silver',
+					fontSize: titleFont,
+					wordWrap: false,
+				}}
+			/>
+
+			<!-- current / total counter (gold, large) -->
+			<BitmapText
+				x={groupSizes.width / 2}
+				y={titleSizes.height + GAP}
+				anchor={{ x: 0.5, y: 0 }}
+				text={`${current}/${total}`}
+				onresize={(sizes) => (counterSizes = sizes)}
+				style={{
+					fontFamily: 'silver',
+					fontSize: counterFont,
+				}}
+			/>
+		</Container>
+	</FadeContainer>
+</MainContainer>

@@ -209,11 +209,23 @@
 		}
 	};
 
+	const broadcastStop = () => {
+		const anticipationActive = context.stateGame.board.some((r) => r.reelState.anticipating);
+		if (context.stateGame.hasAnticipationPending && !anticipationActive) {
+			// First press: skip non-anticipation reels, let anticipation begin
+			context.stateGame.hasAnticipationPending = false;
+			context.eventEmitter.broadcast({ type: 'skipToAnticipation' });
+		} else {
+			// Second press or no anticipation: stop everything
+			context.eventEmitter.broadcast({ type: 'stopButtonClick' });
+		}
+	};
+
 	const onSpinHotkey = () => {
 		if (hasAuto) {
 			if (context.stateXstateDerived.isIdle()) return;
 			context.eventEmitter.broadcast({ type: 'soundPressBet' });
-			context.eventEmitter.broadcast({ type: 'stopButtonClick' });
+			broadcastStop();
 			return;
 		}
 
@@ -229,7 +241,7 @@
 		if (context.stateGame.awaitingFirstReveal) {
 			context.stateGame.pendingStop = true;
 		} else {
-			context.eventEmitter.broadcast({ type: 'stopButtonClick' });
+			broadcastStop();
 		}
 	};
 

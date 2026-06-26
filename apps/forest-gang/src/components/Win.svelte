@@ -16,8 +16,8 @@
 	import { OnMount } from 'components-shared';
 
 	import WinCoins from './WinCoins.svelte';
+	import WinBoard from './WinBoard.svelte';
 	import PressToContinue from './PressToContinue.svelte';
-	import { Sprite } from 'pixi-svelte';
 	import { SYMBOL_SIZE } from '../game/constants';
 	import { getContext } from '../game/context';
 	import { winBoardByAlias } from '../game/utils';
@@ -31,8 +31,9 @@
 	let oncomplete = $state(() => {});
 	let boardClickHandled = false;
 	let isCountingUp = $state(false);
-	let shakeX = $state(0);
-	let shakeY = $state(0);
+
+	// Breathing: gentle ±2% scale oscillation while counting up
+	let breatheScale = $state(1);
 
 	const boardLayout = $derived(context.stateGameDerived.boardLayout());
 	const mainLayout = $derived(context.stateLayoutDerived.mainLayout());
@@ -44,35 +45,25 @@
 			boardClickHandled = false;
 			amount = emitterEvent.amount;
 			winLevelData = emitterEvent.winLevelData;
+			breatheScale = 1;
 			isCountingUp = true;
 			await waitForResolve((resolve) => (oncomplete = resolve));
 			isCountingUp = false;
 		},
 	});
 
+	// Breathing loop
 	$effect(() => {
 		if (!isCountingUp || !winLevelData?.animation) {
-			shakeX = 0;
-			shakeY = 0;
+			breatheScale = 1;
 			return;
 		}
-
-		const alias = winLevelData.alias;
-		const amp = alias === 'max' ? 14 : alias === 'epic' ? 10 : alias === 'mega' ? 7 : alias === 'superwin' ? 5 : 3;
-		const duration = winLevelData.presentDuration;
-
 		let raf = 0;
-		let startTime = 0;
-
+		let start = 0;
 		const tick = (t: number) => {
-			if (!startTime) startTime = t;
-			const elapsed = t - startTime;
-			const progress = Math.min(elapsed / duration, 1);
-			const decay = 1 - progress * progress;
-			const angle = elapsed * 0.016; // ~15Hz shake
-			shakeX = Math.round(Math.sin(angle) * amp * decay);
-			shakeY = Math.round(Math.cos(angle * 0.73) * amp * 0.45 * decay);
-			if (progress < 1) raf = requestAnimationFrame(tick);
+			if (!start) start = t;
+			breatheScale = 1 + Math.sin((t - start) * 0.0025) * 0.022;
+			raf = requestAnimationFrame(tick);
 		};
 		raf = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(raf);
@@ -95,34 +86,21 @@
 
 				<MainContainer>
 					<Container
-						x={boardLayout.x + shakeX}
-						y={boardLayout.y + shakeY}
+						x={boardLayout.x}
+						y={boardLayout.y}
 					>
 						{#if hasBoardAnimation}
 							{@const bs = boardLayout.boardScale}
 							{@const mult = stateBet.betAmount > 0 ? countUpAmount / stateBet.betAmount : 0}
 							{@const boardKey = mult >= 1000 ? winBoardByAlias.max : mult >= 250 ? winBoardByAlias.epic : mult >= 100 ? winBoardByAlias.mega : mult >= 50 ? winBoardByAlias.superwin : winBoardByAlias.big}
-							{@const boardSize = Math.min(boardLayout.width * bs * 0.55, boardLayout.height * bs * 0.85)}
-							{#if boardKey}
-								<Sprite
-									key={boardKey}
-									anchor={0.5}
-									width={boardSize}
-									height={boardSize}
-								/>
-							{/if}
-							<ResponsiveBitmapText
-								anchor={0.5}
-								y={boardSize * 0.36 - 8}
-								maxWidth={boardSize * 0.62}
-								text={bookEventAmountToCurrencyString(countUpAmount)}
-								style={{
-									fontFamily: 'gold',
-									fontSize: SYMBOL_SIZE * bs * 0.295,
-									align: 'center',
-									fontWeight: 'bold',
-									letterSpacing: 0,
-								}}
+							{@const maxBoardSize = Math.min(boardLayout.width * bs * 0.55, boardLayout.height * bs * 0.85)}
+							<WinBoard
+								{boardKey}
+								{maxBoardSize}
+								{breatheScale}
+								{mult}
+								countUpText={bookEventAmountToCurrencyString(countUpAmount)}
+								fontSize={SYMBOL_SIZE * bs * 0.295}
 							/>
 						{:else}
 							<ResponsiveBitmapText

@@ -61,6 +61,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		}
 		stateGame.expandedSymbolWon = false;
 		stateGame.paylineWins = [];
+		stateGame.hasAnticipationPending = !!hasAnticipation;
 
 		// Add a brief pause between bonus spins so players can read the result
 		if (isBonusGame && bookEvent.gameType !== 'basegame' && !stateBet.isSuperTurbo) {
@@ -79,6 +80,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		// Apply buffered stop immediately after spin starts
 		if (hadPendingStop) stateGameDerived.enhancedBoard.stop();
 		await spinPromise;
+		stateGame.hasAnticipationPending = false;
 		eventEmitter.broadcast({ type: 'soundScatterCounterClear' });
 
 		if (stateGame.bonusMode === 'superspin' && bookEvent.gameType !== 'basegame') {
@@ -95,6 +97,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 	bonusSymbolSelected: async (bookEvent: BookEventOfType<'bonusSymbolSelected'>) => {
 		stateGame.selectedBonusSymbol = bookEvent.symbol;
 		stateGame.bonusMode = bookEvent.mode;
+		if (stateBet.isSuperTurbo) return;
 		// Deer presenter reveals the chosen expanding symbol at the start of the round
 		eventEmitter.broadcast({ type: 'expandedPresenterShow', symbol: bookEvent.symbol });
 		await eventEmitter.broadcastAsync({ type: 'bonusSymbolRollAwait' });

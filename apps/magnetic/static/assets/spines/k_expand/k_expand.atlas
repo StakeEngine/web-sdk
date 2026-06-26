@@ -1,0 +1,40 @@
+k_expand.png
+size: 1024,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+k_f1_normal
+  rotate: false
+  xy: 2, 2
+  size: 128, 359
+  orig: 128, 359
+  offset: 0, 0
+  index: -1
+k_f2_energy
+  rotate: false
+  xy: 132, 2
+  size: 128, 359
+  orig: 128, 359
+  offset: 0, 0
+  index: -1
+k_f3_flash
+  rotate: false
+  xy: 262, 2
+  size: 128, 359
+  orig: 128, 359
+  offset: 0, 0
+  index: -1
+k_f4_win_glow
+  rotate: false
+  xy: 392, 2
+  size: 128, 359
+  orig: 128, 359
+  offset: 0, 0
+  index: -1
+k_f5_win
+  rotate: false
+  xy: 522, 2
+  size: 128, 359
+  orig: 128, 359
+  offset: 0, 0
+  index: -1

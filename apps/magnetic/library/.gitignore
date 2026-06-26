@@ -1,0 +1,6 @@
+# Large compressed book files — uploaded separately to the game server
+publish_files/*.zst
+# Local decompressed book copies — auto-generated, not needed in repo  
+books/*.jsonl
+# Temp files from book generation
+temp_multi_threaded_files/
