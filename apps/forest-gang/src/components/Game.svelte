@@ -49,6 +49,15 @@
 	const scatterArt = './assets/components/symbols/scatter.png';
 	const uiRefArt = './assets/components/reference/ui-reference-1.png';
 	const paylinesArt = './assets/components/reference/paylines_reference.png';
+
+	// Game info modal (paginated framed pages) — assets exported from Figma
+	const infoDir = './assets/components/info';
+	const infoFrame = `${infoDir}/overview_frame.webp`;
+	const infoForestBg = `${infoDir}/overview_forest_bg.webp`;
+	const infoPanelBg = `${infoDir}/panel_wood_bg.webp`;
+	const infoPaylines = `${infoDir}/paylines.webp`;
+	const symDir = './assets/components/symbols';
+	const uiDir = './assets/components/ui';
 	const heroArtBackdrop = new URL('../../static/assets/components/backgrounds/visual_v2.png', import.meta.url).href;
 
 	$effect(() => {
@@ -202,6 +211,129 @@
 				},
 			],
 			splashScreen: [],
+			infoAssets: {
+				// Both use the gold arrow; the prev button is mirrored in CSS. Disabled state dims via opacity.
+				navArrowLeft: `${infoDir}/nav_arrow_right.svg`,
+				navArrowRight: `${infoDir}/nav_arrow_right.svg`,
+				navButton: `${infoDir}/nav_btn_bg.webp`,
+				statCard: `${infoDir}/stat_card.webp`,
+				featureCard: `${infoDir}/feature_card.webp`,
+				specialFrame: `${infoDir}/special_frame.webp`,
+			},
+			infoPages: [
+				{
+					kind: 'overview',
+					frame: infoFrame,
+					background: infoForestBg,
+					title: forestStakeTitle('INFO OVERVIEW TITLE'),
+					body: forestStakeTitle('INFO OVERVIEW BODY'),
+					highlight: '25,000x',
+					stats: [
+						{ icon: `${infoDir}/icon_reels.webp`, value: forestStakeTitle('INFO STAT REELS'), label: forestStakeTitle('INFO STAT REELS LABEL') },
+						{ icon: `${infoDir}/icon_paylines.webp`, value: forestStakeTitle('INFO STAT PAYLINES'), label: forestStakeTitle('INFO STAT PAYLINES LABEL') },
+						{ icon: `${infoDir}/icon_maxwin.webp`, value: forestStakeTitle('INFO STAT MAXWIN'), label: forestStakeTitle('INFO STAT MAXWIN LABEL') },
+						{ icon: `${infoDir}/icon_rtp.webp`, value: forestStakeTitle('INFO STAT RTP'), label: forestStakeTitle('INFO STAT RTP LABEL') },
+					],
+				},
+				{
+					kind: 'features',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO FEATURES TITLE'),
+					cards: [
+						{ title: forestStakeTitle('INFO EXPANDING TITLE'), text: forestStakeTitle('INFO EXPANDING TEXT'), images: [`${infoDir}/feat_expanding.webp`, `${infoDir}/feat_expanding_2.webp`] },
+						{ title: forestStakeTitle('INFO DEAL IT TITLE'), text: forestStakeTitle('INFO DEAL IT TEXT'), highlight: forestStakeTitle('INFO DEAL IT HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 3 },
+						{ title: forestStakeTitle('INFO ALL IN TITLE'), text: forestStakeTitle('INFO ALL IN TEXT'), highlight: forestStakeTitle('INFO ALL IN HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 4 },
+					],
+				},
+				{
+					kind: 'paytable',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO PAYTABLE TITLE'),
+					payoutHead: {
+						symbol: forestStakeTitle('INFO PT SYMBOL'),
+						cols: [forestStakeTitle('INFO PT COL3'), forestStakeTitle('INFO PT COL4'), forestStakeTitle('INFO PT COL5')],
+					},
+					payouts: [
+						{ icon: `${symDir}/bear.png`, name: 'BEAR', premium: true, x3: '3x', x4: '20x', x5: '250x' },
+						{ icon: `${symDir}/wolf.png`, name: 'WOLF', premium: true, x3: '2.5x', x4: '15x', x5: '175x' },
+						{ icon: `${symDir}/fox.png`, name: 'FOX', premium: true, x3: '2x', x4: '12x', x5: '150x' },
+						{ icon: `${symDir}/rabbit.png`, name: 'RABBIT', premium: true, x3: '1.5x', x4: '10x', x5: '100x' },
+						{ icon: `${symDir}/squirrel.png`, name: 'SQUIRREL', premium: true, x3: '1x', x4: '8x', x5: '75x' },
+						{ icon: `${symDir}/card_a.png`, name: 'A', x3: '0.8x', x4: '5x', x5: '40x' },
+						{ icon: `${symDir}/card_k.png`, name: 'K', x3: '0.7x', x4: '4x', x5: '35x' },
+						{ icon: `${symDir}/card_q.png`, name: 'Q', x3: '0.6x', x4: '3.5x', x5: '30x' },
+						{ icon: `${symDir}/card_j.png`, name: 'J', x3: '0.5x', x4: '3x', x5: '25x' },
+						{ icon: `${symDir}/card_t.png`, name: '10', x3: '0.4x', x4: '4x', x5: '20x' },
+					],
+					cards: [
+						{ icon: `${infoDir}/icon_wild.webp`, title: forestStakeTitle('INFO WILD TITLE'), text: forestStakeTitle('INFO WILD TEXT') },
+						{ icon: `${infoDir}/icon_scatter_coin.webp`, title: forestStakeTitle('INFO SCATTER PT TITLE'), text: forestStakeTitle('INFO SCATTER PT TEXT') },
+					],
+				},
+				{
+					kind: 'paylines',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO WAYS TITLE'),
+					note: forestStakeTitle('INFO WAYS NOTE'),
+					image: infoPaylines,
+				},
+				{
+					kind: 'cards',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO BUY TITLE'),
+					cards: [
+						{
+							title: forestStakeTitle('INFO BUY CHANCE TITLE'),
+							text: forestStakeTitle('INFO BUY CHANCE TEXT'),
+							theme: 'green',
+							icon: `${uiDir}/bonus_feature_spin_icon.webp`,
+							metric: { label: forestStakeTitle('INFO BUY CHANCE_LABEL'), value: forestStakeTitle('INFO BUY CHANCE_VALUE') },
+							footer: [
+								{ label: forestStakeTitle('INFO BUY COST'), value: '2x BET' },
+								{ label: forestStakeTitle('INFO BUY RTP'), value: forestStakeTitle('INFO BUY RTP_VALUE') },
+							],
+						},
+						{
+							title: forestStakeTitle('INFO BUY FEATURE TITLE'),
+							text: forestStakeTitle('INFO BUY FEATURE TEXT'),
+							theme: 'purple',
+							icon: `${uiDir}/bonus_all_in_icon.webp`,
+							metric: { label: forestStakeTitle('INFO BUY COST'), value: '20x BET' },
+							footer: [{ label: forestStakeTitle('INFO BUY RTP'), value: forestStakeTitle('INFO BUY RTP_VALUE') }],
+						},
+						{
+							title: forestStakeTitle('INFO BUY DEALIT TITLE'),
+							text: forestStakeTitle('INFO BUY DEALIT TEXT'),
+							theme: 'gold',
+							icon: `${infoDir}/buy_dealit.webp`,
+							metric: { label: forestStakeTitle('INFO BUY COST'), value: '100x BET' },
+							footer: [{ label: forestStakeTitle('INFO BUY RTP'), value: forestStakeTitle('INFO BUY RTP_VALUE') }],
+						},
+						{
+							title: forestStakeTitle('INFO BUY ALLIN TITLE'),
+							text: forestStakeTitle('INFO BUY ALLIN TEXT'),
+							theme: 'gold',
+							icon: `${infoDir}/buy_allin.webp`,
+							metric: { label: forestStakeTitle('INFO BUY COST'), value: '400x BET' },
+							footer: [{ label: forestStakeTitle('INFO BUY RTP'), value: forestStakeTitle('INFO BUY RTP_VALUE') }],
+						},
+					],
+				},
+				{
+					kind: 'cards',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO GENERAL TITLE'),
+					cards: [
+						{ icon: `${infoDir}/icon_interrupted.webp`, title: forestStakeTitle('INFO INTERRUPTED TITLE'), text: forestStakeTitle('INFO INTERRUPTED TEXT') },
+						{ icon: `${infoDir}/icon_legal.webp`, title: forestStakeTitle('INFO LEGAL TITLE'), text: forestStakeTitle('INFO LEGAL TEXT') },
+					],
+				},
+			],
 		};
 	});
 
