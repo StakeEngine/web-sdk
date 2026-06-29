@@ -57,7 +57,6 @@
 	const infoPanelBg = `${infoDir}/panel_wood_bg.webp`;
 	const infoPaylines = `${infoDir}/paylines.webp`;
 	const symDir = './assets/components/symbols';
-	const uiDir = './assets/components/ui';
 	const heroArtBackdrop = new URL('../../static/assets/components/backgrounds/visual_v2.png', import.meta.url).href;
 
 	$effect(() => {
@@ -236,17 +235,6 @@
 					],
 				},
 				{
-					kind: 'features',
-					frame: infoFrame,
-					background: infoPanelBg,
-					title: forestStakeTitle('INFO FEATURES TITLE'),
-					cards: [
-						{ title: forestStakeTitle('INFO EXPANDING TITLE'), text: forestStakeTitle('INFO EXPANDING TEXT'), images: [`${infoDir}/feat_expanding.webp`, `${infoDir}/feat_expanding_2.webp`] },
-						{ title: forestStakeTitle('INFO DEAL IT TITLE'), text: forestStakeTitle('INFO DEAL IT TEXT'), highlight: forestStakeTitle('INFO DEAL IT HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 3 },
-						{ title: forestStakeTitle('INFO ALL IN TITLE'), text: forestStakeTitle('INFO ALL IN TEXT'), highlight: forestStakeTitle('INFO ALL IN HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 4 },
-					],
-				},
-				{
 					kind: 'paytable',
 					frame: infoFrame,
 					background: infoPanelBg,
@@ -273,6 +261,17 @@
 					],
 				},
 				{
+					kind: 'features',
+					frame: infoFrame,
+					background: infoPanelBg,
+					title: forestStakeTitle('INFO FEATURES TITLE'),
+					cards: [
+						{ title: forestStakeTitle('INFO EXPANDING TITLE'), text: forestStakeTitle('INFO EXPANDING TEXT'), images: [`${infoDir}/feat_expanding.webp`, `${infoDir}/feat_expanding_2.webp`] },
+						{ title: forestStakeTitle('INFO DEAL IT TITLE'), text: forestStakeTitle('INFO DEAL IT TEXT'), highlight: forestStakeTitle('INFO DEAL IT HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 3 },
+						{ title: forestStakeTitle('INFO ALL IN TITLE'), text: forestStakeTitle('INFO ALL IN TEXT'), highlight: forestStakeTitle('INFO ALL IN HL'), badge: `${infoDir}/icon_scatter.webp`, badgeCount: 4 },
+					],
+				},
+				{
 					kind: 'paylines',
 					frame: infoFrame,
 					background: infoPanelBg,
@@ -290,7 +289,7 @@
 							title: forestStakeTitle('INFO BUY CHANCE TITLE'),
 							text: forestStakeTitle('INFO BUY CHANCE TEXT'),
 							theme: 'green',
-							icon: `${uiDir}/bonus_feature_spin_icon.webp`,
+							icon: `${infoDir}/buy_chance.webp`,
 							metric: { label: forestStakeTitle('INFO BUY CHANCE_LABEL'), value: forestStakeTitle('INFO BUY CHANCE_VALUE') },
 							footer: [
 								{ label: forestStakeTitle('INFO BUY COST'), value: '2x BET' },
@@ -301,7 +300,7 @@
 							title: forestStakeTitle('INFO BUY FEATURE TITLE'),
 							text: forestStakeTitle('INFO BUY FEATURE TEXT'),
 							theme: 'purple',
-							icon: `${uiDir}/bonus_all_in_icon.webp`,
+							icon: `${infoDir}/buy_feature.webp`,
 							metric: { label: forestStakeTitle('INFO BUY COST'), value: '20x BET' },
 							footer: [{ label: forestStakeTitle('INFO BUY RTP'), value: forestStakeTitle('INFO BUY RTP_VALUE') }],
 						},

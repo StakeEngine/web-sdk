@@ -283,7 +283,7 @@
 	.info-close {
 		position: absolute;
 		top: 1.4%;
-		right: -2.4%;
+		right: -1.2%;
 		width: 5cqw;
 		height: 5cqw;
 		border: none;
