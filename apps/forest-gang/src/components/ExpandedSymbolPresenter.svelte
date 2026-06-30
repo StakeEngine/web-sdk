@@ -15,7 +15,7 @@
 	import { anchorToPivot, Container, Sprite } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
-	import { winSpriteKeyByName } from '../game/utils';
+	import { spriteKeyByName } from '../game/utils';
 
 	const context = getContext();
 
@@ -26,7 +26,7 @@
 	// Per-symbol vertical nudge (fraction of deer height). The animal tiles are content-centred,
 	// so they sit right at PLACEHOLDER.cy; some letter glyphs read low and need a small lift.
 	const CY_NUDGE: Partial<Record<SymbolName, number>> = { J: -0.03 };
-	const LETTER_ASPECT = 1.17; // win sprites are ~271×231 / 400×340
+	const LETTER_ASPECT = 1.17; // default symbol sprites are ~cell aspect
 
 	const main = $derived(context.stateLayoutDerived.mainLayout());
 	// Fit the deer to the screen (portrait-friendly): cap by both height and width.
@@ -40,7 +40,7 @@
 	let show = $state(false);
 	// displaySymbol cycles during the roll, then settles on the real symbol.
 	let displaySymbol = $state<SymbolName | null>(null);
-	const letterKey = $derived(displaySymbol ? (winSpriteKeyByName[displaySymbol] ?? null) : null);
+	const letterKey = $derived(displaySymbol ? (spriteKeyByName[displaySymbol] ?? null) : null);
 	const symbolCy = $derived(PLACEHOLDER.cy + (displaySymbol ? (CY_NUDGE[displaySymbol] ?? 0) : 0));
 
 	const letterH = $derived(deerH * PLACEHOLDER.h);

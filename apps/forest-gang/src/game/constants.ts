@@ -2,9 +2,9 @@ import _ from 'lodash';
 
 import type { RawSymbol, SymbolState } from './types';
 
-// Symbol cells sized so the 5×4 grid fills the wooden frame's ~1.465 inner panel
+// Symbol cells sized so the 5×4 grid fills the wooden frame's inner panel
 export const SYMBOL_W = 121;   // cell width
-export const SYMBOL_H = 103;   // cell height (121/103 ≈ 1.175 → board 1.47)
+export const SYMBOL_H = 103;   // cell height
 export const SYMBOL_SIZE = SYMBOL_H; // kept as alias for height-based calculations
 export const BOARD_GRID_OFFSET_Y = 0;
 export const REEL_PADDING = 0.53;

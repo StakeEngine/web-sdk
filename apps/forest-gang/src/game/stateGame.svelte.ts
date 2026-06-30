@@ -142,6 +142,8 @@ const getBoardOffset = () => {
 	const extraLeftShiftPx = layoutType === 'desktop' ? 75 : layoutType === 'landscape' ? 55 : 0;
 	const centeredCanvasX = padding.left + availableCanvasWidth * 0.5 - canvasSizes.width * 0.5;
 	const centeredCanvasY = padding.top + availableCanvasHeight * 0.5 - canvasSizes.height * 0.5;
+	// extraLeftShiftPx (75) and shiftRightPx cancel → board sits centred in the
+	// padded area. Lower shiftRightPx to nudge the whole board left.
 	const shiftRightPx = 90;
 	const shiftDownPx = 10;
 
@@ -152,11 +154,13 @@ const getBoardOffset = () => {
 };
 
 // Mirror BoardFrame.svelte constants — keep in sync if BoardFrame changes
+// slot_pad.png is 3220×2364 — these MUST match BoardFrame.svelte exactly so the
+// grid is centred inside the drawn frame's inner brown panel.
 const _FRAME_MARGIN = 1.04;
-const _FRAME_INNER_W_FRAC = 0.64;
-const _FRAME_ASPECT_H_W = 2528 / 3616;
-const _FRAME_ANCHOR_Y = 0.45; // inner panel centre sits at 45% of frame height
-const _FRAME_EXTRA_SCALE = 1.35 / 1.15; // frame 130%, grid 115% — must match BoardFrame.svelte
+const _FRAME_INNER_W_FRAC = 0.762;
+const _FRAME_ASPECT_H_W = 2364 / 3220;
+const _FRAME_ANCHOR_Y = 0.489; // = slot_pad window centre y (grid centred vertically)
+const _FRAME_EXTRA_SCALE = 1.30 / 1.15;
 
 const boardLayout = () => {
 	const boardScale = getBoardScale() * 0.81 * 1.15;

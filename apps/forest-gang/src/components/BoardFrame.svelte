@@ -6,20 +6,21 @@
 	const context = getContext();
 	const board = $derived(context.stateGameDerived.boardLayout());
 
-	// slot_pad.png is 3616×2528. Measured geometry of the inner brown panel
-	// (where the reels sit): centred at ~(0.50, 0.46) of the image, ~57% of the
-	// image width. We scale the whole frame so the inner panel ≈ board + margin,
-	// then anchor it at the inner-panel centre over the board centre.
-	const FRAME_ASPECT = 3616 / 2528;
-	const INNER_W_FRAC = 0.64; // inner brown panel ≈ 64% of the image width
-	const ANCHOR_X = 0.5;
-	const ANCHOR_Y = 0.45; // inner panel centre sits slightly above image centre
-	const MARGIN = 1.04; // inner panel a touch larger than the board grid
-	// Frame scales to 130% while grid scales to 115% — extra factor covers the difference
+	// slot_pad.png is 3220×2364. Geometry of the inner brown panel (where the reels
+	// sit): inner panel ≈ 76% of image width, centred at ~(0.52, 0.50). We scale the
+	// frame so the inner panel ≈ board grid + margin, then anchor it over the grid.
+	const FRAME_ASPECT = 3220 / 2364;
+	const INNER_W_FRAC = 0.762;
+	const ANCHOR_X = 0.505; // = slot_pad window centre x (grid centred horizontally)
+	const ANCHOR_Y = 0.489; // reference only (Sprite top-anchored); see stateGame _FRAME_ANCHOR_Y
+	const MARGIN = 1.04;
 	const FRAME_EXTRA_SCALE = 1.30 / 1.15;
+	// Draw the frame slightly narrower (height unchanged) so the bamboo poles sit
+	// closer to the reels — reduces the left/right margin without touching top/bottom.
+	const H_SQUASH = 0.93;
 
-	const frameW = $derived((board.width * board.boardScale * MARGIN * FRAME_EXTRA_SCALE) / INNER_W_FRAC);
-	const frameH = $derived(frameW / FRAME_ASPECT);
+	const frameH = $derived((board.width * board.boardScale * MARGIN * FRAME_EXTRA_SCALE) / INNER_W_FRAC / FRAME_ASPECT);
+	const frameW = $derived(((board.width * board.boardScale * MARGIN * FRAME_EXTRA_SCALE) / INNER_W_FRAC) * H_SQUASH);
 </script>
 
 <Sprite
