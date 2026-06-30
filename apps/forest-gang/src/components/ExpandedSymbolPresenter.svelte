@@ -15,7 +15,7 @@
 	import { anchorToPivot, Container, Sprite } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
-	import { winSpriteKeyByName } from '../game/utils';
+	import { spriteKeyByName } from '../game/utils';
 
 	const context = getContext();
 
@@ -23,7 +23,7 @@
 	// interior centred at (0.494, 0.654) of the image, roughly 0.34×0.20 in size.
 	const DEER_RATIO = 792 / 670;
 	const PLACEHOLDER = { cx: 0.494, cy: 0.654, h: 0.18 };
-	const LETTER_ASPECT = 1.17; // win sprites are ~271×231 / 400×340
+	const LETTER_ASPECT = 1.17; // default symbol sprites are ~cell aspect
 
 	const main = $derived(context.stateLayoutDerived.mainLayout());
 	// Fit the deer to the screen (portrait-friendly): cap by both height and width.
@@ -37,7 +37,7 @@
 	let show = $state(false);
 	// displaySymbol cycles during the roll, then settles on the real symbol.
 	let displaySymbol = $state<SymbolName | null>(null);
-	const letterKey = $derived(displaySymbol ? (winSpriteKeyByName[displaySymbol] ?? null) : null);
+	const letterKey = $derived(displaySymbol ? (spriteKeyByName[displaySymbol] ?? null) : null);
 
 	const letterH = $derived(deerH * PLACEHOLDER.h);
 	const letterW = $derived(letterH * LETTER_ASPECT);

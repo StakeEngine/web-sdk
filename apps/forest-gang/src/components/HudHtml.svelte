@@ -270,6 +270,27 @@
 		showAutoModal = true;
 	};
 
+	// Scale the balance text down to fit its slot so a very long balance can't
+	// widen the HUD and push the navigation off the bar. Only ever shrinks; all
+	// digits stay visible. Re-runs when the text changes and when the slot resizes.
+	function fitText(node: HTMLElement, _value: unknown) {
+		const fit = () => {
+			const slot = node.parentElement;
+			if (!slot) return;
+			node.style.transformOrigin = 'left center';
+			node.style.transform = 'none';
+			const avail = slot.clientWidth;
+			const full = node.scrollWidth;
+			const scale = full > avail && avail > 0 ? avail / full : 1;
+			node.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+		};
+		const raf = () => requestAnimationFrame(fit);
+		const ro = new ResizeObserver(raf);
+		if (node.parentElement) ro.observe(node.parentElement);
+		raf();
+		return { update: raf, destroy: () => ro.disconnect() };
+	}
+
 	onDestroy(() => {
 		clearHoldRepeat();
 	});
@@ -324,7 +345,9 @@
 				<div class="label label--balance">
 					<span class="label-text">{i18nDerived.balance()}</span>
 				</div>
-				<span class="value">{formattedBalance}</span>
+				<div class="value-fit">
+					<span class="value" use:fitText={formattedBalance}>{formattedBalance}</span>
+				</div>
 			</div>
 
 			<div
@@ -339,7 +362,9 @@
 				</span>
 				<div class="bet-values">
 					<span class="label">{i18nDerived.betLabel()}</span>
-					<span class="value" class:value--feature={isAnyModeActive}>{formattedBet}</span>
+					<div class="value-fit value-fit--bet">
+						<span class="value" class:value--feature={isAnyModeActive} use:fitText={formattedBet}>{formattedBet}</span>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -555,8 +580,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 16px;
-		padding: 8px 74px;
+		gap: 12px;
+		/* Tighter side padding so the icon clusters sit nearer the bar ends,
+		   leaving more room in the middle for long balance/bet values. */
+		padding: 8px 48px;
 		/* Dark stadium base fills the whole box so no white bleeds through
 		   the transparent areas around the 9-sliced wooden pill on top. */
 		background: #0f0b06;
@@ -634,8 +661,10 @@
 		flex-direction: column;
 		align-items: flex-start;
 		padding: 0 16px;
+		/* Fixed footprint: a long balance scales to fit the slot (see fitText)
+		   instead of widening the pill, so it can never push the navigation. */
 		flex: 0 0 auto;
-		min-width: 150px;
+		width: 150px;
 		border-left: none;
 	}
 
@@ -646,6 +675,22 @@
 
 	.value-pill--balance .value {
 		line-height: 1;
+	}
+
+	/* Fixed slots that the balance/bet are scaled to fit (see fitText) so a long
+	   value can never widen the bar and push the navigation. */
+	.value-fit {
+		max-width: 150px;
+		overflow: hidden;
+	}
+
+	.value-fit--bet {
+		max-width: 132px;
+	}
+
+	.value-fit .value {
+		display: inline-block;
+		white-space: nowrap;
 	}
 
 	.value-pill--bet {

@@ -100,7 +100,7 @@
 								{breatheScale}
 								{mult}
 								countUpText={bookEventAmountToCurrencyString(countUpAmount)}
-								fontSize={SYMBOL_SIZE * bs * 0.295}
+								fontSize={SYMBOL_SIZE * bs * 0.21}
 							/>
 						{:else}
 							<ResponsiveBitmapText

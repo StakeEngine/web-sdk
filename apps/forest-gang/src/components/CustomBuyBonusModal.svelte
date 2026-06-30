@@ -62,15 +62,6 @@
 
 	<div class="grid">
 
-		<!-- DEAL IT -->
-		<div class="card" style="--frame:url('{cardFrame}')">
-			<span class="card-title">DEAL IT</span>
-			<span class="card-desc">10 FREE SPINS · RANDOM EXPANDING SYMBOL · UP TO 250× MULTIPLIER</span>
-			<img class="card-icon" src={dealItIcon} alt="" />
-			<span class="card-price">{dealItCost}</span>
-			<button class="card-btn card-btn--buy" type="button" disabled={!canBuy} onclick={() => openConfirm('BONUS')}>BUY</button>
-		</div>
-
 		<!-- CHANCE SPIN -->
 		<div class="card" style="--frame:url('{cardFrame}')">
 			<span class="card-title">CHANCE SPIN</span>
@@ -103,6 +94,15 @@
 				type="button"
 				onclick={() => toggleActivateMode(props.onToggleFeature)}
 			>{props.isFeatureActive ? 'DEACTIVATE' : 'ACTIVATE'}</button>
+		</div>
+
+		<!-- DEAL IT -->
+		<div class="card" style="--frame:url('{cardFrame}')">
+			<span class="card-title">DEAL IT</span>
+			<span class="card-desc">10 FREE SPINS · RANDOM EXPANDING SYMBOL · UP TO 250× MULTIPLIER</span>
+			<img class="card-icon" src={dealItIcon} alt="" />
+			<span class="card-price">{dealItCost}</span>
+			<button class="card-btn card-btn--buy" type="button" disabled={!canBuy} onclick={() => openConfirm('BONUS')}>BUY</button>
 		</div>
 
 		<!-- ALL IN -->
@@ -150,7 +150,7 @@
 		position: fixed; left: 50%; top: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 61;
-		width: min(680px, 96vw);
+		width: min(1080px, 96vw);
 		padding: 28px 24px 28px;
 	}
 
@@ -176,22 +176,22 @@
 	}
 	.close-btn:hover { background: rgba(30,20,8,0.97); color: #fff; }
 
-	/* 2×2 grid */
+	/* One row of 4 cards (see Figma node 2349-2074) */
 	.grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 16px;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 12px;
 	}
 
 	/* Card */
 	.card {
 		display: flex; flex-direction: column; align-items: center;
 		text-align: center;
-		padding: 22px 18px 18px;
+		padding: 20px 12px 14px;
 		background-image: var(--frame);
 		background-size: 100% 100%;
 		border-radius: 4px;
-		gap: 8px;
+		gap: 7px;
 	}
 
 	.card-title {
@@ -212,12 +212,12 @@
 
 	.card-icon-wrap {
 		position: relative;
-		width: 80px; height: 80px;
+		width: 64px; height: 64px;
 		margin: 4px 0;
 		flex-shrink: 0;
 	}
 	.card-icon {
-		width: 80px; height: 80px;
+		width: 64px; height: 64px;
 		object-fit: contain;
 	}
 	.card-icon-overlay {

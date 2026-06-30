@@ -2,8 +2,8 @@
 	import { Tween } from 'svelte/motion';
 	import { cubicOut, linear } from 'svelte/easing';
 
-	import { Sprite } from 'pixi-svelte';
-	import { ResponsiveBitmapText } from 'components-pixi';
+	import { FillGradient } from 'pixi.js';
+	import { Sprite, Container, Text } from 'pixi-svelte';
 
 	type Props = {
 		boardKey: string;
@@ -84,6 +84,35 @@
 	);
 	const boardSize = $derived(maxBoardSize * accumulationScale * breatheScale * currScaleTween.current);
 	const prevBoardSize = $derived(maxBoardSize * (TIER_BASE_SCALE[prevKey ?? boardKey] ?? 1) * prevScaleTween.current);
+
+	// Win-amount text style: Cinzel 900 with the gold gradient (Figma spec).
+	const goldFill = new FillGradient({
+		type: 'linear',
+		start: { x: 0, y: 0 },
+		end: { x: 0, y: 1 },
+		colorStops: [
+			{ offset: 0.176, color: '#E2D981' },
+			{ offset: 0.6, color: '#FBC503' },
+			{ offset: 1, color: '#D98503' },
+		],
+		textureSpace: 'local',
+	});
+
+	// Scale the amount to fit inside the board (keeps long wins readable).
+	let amountNatW = $state(0);
+	const amountMaxW = $derived(boardSize * 0.62);
+	const amountScale = $derived(amountNatW > 0 ? Math.min(1, amountMaxW / amountNatW) : 1);
+
+	// Each board art has its amount plaque at a slightly different height. mega_win
+	// (mythic) has more bottom padding, so its text needs to sit a bit higher.
+	const TIER_TEXT_Y: Record<string, number> = {
+		sweetWinBoard: 0.36,
+		wildWinBoard: 0.36,
+		epicWinBoard: 0.36,
+		mythicWinBoard: 0.345,
+		legendaryWinBoard: 0.36,
+	};
+	const textYFrac = $derived(TIER_TEXT_Y[boardKey] ?? 0.36);
 </script>
 
 {#if showPrev && prevKey && prevKey !== boardKey}
@@ -104,16 +133,18 @@
 	alpha={currAlphaTween.current}
 />
 
-<ResponsiveBitmapText
-	anchor={0.5}
-	y={boardSize * 0.36 - 8}
-	maxWidth={boardSize * 0.62}
-	text={countUpText}
-	style={{
-		fontFamily: 'gold',
-		fontSize,
-		align: 'center',
-		fontWeight: 'bold',
-		letterSpacing: 0,
-	}}
-/>
+<Container y={boardSize * textYFrac - 8} scale={amountScale}>
+	<Text
+		anchor={0.5}
+		text={countUpText}
+		style={{
+			fontFamily: 'Cinzel',
+			fontWeight: '900',
+			fontSize,
+			align: 'center',
+			letterSpacing: fontSize * 0.03,
+			fill: goldFill,
+		}}
+		onresize={({ width }) => (amountNatW = width)}
+	/>
+</Container>
