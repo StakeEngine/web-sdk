@@ -13,7 +13,8 @@
 	const VINE_H = 20;
 	const DRAW_MS = 250;
 	const HOLD_MS = 400; // pause at full before restarting loop
-	const GREEN = 0x33ff55;
+	// Bright gold (dominant tone of the win gradient) for the winning-payline lines.
+	const GOLD = 0xfbc503;
 
 	let drawProgress = $state(0);
 	let raf = 0;
@@ -51,7 +52,7 @@
 {#each props.wins as win (win.lineIndex)}
 	<VineRope
 		waypoints={win.path.map((p) => ({ x: cx(p.reel), y: cy(p.row) }))}
-		color={GREEN}
+		color={GOLD}
 		progress={drawProgress}
 		vineH={VINE_H}
 	/>

@@ -8,8 +8,8 @@
 </script>
 
 <script lang="ts">
-	import { Container } from 'pixi-svelte';
-	import { FadeContainer, WinCountUpProvider, ResponsiveBitmapText } from 'components-pixi';
+	import { Container, Text } from 'pixi-svelte';
+	import { FadeContainer, WinCountUpProvider } from 'components-pixi';
 	import { waitForResolve } from 'utils-shared/wait';
 	import { bookEventAmountToCurrencyString } from 'utils-shared/amount';
 	import { CanvasSizeRectangle, MainContainer } from 'components-layout';
@@ -21,6 +21,7 @@
 	import { SYMBOL_SIZE } from '../game/constants';
 	import { getContext } from '../game/context';
 	import { winBoardByAlias } from '../game/utils';
+	import { WIN_GRADIENT } from '../game/goldGradient';
 	import { stateBet } from 'state-shared';
 
 	const context = getContext();
@@ -31,6 +32,7 @@
 	let oncomplete = $state(() => {});
 	let boardClickHandled = false;
 	let isCountingUp = $state(false);
+	let winSizes = $state({ width: 0, height: 0 });
 
 	// Breathing: gentle ±2% scale oscillation while counting up
 	let breatheScale = $state(1);
@@ -103,18 +105,25 @@
 								fontSize={SYMBOL_SIZE * bs * 0.21}
 							/>
 						{:else}
-							<ResponsiveBitmapText
-								anchor={0.5}
-								maxWidth={context.stateLayoutDerived.canvasSizes().width / context.stateLayoutDerived.mainLayout().scale}
-								text={bookEventAmountToCurrencyString(countUpAmount)}
-								style={{
-									fontFamily: 'gold',
-									fontSize: SYMBOL_SIZE,
-									align: 'center',
-									fontWeight: 'bold',
-									letterSpacing: 0,
-								}}
-							/>
+							<!-- Win amount — Cinzel 900 gold gradient with a black outline; scales to fit the board -->
+							{@const winMaxW = context.stateLayoutDerived.canvasSizes().width / context.stateLayoutDerived.mainLayout().scale}
+							{@const winScale = winSizes.width > winMaxW ? winMaxW / winSizes.width : 1}
+							<Container scale={winScale}>
+								<Text
+									anchor={0.5}
+									onresize={(s) => (winSizes = s)}
+									text={bookEventAmountToCurrencyString(countUpAmount)}
+									style={{
+										fontFamily: 'Cinzel',
+										fontWeight: '900',
+										fontSize: SYMBOL_SIZE,
+										fill: WIN_GRADIENT,
+										align: 'center',
+										letterSpacing: SYMBOL_SIZE * 0.03,
+										stroke: { color: 0x000000, width: Math.max(2, Math.round(SYMBOL_SIZE * 0.04)) },
+									}}
+								/>
+							</Container>
 						{/if}
 					</Container>
 				</MainContainer>
