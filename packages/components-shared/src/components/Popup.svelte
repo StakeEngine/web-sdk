@@ -10,6 +10,8 @@
 		children: Snippet;
 		zIndex: number;
 		persistent?: boolean;
+		/** Hide the default × close button (e.g. when the content renders its own themed close). */
+		hideClose?: boolean;
 		onclose: () => void;
 	};
 
@@ -55,7 +57,7 @@
 			style="--zIndex: {zIndexInternal.clickToCloseLayer}"
 		></div>
 
-		{#if !props.persistent}
+		{#if !props.persistent && !props.hideClose}
 			<div class="close-button-wrap" style="--zIndex: {zIndexInternal.closeButton}">
 				<button class="close-button" data-test="close-button" onclick={closeModal}>×</button>
 			</div>

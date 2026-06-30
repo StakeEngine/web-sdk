@@ -106,4 +106,87 @@ export default {
 	'PAYTABLE BUY_TEXT': 'Deal It: 100x bet.\nAll In: 400x bet.\nChance Spin: 2x bet per round.\nFeature Spin: 20x bet per round.\nDeal It and All In require confirmation before the round starts.',
 	'PAYTABLE MAX_TEXT': 'Advertised max win is 25,000x the selected bet.',
 	'DISCLAIMER TEXT': 'Malfunction voids all wins and plays. A consistent internet connection is required. In the event of a disconnection, reload the game to finish any uncompleted rounds. The expected return is calculated over many plays. The game display is not representative of any physical device and is for illustrative purposes only. Winnings are settled according to the amount received from the Remote Game Server and not from events within the web browser. TM and © 2025 Stake Engine.',
+
+	// Game info modal — paginated framed pages
+	'INFO OVERVIEW TITLE': 'OVERVIEW',
+	'INFO OVERVIEW BODY':
+		'Forest Gang is a 5x4 video slot played on 20 paylines.\nWins are awarded from left to right on consecutive reels, starting from reel 1, when matching symbols land on an active payline.\nThe game includes 5 premium symbols, 5 low symbols, a Wild symbol, and a Scatter symbol.\n\nMaximum win potential is 25,000x the total bet.\n\nTheoretical RTP: 96.1%',
+	'INFO STAT REELS': '5 x 4',
+	'INFO STAT REELS LABEL': 'REELS',
+	'INFO STAT PAYLINES': '20',
+	'INFO STAT PAYLINES LABEL': 'PAYLINES',
+	'INFO STAT MAXWIN': '25,000x',
+	'INFO STAT MAXWIN LABEL': 'MAX WIN',
+	'INFO STAT RTP': '96.1%',
+	'INFO STAT RTP LABEL': 'RTP',
+	'INFO FEATURES TITLE': 'FEATURES',
+	'INFO EXPANDING TITLE': 'EXPANDING SYMBOL',
+	'INFO EXPANDING TEXT':
+		"During qualifying feature spins and bonus rounds, one random symbol is selected as the expanding symbol. When it lands on the reels, it expands vertically to cover the full reel. Expanded symbols can create multiple payline wins on the same spin. A random multiplier can appear on any spin and applies to that spin's win.",
+	'INFO DEAL IT TITLE': 'DEAL IT BONUS',
+	'INFO DEAL IT HL': '3 Scatter',
+	'INFO DEAL IT TEXT':
+		'Triggered by 3 Scatter symbols.\n\nAwards 10 free spins. Before the bonus begins, one random expanding symbol is selected. During the bonus, the selected symbol may expand to cover the full reel.\n\nA random multiplier can apply to any winning spin, up to 100x.',
+	'INFO ALL IN TITLE': 'ALL IN BONUS',
+	'INFO ALL IN HL': '4 Scatter',
+	'INFO ALL IN TEXT':
+		'Triggered by 4 Scatter symbols and awards 10 free spins.\n\nBefore the bonus begins, one random expanding symbol is selected. During the bonus, the selected symbol may expand to cover the full reel. Reel multipliers stay active for the full bonus and double on every qualifying win, starting at 2x.',
+	'INFO PLACEHOLDER BODY': 'Design coming soon.',
+	// Paytable page
+	'INFO PAYTABLE TITLE': 'PAYTABLE',
+	'INFO PT SYMBOL': 'SYMBOL',
+	'INFO PT COL3': '3 IN A LINE',
+	'INFO PT COL4': '4 IN A LINE',
+	'INFO PT COL5': '5 IN A LINE',
+	'INFO WILD TITLE': 'WILD SYMBOL',
+	'INFO WILD TEXT':
+		'The Wild substitutes for all regular paying symbols. The Wild does not substitute for the Scatter. Wild payout: 5 in a line only 250x.',
+	'INFO SCATTER PT TITLE': 'SCATTER SYMBOL',
+	'INFO SCATTER PT TEXT':
+		'The Scatter appears on all reels. 3 Scatters trigger the Deal It Bonus. 4 Scatters trigger the All In Bonus. Scatters do not need to land on a payline to trigger a bonus.',
+	// Ways to win page
+	'INFO WAYS TITLE': 'WAYS TO WIN',
+	'INFO WAYS NOTE':
+		'Forest Gang is played on 20 fixed paylines. Wins are awarded from left to right on consecutive reels, starting from reel 1. Only the highest win per active payline is paid.',
+	// Feature buy page
+	'INFO BUY TITLE': 'FEATURE BUY',
+	'INFO BUY CHANCE TITLE': 'EXTRA BONUS CHANCE',
+	'INFO BUY CHANCE TEXT': 'Before the bonus begins, one random expanding symbol is selected.',
+	'INFO BUY FEATURE TITLE': 'FEATURE SPIN',
+	'INFO BUY FEATURE TEXT': 'Awards 1 spin with a random expanding symbol.',
+	'INFO BUY DEALIT TITLE': 'DEAL IT BONUS',
+	'INFO BUY DEALIT TEXT': 'Instantly awards the Deal It Bonus.',
+	'INFO BUY ALLIN TITLE': 'ALL IN BONUS',
+	'INFO BUY ALLIN TEXT': 'Instantly awards the All In Bonus.',
+	'INFO BUY COST': 'COST',
+	'INFO BUY RTP': 'RTP',
+	'INFO BUY RTP_VALUE': '96.1%',
+	'INFO BUY CHANCE_LABEL': 'BONUS CHANCE',
+	'INFO BUY CHANCE_VALUE': '3x CHANCE',
+	// General info page
+	'INFO GENERAL TITLE': 'GENERAL INFO',
+	'INFO INTERRUPTED TITLE': 'INTERRUPTED ROUNDS',
+	'INFO INTERRUPTED TEXT':
+		'If a game round is interrupted, it will continue when the game is reloaded, where possible.\n\nAll valid wagers and potential winnings remain active until the round is fully completed.',
+	'INFO LEGAL TITLE': 'LEGAL NOTICE',
+	'INFO LEGAL TEXT':
+		'Malfunction voids all pays and plays. A stable internet connection is required. If the connection is lost, reload the game to complete any unfinished rounds.\n\nThe expected return is calculated over a large number of plays. The game display is for visual and entertainment purposes only and does not represent any physical gaming device.\n\nAll winnings are settled according to the result received from the Remote Game Server, not from animations or events shown inside the web browser.',
+
+	// Splash intro feature boards (the big gold values are images)
+	'SPLASH EXP TITLE': 'EXPANDING\nREELS',
+	'SPLASH EXP TOP': 'with up to',
+	'SPLASH EXP BOTTOM': 'multiplier',
+	'SPLASH BONUS TITLE': 'BONUS GAME',
+	'SPLASH BONUS TOP': '3 scatters to\nenter bonus and',
+	'SPLASH BONUS MID': '4 scatters for',
+	'SPLASH BONUS HL': 'SUPER BONUS',
+	'SPLASH EPIC TITLE': 'EPIC WIN',
+	'SPLASH EPIC TOP': 'become the king of the\nforest with',
+	'SPLASH EPIC BOTTOM': 'MAX WIN',
+	'SPLASH PRESS': 'PRESS TO CONTINUE',
+
+	// Free spins intro popup (rendered as live text so it is translatable)
+	'FS CONGRATS': 'CONGRATULATIONS!',
+	'FS YOU WON': 'YOU WON',
+	'FS FREE SPINS': 'FREE SPINS',
 };

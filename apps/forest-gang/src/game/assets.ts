@@ -16,6 +16,16 @@ export default {
 		src: './assets/components/backgrounds/visual_v2.png?v=20260625',
 		preload: true,
 	},
+	bonusNormalBackground: {
+		type: 'sprite',
+		src: './assets/components/backgrounds/bonus_normal_bg.webp?v=20260630',
+		preload: true,
+	},
+	bonusSuperBackground: {
+		type: 'sprite',
+		src: './assets/components/backgrounds/bonus_super_bg.webp?v=20260630',
+		preload: true,
+	},
 	reelsFrame: {
 		type: 'sprite',
 		src: './assets/components/frames/reels_frame.png?v=20260623',
@@ -59,6 +69,11 @@ export default {
 	forestGangLogo: {
 		type: 'sprite',
 		src: './assets/components/ui/forest_gang_logo.png?v=20260611',
+		preload: true,
+	},
+	pressPlayLogo: {
+		type: 'sprite',
+		src: './assets/components/ui/press_play_logo.png?v=20260630',
 		preload: true,
 	},
 	scatterPanelImage: {

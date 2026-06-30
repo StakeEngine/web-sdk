@@ -301,10 +301,9 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 		await eventEmitter.broadcastAsync({ type: 'winUpdate', amount: bookEvent.amount, winLevelData });
 		winLevelSoundsStop();
 		eventEmitter.broadcast({ type: 'winHide' });
-		// Hide Deal It multiplier panel after win animation
-		if ((stateGame.bonusMode === 'freegame' || stateGame.bonusMode === 'feature')) {
-			eventEmitter.broadcast({ type: 'dealItMultiplierHide' });
-		}
+		// NOTE: the Deal It multiplier panel is intentionally NOT hidden here — it stays on
+		// screen for the whole bonus and only animates when the multiplier value changes.
+		// It is hidden at bonus end (freeSpinEnd) and when switching to the All In bonus.
 	},
 	finalWin: async () => {
 		if (stateGame.gameType === 'basegame' && stateGame.bonusMode !== 'feature') stateGameDerived.resetBonusState();

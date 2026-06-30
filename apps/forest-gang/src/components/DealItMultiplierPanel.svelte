@@ -10,35 +10,33 @@
 
 <script lang="ts">
 	import { Tween } from 'svelte/motion';
-	import { cubicOut, backOut } from 'svelte/easing';
+	import { cubicIn, backOut } from 'svelte/easing';
 
-	import { BitmapText, Container, Sprite } from 'pixi-svelte';
+	import { Container, Sprite, Text } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
-	import { stateBetDerived } from 'state-shared';
 	import { waitForTimeout } from 'utils-shared/wait';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE, SYMBOL_W } from '../game/constants';
+	import { GOLD_GRADIENT } from '../game/goldGradient';
 
-	type AnimationName = 'static' | 'win' | 'reset' | 'increment';
-
-	// Bear-hand board sizing — multiplier_hand.png is 944×708 with the board panel
-	// (centre 0.368/0.458) ≈ 58% of the width; render so the board ≈ BOARD_W.
-	// Match the top symbol board (BonusSymbolPanel uses SYMBOL_W * 1.1).
-	// The hand image is 944×708; its board region is 592px wide, centred at (368,324).
+	// Bear-hand board sizing — multiplier_hand.png is 944×708; its board region is 592px wide,
+	// centred at (368,324). Match the top symbol board (BonusSymbolPanel uses SYMBOL_W * 1.1).
 	const BOARD_W = SYMBOL_W * 1.1;
 	const HAND_W = BOARD_W * (944 / 592);
 	const HAND_H = HAND_W * (708 / 944);
-	const NUM_FONT = BOARD_W * 0.19;
-	const REEL_SLIDE = BOARD_W * 0.5;
-
-	// Mirror BonusSymbolPanel geometry so DealIt panel sits directly below it
-	const _symPadW = SYMBOL_W * 1.1;
-	const _symPadH = _symPadW * (420 / 624);
+	const NUM_FONT = BOARD_W * 0.215;
+	// Vertical centre nudge so the Cinzel caps sit in the middle of the wood board.
+	const NUM_Y = BOARD_W * 0.012;
+	const SLIDE = BOARD_W * 0.55;
 
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
+
+	// Mirror BonusSymbolPanel geometry so the DealIt panel sits directly below it.
+	const _symPadW = SYMBOL_W * 1.1;
+	const _symPadH = _symPadW * (420 / 624);
 	const boardW = $derived(context.stateGameDerived.boardLayout().width);
 	const desktopPosition = $derived({
 		x: boardW + 40,
@@ -51,125 +49,88 @@
 	const position = $derived(
 		context.stateLayoutDerived.isStacked() ? portraitPosition : desktopPosition,
 	);
+
+	// The panel stays on screen for the whole Deal It bonus (shown on the first winning spin,
+	// hidden only at bonus end). It only animates when the multiplier value actually changes —
+	// the hand slides out, swaps the value while hidden, and slides back in.
 	let show = $state(false);
-	let animationName = $state<AnimationName>('static');
 	let multiplier = $state(1);
-	let previousMultiplier = new Tween(1);
-	let oncomplete = $state(() => {});
-	let isCycling = $state(false);
-	let landingTarget = $state(1);
-	let cyclingResolve = $state<(() => void) | null>(null);
-	let fastForward = $state(false);
+	let pendingTarget = $state(1);
+	let swapping = $state(false);
+	let swapResolve = $state<(() => void) | null>(null);
 
-	// Single text slides in from top — no overlap, no artifacts
-	let reelText = $state('1X');
-	let reelY = new Tween(0);
+	let groupX = new Tween(0);
+	let groupAlpha = new Tween(1);
 
-	const tickReel = async (newVal: number, duration: number) => {
-		const scaledDuration = fastForward ? Math.max(55, duration * 0.18) : duration;
-		// Slide current number out to bottom first (fast), then snap new number in from top
-		reelY.set(REEL_SLIDE * 0.5, { duration: scaledDuration * 0.25, easing: cubicOut });
-		await waitForTimeout(scaledDuration * 0.25);
-		// Swap text while offscreen above, then slide in with slight bounce
-		reelText = `${newVal}X`;
-		reelY.set(-REEL_SLIDE, { duration: 0 });
-		reelY.set(0, { duration: scaledDuration * 0.6, easing: backOut });
-		await waitForTimeout(scaledDuration * 0.75);
+	const swapTo = async (next: number) => {
+		swapping = true;
+		groupX.set(SLIDE, { duration: 170, easing: cubicIn });
+		groupAlpha.set(0, { duration: 150 });
+		await waitForTimeout(170);
+		multiplier = next;
+		groupX.set(-SLIDE, { duration: 0 });
+		groupX.set(0, { duration: 280, easing: backOut });
+		groupAlpha.set(1, { duration: 190 });
+		await waitForTimeout(280);
+		swapping = false;
+		swapResolve?.();
+		swapResolve = null;
 	};
 
 	context.eventEmitter.subscribeOnMount({
-		stopButtonClick: () => {
-			if (show && (context.stateGame.bonusMode === 'freegame' || context.stateGame.bonusMode === 'feature')) fastForward = true;
-		},
-		dealItMultiplierAwaitCycle: async () => {
-			if (!isCycling) return;
-			await new Promise<void>((resolve) => { cyclingResolve = resolve; });
-		},
-		dealItMultiplierStart: async () => {
+		// First winning spin reveals the board; it then stays put.
+		dealItMultiplierStart: () => {
 			show = true;
-			landingTarget = 1;
-			multiplier = 1;
-			previousMultiplier.set(1, { duration: 0 });
-			animationName = 'static';
-			reelText = '1X';
-			reelY.set(0, { duration: 0 });
-			fastForward = false;
-
-			const isFast = stateBetDerived.timeScale() > 1;
-			if (isFast) {
-				await waitForTimeout(80);
-				const target = landingTarget;
-				if (target > 1) {
-					context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_update' });
-					previousMultiplier.set(1, { duration: 0 });
-					multiplier = target;
-					animationName = 'increment';
-					await waitForTimeout(450);
-					animationName = 'static';
-					previousMultiplier.set(multiplier, { duration: 0 });
-				}
-				cyclingResolve?.();
-				cyclingResolve = null;
-				return;
-			}
-
-			const VALUES = [2, 3, 5, 10, 20, 100, 250];
-			isCycling = true;
-			// Bell curve: slow → fast → slow, with extra slow at end
-			const delays = [450, 360, 270, 190, 140, 110, 100, 110, 140, 190, 270, 360, 480, 640, 860];
-			let prevVal = 0;
-			for (let i = 0; i < delays.length; i++) {
-				const d = delays[i];
-				if (fastForward && i >= 5) break;
-				let val: number;
-				do { val = VALUES[Math.floor(Math.random() * VALUES.length)]; } while (val === prevVal);
-				prevVal = val;
-				await tickReel(val, d);
-			}
-			// Final land — keep isCycling=true so reel template stays visible
-			const target = landingTarget;
-			await tickReel(target, fastForward ? 220 : 600);
-			isCycling = false;
-
-			if (target > 1) {
-				context.eventEmitter.broadcast({ type: 'soundOnce', name: 'sfx_multiplier_update' });
-				previousMultiplier.set(1, { duration: 0 });
-				multiplier = target;
-				animationName = 'increment';
-				await waitForTimeout(450);
-				animationName = 'static';
-				previousMultiplier.set(multiplier, { duration: 0 });
-			}
-
-			cyclingResolve?.();
-			cyclingResolve = null;
 		},
+		// The multiplier for this spin (only broadcast when a multiplier applies).
 		dealItMultiplierSetTarget: ({ multiplier: m }: { multiplier: number }) => {
-			landingTarget = m;
+			pendingTarget = m;
 		},
+		// Commit point (after the win resolves): animate only if the value actually changed.
+		dealItMultiplierAwaitCycle: async () => {
+			if (pendingTarget !== multiplier) {
+				context.eventEmitter.broadcast({
+					type: 'soundOnce',
+					name: pendingTarget > multiplier ? 'sfx_multiplier_update' : 'sfx_multiplier_reset',
+				});
+				await swapTo(pendingTarget);
+			}
+		},
+		// Bonus end (or switch to All In): clear and hide.
 		dealItMultiplierHide: () => {
 			show = false;
-			isCycling = false;
-			landingTarget = 1;
+			swapping = false;
 			multiplier = 1;
-			previousMultiplier.set(1, { duration: 0 });
-			animationName = 'static';
+			pendingTarget = 1;
+			groupX.set(0, { duration: 0 });
+			groupAlpha.set(1, { duration: 0 });
+			swapResolve?.();
+			swapResolve = null;
 		},
 	});
 </script>
 
 <FadeContainer {show}>
 	<BoardContainer>
-		<Container {...position} {scale}>
-			<!-- Bear-hand board: panel centre (0.368/0.458) at the container origin, paw extends right -->
+		<!-- The hand+board+number group slides + fades only when the multiplier changes -->
+		<Container x={position.x + groupX.current} y={position.y} alpha={groupAlpha.current} {scale}>
+			<!-- Bear-hand board: panel centre (0.39/0.458) at the container origin, paw extends right -->
 			<Sprite key="multiplierHand" anchor={{ x: 0.39, y: 0.458 }} width={HAND_W} height={HAND_H} />
 
-			<!-- Multiplier number, gold, on the board -->
-			{#if isCycling}
-				<BitmapText anchor={0.5} y={reelY.current} text={reelText} style={{ fontFamily: 'silver', fontSize: NUM_FONT }} />
-			{:else}
-				<BitmapText anchor={0.5} text={`${Math.round(previousMultiplier.current)}X`} style={{ fontFamily: 'silver', fontSize: NUM_FONT }} />
-			{/if}
+			<!-- Multiplier number — Cinzel 900 gold, riding the board (static — only the hand animates) -->
+			<Text
+				anchor={0.5}
+				y={NUM_Y}
+				text={`${multiplier}X`}
+				style={{
+					fontFamily: 'Cinzel',
+					fontWeight: '900',
+					fontSize: NUM_FONT,
+					fill: GOLD_GRADIENT,
+					align: 'center',
+					letterSpacing: NUM_FONT * 0.03,
+				}}
+			/>
 		</Container>
 	</BoardContainer>
 </FadeContainer>

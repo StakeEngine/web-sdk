@@ -20,9 +20,12 @@
 	const context = getContext();
 
 	// deer_presenter.png is 792×670; the empty board the deer holds has its
-	// interior centred at (0.494, 0.654) of the image, roughly 0.34×0.20 in size.
+	// interior centred at (0.494, 0.645) of the image, roughly 0.34×0.20 in size.
 	const DEER_RATIO = 792 / 670;
-	const PLACEHOLDER = { cx: 0.494, cy: 0.654, h: 0.18 };
+	const PLACEHOLDER = { cx: 0.494, cy: 0.645, h: 0.18 };
+	// Per-symbol vertical nudge (fraction of deer height). The animal tiles are content-centred,
+	// so they sit right at PLACEHOLDER.cy; some letter glyphs read low and need a small lift.
+	const CY_NUDGE: Partial<Record<SymbolName, number>> = { J: -0.03 };
 	const LETTER_ASPECT = 1.17; // default symbol sprites are ~cell aspect
 
 	const main = $derived(context.stateLayoutDerived.mainLayout());
@@ -38,6 +41,7 @@
 	// displaySymbol cycles during the roll, then settles on the real symbol.
 	let displaySymbol = $state<SymbolName | null>(null);
 	const letterKey = $derived(displaySymbol ? (spriteKeyByName[displaySymbol] ?? null) : null);
+	const symbolCy = $derived(PLACEHOLDER.cy + (displaySymbol ? (CY_NUDGE[displaySymbol] ?? 0) : 0));
 
 	const letterH = $derived(deerH * PLACEHOLDER.h);
 	const letterW = $derived(letterH * LETTER_ASPECT);
@@ -117,7 +121,7 @@
 			{#if letterKey}
 				<Container
 					x={deerW * PLACEHOLDER.cx}
-					y={deerH * PLACEHOLDER.cy}
+					y={deerH * symbolCy}
 					scale={sc.current}
 					rotation={rot.current}
 				>

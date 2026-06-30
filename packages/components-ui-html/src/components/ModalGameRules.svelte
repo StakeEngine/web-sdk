@@ -7,6 +7,7 @@
 
 	import BaseContent from './BaseContent.svelte';
 	import BaseScrollable from './BaseScrollable.svelte';
+	import GameInfoCarousel from './GameInfoCarousel.svelte';
 	import GameRuleSections from './GameRuleSections.svelte';
 
 	type Props = {
@@ -14,15 +15,30 @@
 	};
 
 	const props: Props = $props();
+
+	const infoPages = $derived(stateMeta.gameRuleMeta.infoPages ?? []);
 </script>
 
 {#if stateModal.modal?.name === 'gameRules'}
-	<Popup zIndex={zIndex.modal} onclose={() => (stateModal.modal = null)}>
+	<Popup
+		zIndex={zIndex.modal}
+		hideClose={infoPages.length > 0}
+		onclose={() => (stateModal.modal = null)}
+	>
 		<BaseContent maxWidth="100%">
-			<BaseScrollable type="column">
-				<GameRuleSections sections={stateMeta.gameRuleMeta.gameRules} />
+			{#if infoPages.length}
+				<GameInfoCarousel
+					pages={infoPages}
+					assets={stateMeta.gameRuleMeta.infoAssets}
+					onClose={() => (stateModal.modal = null)}
+				/>
 				{@render props.children()}
-			</BaseScrollable>
+			{:else}
+				<BaseScrollable type="column">
+					<GameRuleSections sections={stateMeta.gameRuleMeta.gameRules} />
+					{@render props.children()}
+				</BaseScrollable>
+			{/if}
 		</BaseContent>
 	</Popup>
 {/if}

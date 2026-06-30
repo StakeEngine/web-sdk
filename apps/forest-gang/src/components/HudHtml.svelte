@@ -35,6 +35,7 @@
 	const iconPlus = ap('/assets/hud/icon-plus.png');
 	const iconAuto = ap('/assets/hud/icon-autoplay.png');
 	const iconSpin = ap('/assets/hud/icon-spin.png');
+	const iconStop = ap('/assets/hud/icon-stop.png');
 	const iconTurbo1 = ap('/assets/hud/icon-lightning-1.png');
 	const iconTurbo2 = ap('/assets/hud/icon-lightning-2.png');
 	const iconTurbo3 = ap('/assets/hud/icon-lightning-3.png');
@@ -427,7 +428,9 @@
 					aria-label="Spin"
 					disabled={canInteract && !hasAuto && !canAffordBet}
 				>
-					<img src={iconSpin} alt="" class="spin-btn__icon" />
+					{#if !isSpinStop}
+						<img src={iconSpin} alt="" class="spin-btn__icon" />
+					{/if}
 					{#if hasAuto}
 						<span
 							class="spin-btn__count"
@@ -435,7 +438,7 @@
 							>{autoSpinsRemainingText}</span
 						>
 					{:else if isSpinStop}
-						<span class="spin-btn__glyph" aria-hidden="true">■</span>
+						<img src={iconStop} alt="" class="spin-btn__stop" aria-hidden="true" />
 					{/if}
 				</button>
 			</div>
@@ -739,10 +742,16 @@
 	}
 
 	.label {
-		font-family: 'Cinzel', serif;
-		font-size: 0.7rem;
-		font-weight: 700;
-		color: #d6ea57;
+		font-family: 'Poppins', sans-serif;
+		font-size: 0.8125rem; /* 13px */
+		font-weight: 500;
+		letter-spacing: 0.03em;
+		/* Golden gradient clipped to the BALANCE / BET label text */
+		background: linear-gradient(184deg, #ffa90e 15.26%, #ee960b 69.74%, #d18005 92.88%);
+		background-clip: text;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		color: transparent;
 		display: flex;
 		align-items: center;
 		gap: 4px;
@@ -760,9 +769,10 @@
 	}
 
 	.value {
-		font-family: 'Cinzel', serif;
-		font-size: 1.25rem;
-		font-weight: 700;
+		font-family: 'Poppins', sans-serif;
+		font-size: 1.125rem; /* 18px */
+		font-weight: 500;
+		letter-spacing: 0.03em; /* 0.54px @ 18px */
 		color: #fff;
 	}
 
@@ -1091,6 +1101,19 @@
 
 	.spin-btn__glyph {
 		font-size: 2rem;
+	}
+
+	/* Gold stop tile shown over the green disc while spinning (replaces the ■ glyph). */
+	.spin-btn__stop {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 30%;
+		aspect-ratio: 1;
+		transform: translate(-50%, -50%) translateY(7%);
+		object-fit: contain;
+		pointer-events: none;
+		filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
 	}
 
 	.spin-btn__count {

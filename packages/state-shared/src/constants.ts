@@ -485,6 +485,15 @@ const DEFAULT_GAME_RULE_META = {
 		},
 	],
 	splashScreen: [],
+	infoPages: [],
+	infoAssets: {
+		navArrowLeft: '',
+		navArrowRight: '',
+		navButton: '',
+		statCard: '',
+		featureCard: '',
+		specialFrame: '',
+	},
 };
 
 export { DEFAULT_BET_MODE_META, DEFAULT_GAME_RULE_META };

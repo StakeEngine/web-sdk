@@ -8,15 +8,19 @@
 <script lang="ts">
 	import { MainContainer } from 'components-layout';
 	import { FadeContainer } from 'components-pixi';
+	import { stateI18nDerived } from 'state-shared';
 
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE } from '../game/constants';
-	import { anchorToPivot, BitmapText, Container, Sprite, type Sizes } from 'pixi-svelte';
+	import { GOLD_GRADIENT } from '../game/goldGradient';
+	import { anchorToPivot, Container, Sprite, Text, type Sizes } from 'pixi-svelte';
 
 	const context = getContext();
+	const t = (key: string) => stateI18nDerived.translate(key);
+
 	// Leaf-corner wooden board (confirm_frame.png is 505×301; wood centre ≈ 0.507).
 	const PANEL_RATIO = 505 / 301;
-	const WOOD_CENTER_Y = 0.46;
+	const WOOD_CENTER_Y = 0.5;
 	const panelWidth = $derived(SYMBOL_SIZE * 2.0);
 	const panelSizes = $derived({
 		width: panelWidth,
@@ -35,9 +39,9 @@
 			20,
 	});
 
-	const titleFont = $derived(SYMBOL_SIZE * 0.115);
-	const counterFont = $derived(SYMBOL_SIZE * 0.25);
-	const GAP = $derived(SYMBOL_SIZE * 0.13);
+	const titleFont = $derived(SYMBOL_SIZE * 0.14);
+	const counterFont = $derived(SYMBOL_SIZE * 0.36);
+	const GAP = $derived(SYMBOL_SIZE * 0.12);
 
 	let show = $state(false);
 	let current = $state(0);
@@ -80,30 +84,38 @@
 			y={panelSizes.height * WOOD_CENTER_Y}
 			pivot={anchorToPivot({ sizes: groupSizes, anchor: { x: 0.5, y: 0.5 } })}
 		>
-			<!-- FREE SPINS title (gold) -->
-			<BitmapText
+			<!-- FREE SPINS title — Cinzel 700, gold gradient -->
+			<Text
 				x={groupSizes.width / 2}
 				y={0}
 				anchor={{ x: 0.5, y: 0 }}
-				text="FREE SPINS"
+				text={t('FS FREE SPINS')}
 				onresize={(sizes) => (titleSizes = sizes)}
 				style={{
-					fontFamily: 'silver',
+					fontFamily: 'Cinzel',
+					fontWeight: '700',
 					fontSize: titleFont,
+					fill: GOLD_GRADIENT,
+					align: 'center',
+					letterSpacing: titleFont * 0.03,
 					wordWrap: false,
 				}}
 			/>
 
-			<!-- current / total counter (gold, large) -->
-			<BitmapText
+			<!-- current / total counter — Cinzel 700, gold gradient, large -->
+			<Text
 				x={groupSizes.width / 2}
 				y={titleSizes.height + GAP}
 				anchor={{ x: 0.5, y: 0 }}
 				text={`${current}/${total}`}
 				onresize={(sizes) => (counterSizes = sizes)}
 				style={{
-					fontFamily: 'silver',
+					fontFamily: 'Cinzel',
+					fontWeight: '700',
 					fontSize: counterFont,
+					fill: GOLD_GRADIENT,
+					align: 'center',
+					letterSpacing: counterFont * 0.03,
 				}}
 			/>
 		</Container>
