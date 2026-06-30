@@ -9,13 +9,14 @@
 	import { Tween } from 'svelte/motion';
 	import { cubicIn, backOut } from 'svelte/easing';
 
-	import { BitmapText, Container, Sprite } from 'pixi-svelte';
+	import { Container, Sprite, Text } from 'pixi-svelte';
 	import { FadeContainer } from 'components-pixi';
 	import { waitForTimeout } from 'utils-shared/wait';
 
 	import BoardContainer from './BoardContainer.svelte';
 	import { getContext } from '../game/context';
 	import { SYMBOL_SIZE, SYMBOL_W } from '../game/constants';
+	import { GOLD_GRADIENT } from '../game/goldGradient';
 
 	// Bear-hand board sizing (board panel ≈ 58% of the 944×708 image width)
 	// Match the top symbol board (BonusSymbolPanel uses SYMBOL_W * 1.1).
@@ -23,9 +24,9 @@
 	const BOARD_W = SYMBOL_W * 1.1;
 	const HAND_W = BOARD_W * (944 / 592);
 	const HAND_H = HAND_W * (708 / 944);
-	const NUM_FONT = BOARD_W * 0.19;
-	// Vertical centre nudge so the number sits in the middle of the wood board.
-	const NUM_Y = -BOARD_W * 0.04;
+	const NUM_FONT = BOARD_W * 0.215;
+	// Vertical centre nudge so the Cinzel caps sit in the middle of the wood board.
+	const NUM_Y = BOARD_W * 0.012;
 	const SLIDE = BOARD_W * 0.55;
 	const context = getContext();
 	const scale = $derived(context.stateLayoutDerived.isStacked() ? 1.28 : 1);
@@ -96,12 +97,19 @@
 			<!-- Bear-hand board: panel centre (0.39/0.458) at the container origin, paw extends right -->
 			<Sprite key="multiplierHand" anchor={{ x: 0.39, y: 0.458 }} width={HAND_W} height={HAND_H} />
 
-			<!-- Global multiplier number, gold, centred on the board (static) -->
-			<BitmapText
+			<!-- Global multiplier number — Cinzel 900 gold, centred on the board (static) -->
+			<Text
 				anchor={0.5}
 				y={NUM_Y}
 				text={`${multiplier}X`}
-				style={{ fontFamily: 'silver', fontSize: NUM_FONT }}
+				style={{
+					fontFamily: 'Cinzel',
+					fontWeight: '900',
+					fontSize: NUM_FONT,
+					fill: GOLD_GRADIENT,
+					align: 'center',
+					letterSpacing: NUM_FONT * 0.03,
+				}}
 			/>
 		</Container>
 	</BoardContainer>

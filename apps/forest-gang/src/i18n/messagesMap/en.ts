@@ -184,4 +184,9 @@ export default {
 	'SPLASH EPIC TOP': 'become the king of the\nforest with',
 	'SPLASH EPIC BOTTOM': 'MAX WIN',
 	'SPLASH PRESS': 'PRESS TO CONTINUE',
+
+	// Free spins intro popup (rendered as live text so it is translatable)
+	'FS CONGRATS': 'CONGRATULATIONS!',
+	'FS YOU WON': 'YOU WON',
+	'FS FREE SPINS': 'FREE SPINS',
 };

@@ -366,6 +366,8 @@
 				<ResumeBet />
 				<Sound />
 
+				<GameLogoFrame />
+
 				<MainContainer zIndex={0}>
 					<BoardFrame />
 				</MainContainer>

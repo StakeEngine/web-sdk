@@ -7,20 +7,39 @@
 
 <script lang="ts">
 	import { CanvasSizeRectangle } from 'components-layout';
-	import { stateUrlDerived } from 'state-shared';
+	import { stateI18nDerived } from 'state-shared';
 	import { FadeContainer } from 'components-pixi';
 	import { waitForResolve } from 'utils-shared/wait';
-	import { BitmapText, Sprite } from 'pixi-svelte';
+	import { Sprite, Text } from 'pixi-svelte';
 
 	import { getContext } from '../game/context';
 	import PressToContinue from './PressToContinue.svelte';
 	import FreeSpinAnimation from './FreeSpinAnimation.svelte';
 
 	const context = getContext();
+	const t = (key: string) => stateI18nDerived.translate(key);
 
 	let show = $state(false);
 	let freeSpinsFromEvent = $state(0);
 	let oncomplete = $state(() => {});
+
+	// Live (translatable) text styled per Figma: Cinzel 900, soft drop shadow (offset/blur 2.78 @ 25%
+	// alpha, straight down) and letter-spacing 0.72 — all kept proportional to the font size.
+	const textStyle = (fontSize: number, fill: number) => ({
+		fontFamily: 'Cinzel',
+		fontWeight: '900' as const,
+		fontSize,
+		fill,
+		align: 'center' as const,
+		letterSpacing: fontSize * 0.03,
+		dropShadow: {
+			color: 0x000000,
+			alpha: 0.25,
+			angle: Math.PI / 2,
+			blur: fontSize * 0.116,
+			distance: fontSize * 0.116,
+		},
+	});
 
 	context.eventEmitter.subscribeOnMount({
 		freeSpinIntroShow: () => (show = true),
@@ -42,13 +61,19 @@
 			<!-- Square wooden board centred on slot pivot -->
 			<Sprite key="fsBoardBg" anchor={{ x: 0.5, y: 0.5 }} width={BW} height={BW} />
 
-			<!-- CONGRATULATIONS! + YOU WON (language-aware, no baked-in spin count) -->
-			<Sprite
-				key="freespins_{stateUrlDerived.lang()}.png"
+			<!-- CONGRATULATIONS! (gold) — live translatable text -->
+			<Text
 				anchor={{ x: 0.5, y: 0.5 }}
-				width={Math.round(BW * 0.53)}
-				height={Math.round(BW * 0.53 * (128 / 486))}
-				y={Math.round(-BW * 0.279)}
+				text={t('FS CONGRATS')}
+				style={textStyle(Math.round(BW * 0.044), 0xf1c14a)}
+				y={Math.round(-BW * 0.31)}
+			/>
+			<!-- YOU WON (green) -->
+			<Text
+				anchor={{ x: 0.5, y: 0.5 }}
+				text={t('FS YOU WON')}
+				style={textStyle(Math.round(BW * 0.031), 0x7cc23f)}
+				y={Math.round(-BW * 0.238)}
 			/>
 
 			<!-- Scatter medallion -->
@@ -64,24 +89,23 @@
 			<Sprite
 				key="bonusBuyButtonFrame"
 				anchor={{ x: 0.5, y: 0.5 }}
-				width={Math.round(BW * 0.34)}
-				height={Math.round(BW * 0.34 * (1084 / 3065))}
-				y={Math.round(BW * 0.170)}
+				width={Math.round(BW * 0.37)}
+				height={Math.round(BW * 0.37 * (1084 / 3065))}
+				y={Math.round(BW * 0.165)}
 			/>
-			<BitmapText
+			<Text
 				anchor={{ x: 0.5, y: 0.5 }}
 				text={freeSpinsFromEvent}
-				style={{ fontFamily: 'silver', fontSize: Math.round(BW * 0.05) }}
-				y={Math.round(BW * 0.170 - 34 / 97 * (BW * 0.05))}
+				style={textStyle(Math.round(BW * 0.08), 0xf1c14a)}
+				y={Math.round(BW * 0.16)}
 			/>
 
-			<!-- FREE SPINS text -->
-			<Sprite
+			<!-- FREE SPINS (green, large) — live translatable text -->
+			<Text
 				anchor={{ x: 0.5, y: 0.5 }}
-				width={Math.round(BW * 0.37)}
-				height={Math.round(BW * 0.37 * (46 / 201))}
-				key="freespins.png"
-				y={Math.round(BW * 0.306)}
+				text={t('FS FREE SPINS')}
+				style={textStyle(Math.round(BW * 0.048), 0x7cc23f)}
+				y={Math.round(BW * 0.305)}
 			/>
 		{/snippet}
 	</FreeSpinAnimation>

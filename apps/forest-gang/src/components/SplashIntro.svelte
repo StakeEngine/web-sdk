@@ -15,8 +15,9 @@
 	const bonusMid = $derived(splitNum(t('SPLASH BONUS MID')));
 
 	// splash.jpg = forest + 5 characters holding 3 empty wooden boards (no logo, no text).
-	const bgSrc   = './assets/components/backgrounds/splash.jpg?v=20260622';
+	const bgSrc   = './assets/components/backgrounds/splash.jpg?v=20260630';
 	const logoSrc = './assets/components/ui/forest_gang_logo.png';
+	const brandSrc = './assets/components/ui/press_play_logo.png?v=20260630';
 	// Big gold values stay as images (stylised); everything else is localizable text.
 	const valExpanding = './assets/components/splash/feat_value_expanding.png?v=20260626b';
 	const valEpic      = './assets/components/splash/feat_value_epic.png?v=20260626b';
@@ -31,6 +32,7 @@
 	<!-- 16:9 stage that cover-scales the artwork; overlays are positioned within it
 	     so they stay locked to the boards at any viewport aspect ratio. -->
 	<div class="stage" style={`background-image: url('${bgSrc}')`}>
+		<img class="brand" src={brandSrc} alt="Press Play" draggable="false" />
 		<img class="logo" src={logoSrc} alt="Forest Gang" draggable="false" />
 
 		<!-- EXPANDING REELS -->
@@ -88,10 +90,21 @@
 		container-type: size;
 	}
 
+	/* Studio logo, centred at the very top, above the game logo. */
+	.brand {
+		position: absolute;
+		left: 50%;
+		top: 2.5%;
+		transform: translateX(-50%);
+		width: 11%;
+		object-fit: contain;
+		filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+	}
+
 	.logo {
 		position: absolute;
 		left: 50%;
-		top: 3%;
+		top: 9.5%;
 		transform: translateX(-50%);
 		width: 19.8%;
 		object-fit: contain;
