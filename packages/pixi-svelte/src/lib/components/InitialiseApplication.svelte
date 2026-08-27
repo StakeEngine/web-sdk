@@ -6,7 +6,7 @@
 	import { getContextApp } from '../context.svelte';
 	import { preloadFont } from '../utils.svelte';
 
-	type Props = { children: Snippet };
+	type Props = { children: Snippet; rendererPreference?: 'webgpu' | 'webgl' };
 
 	const props: Props = $props();
 	const context = getContextApp();
@@ -26,7 +26,7 @@
 			multiView: false,
 			antialias: true,
 			clearBeforeRender: true,
-			preference: 'webgpu',
+			preference: props.rendererPreference ?? 'webgpu',
 			powerPreference: 'high-performance',
 			resolution: devicePixelRatio.current,
 			resizeTo: window,
