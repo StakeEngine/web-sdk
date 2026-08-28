@@ -8,7 +8,17 @@ import { playBookEvent } from './utils';
 import { winLevelMap, type WinLevel, type WinLevelData } from './winLevelMap';
 import { stateGame, stateGameDerived } from './stateGame.svelte';
 import type { BookEvent, BookEventOfType, BookEventContext } from './typesBookEvent';
-import type { Position } from './types';
+import type { GameType, Position } from './types';
+
+/**
+ * math-sdk names its game types basegame / freegame (Config.freegame_type), while this
+ * game's config - and therefore GameType - names them basegame / freeSpins. Passing the
+ * book event's value through raw leaves gameType at 'freegame', which matches neither
+ * branch in Background.svelte, so both backgrounds stay hidden and the screen goes black
+ * for the whole feature. freeSpinTrigger sets the right value; the next reveal overwrote it.
+ */
+const toGameType = (raw: string): GameType =>
+	raw === 'freegame' ? 'freeSpins' : (raw as GameType);
 
 const winLevelSoundsPlay = ({ winLevelData }: { winLevelData: WinLevelData }) => {
 	if (winLevelData?.alias === 'max') eventEmitter.broadcastAsync({ type: 'uiHide' });
@@ -51,7 +61,7 @@ export const bookEventHandlerMap: BookEventHandlerMap<BookEvent, BookEventContex
 			recordBookEvent({ bookEvent });
 		}
 
-		stateGame.gameType = bookEvent.gameType;
+		stateGame.gameType = toGameType(bookEvent.gameType);
 		await stateGameDerived.enhancedBoard.spin({ revealEvent: bookEvent });
 		eventEmitter.broadcast({ type: 'soundScatterCounterClear' });
 	},
