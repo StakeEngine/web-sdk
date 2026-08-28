@@ -31,6 +31,14 @@ export const createLayout = (layoutOptions: {
 		portrait: number;
 	};
 	mainSizesMap: MainSizesMap;
+	/**
+	 * Height the UI chrome occupies along the bottom, per layout type, in the same
+	 * units as `mainSizesMap`. Reserving it keeps the game area clear of the UI bar
+	 * when the canvas is wider than the design ratio - without it the game area
+	 * takes the full canvas height and the bottom of the board renders behind the
+	 * bar. Omit it and the layout is unchanged.
+	 */
+	safeAreaBottomMap?: Partial<Record<keyof MainSizesMap, number>>;
 }) => {
 	const canvasSizes = () => ({ width: innerWidth.current ?? 1, height: innerHeight.current ?? 1 }); // because of resizeTo: window
 	const canvasRatio = () => getRatio(canvasSizes());
@@ -56,25 +64,32 @@ export const createLayout = (layoutOptions: {
 	};
 	const isStacked = () => ['portrait', 'almostSquare'].includes(layoutType());
 
-	const createMainLayout = (mainSizesMap: MainSizesMap) => () => {
-		const x = canvasSizes().width * 0.5;
-		const y = canvasSizes().height * 0.5;
-		const mainSizes = mainSizesMap[layoutType()];
-		const widthScale = canvasSizes().width / mainSizes.width;
-		const heightScale = canvasSizes().height / mainSizes.height;
-		const scale = Math.min(widthScale, heightScale);
+	const createMainLayout =
+		(
+			mainSizesMap: MainSizesMap,
+			safeAreaBottomMap?: Partial<Record<keyof MainSizesMap, number>>,
+		) =>
+		() => {
+			const mainSizes = mainSizesMap[layoutType()];
+			const safeAreaBottom = safeAreaBottomMap?.[layoutType()] ?? 0;
+			const widthScale = canvasSizes().width / mainSizes.width;
+			const heightScale = canvasSizes().height / (mainSizes.height + safeAreaBottom);
+			const scale = Math.min(widthScale, heightScale);
+			const x = canvasSizes().width * 0.5;
+			// centre in the area above the reserved strip, not in the whole canvas
+			const y = canvasSizes().height * 0.5 - safeAreaBottom * scale * 0.5;
 
-		return {
-			x,
-			y,
-			scale,
-			width: mainSizes.width,
-			height: mainSizes.height,
-			anchor: 0.5,
+			return {
+				x,
+				y,
+				scale,
+				width: mainSizes.width,
+				height: mainSizes.height,
+				anchor: 0.5,
+			};
 		};
-	};
 
-	const mainLayout = createMainLayout(layoutOptions.mainSizesMap);
+	const mainLayout = createMainLayout(layoutOptions.mainSizesMap, layoutOptions.safeAreaBottomMap);
 
 	const mainLayoutStandard = createMainLayout(STANDARD_MAIN_SIZES_MAP);
 

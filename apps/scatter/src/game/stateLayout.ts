@@ -11,4 +11,11 @@ export const { stateLayout, stateLayoutDerived } = createLayout({
 		landscape: { width: 1600, height: 900 },
 		portrait: { width: 800, height: 1422 },
 	},
+	// height the UI bar takes along the bottom, in mainSizesMap units
+	safeAreaBottomMap: {
+		desktop: 220,
+		tablet: 260,
+		landscape: 240,
+		portrait: 380,
+	},
 });
