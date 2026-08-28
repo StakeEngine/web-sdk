@@ -59,3 +59,35 @@ export const stateMeta = $state({
 export const stateMetaDerived = {
 	betModeMetaList: () => Object.values(stateMeta.betModeMeta),
 };
+
+/**
+ * Reconcile `betModeMeta` against the bet modes the RGS reports at authentication.
+ *
+ * `betModeMeta` defaults to a placeholder table that does not describe any
+ * particular game. Modes it lists that the RGS does not know are rejected with
+ * ERR_VAL "invalid amount" when played, and a costMultiplier that disagrees with
+ * the published math is wrong in the UI before it is ever sent.
+ *
+ * Server-reported modes win on identity and cost; presentation a game has already
+ * set (assets, copy, type) is kept for the modes that survive.
+ */
+export const reconcileBetModeMeta = (
+	gameModes: { mode: string; costMultiplier: number }[],
+): BetModeMeta => {
+	const reconciled: BetModeMeta = {};
+
+	gameModes.forEach(({ mode, costMultiplier }) => {
+		const key = mode.toUpperCase();
+		const existing = stateMeta.betModeMeta[key] ?? stateMeta.betModeMeta[mode.toLowerCase()];
+
+		reconciled[key] = {
+			...(existing ?? DEFAULT_BET_MODE_META.BASE),
+			mode: key,
+			costMultiplier,
+			// only infer when the game has not described this mode itself
+			type: existing?.type ?? (costMultiplier === 1 ? 'default' : 'buy'),
+		} as BetModeData;
+	});
+
+	return reconciled;
+};

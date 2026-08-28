@@ -2,7 +2,15 @@
 	import { onMount, type Snippet } from 'svelte';
 
 	import { requestAuthenticate, requestReplay } from 'rgs-requests';
-	import { stateUrlDerived, stateBet, stateConfig, stateModal, stateUi } from 'state-shared';
+	import {
+		stateUrlDerived,
+		stateBet,
+		stateConfig,
+		stateMeta,
+		stateModal,
+		stateUi,
+		reconcileBetModeMeta,
+	} from 'state-shared';
 	import { API_AMOUNT_MULTIPLIER, MOST_USED_BET_INDEXES } from 'constants-shared/bet';
 
 	type Props = { children: Snippet };
@@ -66,6 +74,15 @@
 				stateConfig.betMenuOptions = stateConfig.betAmountOptions.filter((_, index) =>
 					MOST_USED_BET_INDEXES.includes(index),
 				);
+
+				// Example of authenticateData.config.gameModes
+				// [
+				// 	{ "mode": "base", "costMultiplier": 1, "maxBet": 2000000000 },
+				// 	{ "mode": "bonus", "costMultiplier": 200, "maxBet": 2000000000 }
+				// ]
+				if (authenticateData.config?.gameModes?.length) {
+					stateMeta.betModeMeta = reconcileBetModeMeta(authenticateData.config.gameModes);
+				}
 			}
 
 			// round
