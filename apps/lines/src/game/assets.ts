@@ -14,12 +14,8 @@ export default {
 		preload: true,
 	},
 	H1: {
-		type: 'spine',
-		src: {
-			atlas: new URL('../../assets/spines/symbols/symbols.atlas', import.meta.url).href,
-			skeleton: new URL('../../assets/spines/symbols/h1.json', import.meta.url).href,
-			scale: 2,
-		},
+		type: 'sprite',
+		src: new URL('../../assets/symbols/h1-mouse.webp', import.meta.url).href,
 	},
 	H2: {
 		type: 'spine',
